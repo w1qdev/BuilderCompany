@@ -32,3 +32,26 @@ export async function PATCH(
 
   return NextResponse.json(updated);
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const password = req.headers.get("x-admin-password");
+  if (password !== process.env.ADMIN_PASSWORD) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  await prisma.request.delete({
+    where: { id: Number(id) },
+  });
+
+  const io = getIO();
+  if (io) {
+    io.emit("delete-request", { id: Number(id) });
+  }
+
+  return NextResponse.json({ success: true });
+}

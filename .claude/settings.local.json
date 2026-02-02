@@ -12,7 +12,8 @@
       "Bash(wc:*)",
       "Bash(npm ls:*)",
       "Bash(node -e:*)",
-      "Bash(npx next lint:*)"
+      "Bash(npx next lint:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
