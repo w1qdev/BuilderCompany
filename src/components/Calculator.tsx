@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const serviceTypes = [
   { id: "building", label: "Строительство дома", pricePerSqm: 45000 },
@@ -62,17 +69,18 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
                 <label className="block text-sm font-semibold text-dark mb-2">
                   Тип услуги
                 </label>
-                <select
-                  value={service}
-                  onChange={(e) => setService(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all bg-warm-bg"
-                >
-                  {serviceTypes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label} — от {formatPrice(s.pricePerSqm)} руб/м²
-                    </option>
-                  ))}
-                </select>
+                <Select value={service} onValueChange={setService}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceTypes.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.label} — от {formatPrice(s.pricePerSqm)} руб/м²
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Area */}

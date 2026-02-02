@@ -1,6 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const services = [
   "Строительство дома",
@@ -75,56 +85,66 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-name">Ваше имя</Label>
+        <Input
+          id="contact-name"
           type="text"
           placeholder="Ваше имя *"
           required
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all bg-warm-bg placeholder:text-neutral-light"
         />
       </div>
-      <div>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-phone">Телефон</Label>
+        <Input
+          id="contact-phone"
           type="tel"
           placeholder="Телефон *"
           required
           value={form.phone}
           onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all bg-warm-bg placeholder:text-neutral-light"
         />
       </div>
-      <div>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-email">Email</Label>
+        <Input
+          id="contact-email"
           type="email"
           placeholder="Email *"
           required
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all bg-warm-bg placeholder:text-neutral-light"
         />
       </div>
-      <div>
-        <select
+      <div className="space-y-1.5">
+        <Label>Услуга</Label>
+        <Select
           value={form.service}
-          onChange={(e) => setForm({ ...form, service: e.target.value })}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all bg-warm-bg"
+          onValueChange={(value) => setForm({ ...form, service: value })}
         >
-          {services.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger>
+            <SelectValue placeholder="Выберите услугу" />
+          </SelectTrigger>
+          <SelectContent>
+            {services.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-      <div>
-        <textarea
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-message">Сообщение</Label>
+        <Textarea
+          id="contact-message"
           placeholder="Сообщение (необязательно)"
           rows={3}
           value={form.message}
           onChange={(e) => setForm({ ...form, message: e.target.value })}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all bg-warm-bg resize-none placeholder:text-neutral-light"
+          className="resize-none"
         />
       </div>
 

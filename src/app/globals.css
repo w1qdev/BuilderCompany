@@ -4,14 +4,43 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-:root {
-  --primary: #E87A2E;
-  --primary-light: #F5A623;
-  --primary-dark: #D4601A;
-  --dark: #2D1B0E;
-  --dark-light: #3D2B1A;
-  --warm-bg: #FFF8F0;
-  --warm-light: #FFFDF9;
+@layer base {
+  :root {
+    --background: 32 100% 97%;
+    --foreground: 24 54% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 54% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 54% 12%;
+    --primary: 24 82% 54%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 20% 94%;
+    --secondary-foreground: 24 54% 12%;
+    --muted: 30 20% 94%;
+    --muted-foreground: 24 10% 40%;
+    --accent: 30 20% 94%;
+    --accent-foreground: 24 54% 12%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 20% 88%;
+    --input: 30 20% 88%;
+    --ring: 24 82% 54%;
+    --radius: 0.75rem;
+
+    --primary-hex: #E87A2E;
+    --primary-light: #F5A623;
+    --primary-dark: #D4601A;
+    --dark: #2D1B0E;
+    --dark-light: #3D2B1A;
+    --warm-bg: #FFF8F0;
+    --warm-light: #FFFDF9;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
 }
 
 html {

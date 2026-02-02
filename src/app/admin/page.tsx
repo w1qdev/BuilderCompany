@@ -2,6 +2,22 @@
 
 import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { io as ioClient, Socket } from "socket.io-client";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface RequestItem {
   id: number;
@@ -21,10 +37,10 @@ interface Stats {
   done: number;
 }
 
-const statusLabels: Record<string, { label: string; color: string }> = {
-  new: { label: "Новая", color: "bg-blue-100 text-blue-700" },
-  in_progress: { label: "В работе", color: "bg-yellow-100 text-yellow-700" },
-  done: { label: "Завершена", color: "bg-green-100 text-green-700" },
+const statusLabels: Record<string, { label: string; variant: "new" | "in_progress" | "done" }> = {
+  new: { label: "Новая", variant: "new" },
+  in_progress: { label: "В работе", variant: "in_progress" },
+  done: { label: "Завершена", variant: "done" },
 };
 
 const statusCycle = ["new", "in_progress", "done"];
@@ -324,12 +340,12 @@ export default function AdminPage() {
             </div>
           )}
 
-          <input
+          <Input
             type="password"
             placeholder="Пароль"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all bg-warm-bg mb-4"
+            className="mb-4"
           />
           <button
             type="submit"
@@ -350,180 +366,187 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-warm-bg">
-      {/* Header */}
-      <div className="gradient-dark text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <span className="font-bold">СтройКомпани</span>
-            </a>
-            <span className="text-white/40 text-sm">/ Админ-панель</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`} />
-              <span className="text-xs text-white/50">{connected ? "Онлайн" : "Оффлайн"}</span>
-            </div>
-            <span className="text-sm text-white/60">Заявок: {total}</span>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-white/60 hover:text-white transition-colors"
-            >
-              Выйти
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {statsCards.map((card) => (
-            <button
-              key={card.key}
-              onClick={() => {
-                setFilter(card.key);
-                setPage(1);
-              }}
-              className={`${card.bg} rounded-2xl p-4 text-left transition-all hover:shadow-md ${
-                filter === card.key ? "ring-2 ring-primary shadow-md" : ""
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.iconBg}`}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={card.icon} />
+    <TooltipProvider>
+      <div className="min-h-screen bg-warm-bg">
+        {/* Header */}
+        <div className="gradient-dark text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <a href="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-dark">{card.value}</div>
-                  <div className="text-xs text-neutral">{card.label}</div>
-                </div>
+                <span className="font-bold">СтройКомпани</span>
+              </a>
+              <span className="text-white/40 text-sm">/ Админ-панель</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`} />
+                <span className="text-xs text-white/50">{connected ? "Онлайн" : "Оффлайн"}</span>
               </div>
-            </button>
-          ))}
-        </div>
-
-        {/* Search + Actions */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Поиск по имени, телефону, email..."
-              value={searchInput}
-              onChange={(e) => handleSearchInput(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl text-sm border border-gray-200 bg-white focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
-            />
+              <span className="text-sm text-white/60">Заявок: {total}</span>
+              <button
+                onClick={handleLogout}
+                className="text-sm text-white/60 hover:text-white transition-colors"
+              >
+                Выйти
+              </button>
+            </div>
           </div>
-          <button
-            onClick={fetchRequests}
-            className="px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-all border border-gray-200"
-          >
-            Обновить
-          </button>
-          <button
-            onClick={exportCSV}
-            className="px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-all border border-gray-200 flex items-center gap-1.5"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Экспорт CSV
-          </button>
         </div>
 
-        {/* Filter pills */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          {[
-            { value: "all", label: "Все" },
-            { value: "new", label: "Новые" },
-            { value: "in_progress", label: "В работе" },
-            { value: "done", label: "Завершены" },
-          ].map((f) => (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {statsCards.map((card) => (
+              <button
+                key={card.key}
+                onClick={() => {
+                  setFilter(card.key);
+                  setPage(1);
+                }}
+                className={`${card.bg} rounded-2xl p-4 text-left transition-all hover:shadow-md ${
+                  filter === card.key ? "ring-2 ring-primary shadow-md" : ""
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.iconBg}`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={card.icon} />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-dark">{card.value}</div>
+                    <div className="text-xs text-neutral">{card.label}</div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Search + Actions */}
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral z-10"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <Input
+                type="text"
+                placeholder="Поиск по имени, телефону, email..."
+                value={searchInput}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                className="pl-10 bg-white"
+              />
+            </div>
             <button
-              key={f.value}
-              onClick={() => {
-                setFilter(f.value);
-                setPage(1);
-              }}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                filter === f.value
-                  ? "gradient-primary text-white shadow-md"
-                  : "bg-white text-neutral hover:bg-gray-50"
-              }`}
+              onClick={fetchRequests}
+              className="px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-all border border-gray-200"
             >
-              {f.label}
+              Обновить
             </button>
-          ))}
-        </div>
+            <button
+              onClick={exportCSV}
+              className="px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-all border border-gray-200 flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Экспорт CSV
+            </button>
+          </div>
 
-        {/* Table */}
-        {loading ? (
-          <div className="text-center py-20 text-neutral">Загрузка...</div>
-        ) : requests.length === 0 ? (
-          <div className="text-center py-20 text-neutral">Заявок пока нет</div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-warm-bg">
-                    <th className="text-left px-4 py-3 font-semibold text-dark">#</th>
+          {/* Filter pills */}
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            {[
+              { value: "all", label: "Все" },
+              { value: "new", label: "Новые" },
+              { value: "in_progress", label: "В работе" },
+              { value: "done", label: "Завершены" },
+            ].map((f) => (
+              <button
+                key={f.value}
+                onClick={() => {
+                  setFilter(f.value);
+                  setPage(1);
+                }}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  filter === f.value
+                    ? "gradient-primary text-white shadow-md"
+                    : "bg-white text-neutral hover:bg-gray-50"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Table */}
+          {loading ? (
+            <div className="text-center py-20 text-neutral">Загрузка...</div>
+          ) : requests.length === 0 ? (
+            <div className="text-center py-20 text-neutral">Заявок пока нет</div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-warm-bg hover:bg-warm-bg">
+                    <TableHead className="font-semibold text-dark">#</TableHead>
                     {sortableColumns.map((col) => (
-                      <th
+                      <TableHead
                         key={col.field}
-                        className="text-left px-4 py-3 font-semibold text-dark cursor-pointer select-none hover:text-primary transition-colors"
+                        className="font-semibold text-dark cursor-pointer select-none hover:text-primary transition-colors"
                         onClick={() => handleSort(col.field)}
                       >
                         {col.label}
                         <SortArrow field={col.field} />
-                      </th>
+                      </TableHead>
                     ))}
-                    <th className="text-left px-4 py-3 font-semibold text-dark">Телефон</th>
-                    <th className="text-left px-4 py-3 font-semibold text-dark">Email</th>
-                  </tr>
-                </thead>
-                <tbody>
+                    <TableHead className="font-semibold text-dark">Телефон</TableHead>
+                    <TableHead className="font-semibold text-dark">Email</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {requests.map((r) => (
                     <Fragment key={r.id}>
-                      <tr
+                      <TableRow
                         onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                        className="border-t border-gray-100 hover:bg-warm-bg/50 transition-colors cursor-pointer"
+                        className="border-t border-gray-100 hover:bg-warm-bg/50 cursor-pointer"
                       >
-                        <td className="px-4 py-3 text-neutral">{r.id}</td>
-                        <td className="px-4 py-3 text-neutral whitespace-nowrap">{formatDate(r.createdAt)}</td>
-                        <td className="px-4 py-3 font-medium text-dark">{r.name}</td>
-                        <td className="px-4 py-3 text-neutral">{r.service}</td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={(e) => cycleStatus(e, r.id, r.status)}
-                            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all hover:scale-105 ${
-                              statusLabels[r.status]?.color || "bg-gray-100 text-gray-600"
-                            }`}
-                          >
-                            {statusLabels[r.status]?.label || r.status}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-neutral">{r.phone}</td>
-                        <td className="px-4 py-3 text-neutral">{r.email}</td>
-                      </tr>
+                        <TableCell className="text-neutral">{r.id}</TableCell>
+                        <TableCell className="text-neutral whitespace-nowrap">{formatDate(r.createdAt)}</TableCell>
+                        <TableCell className="font-medium text-dark">{r.name}</TableCell>
+                        <TableCell className="text-neutral">{r.service}</TableCell>
+                        <TableCell>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={(e) => cycleStatus(e, r.id, r.status)}
+                                className="transition-all hover:scale-105"
+                              >
+                                <Badge variant={statusLabels[r.status]?.variant || "default"}>
+                                  {statusLabels[r.status]?.label || r.status}
+                                </Badge>
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Нажмите для смены статуса</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell className="text-neutral">{r.phone}</TableCell>
+                        <TableCell className="text-neutral">{r.email}</TableCell>
+                      </TableRow>
                       {expandedId === r.id && (
-                        <tr key={`${r.id}-detail`} className="border-t border-gray-100">
-                          <td colSpan={7} className="px-4 py-4 bg-warm-bg/30">
+                        <TableRow key={`${r.id}-detail`} className="border-t border-gray-100">
+                          <TableCell colSpan={7} className="bg-warm-bg/30">
                             <div className="grid sm:grid-cols-2 gap-4">
                               <div>
                                 <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Сообщение</div>
@@ -575,36 +598,36 @@ export default function AdminPage() {
                                 </button>
                               )}
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )}
                     </Fragment>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
 
-            {/* Pagination */}
-            {pages > 1 && (
-              <div className="flex items-center justify-center gap-2 py-4 border-t border-gray-100">
-                {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
-                      page === p
-                        ? "gradient-primary text-white"
-                        : "text-neutral hover:bg-gray-100"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+              {/* Pagination */}
+              {pages > 1 && (
+                <div className="flex items-center justify-center gap-2 py-4 border-t border-gray-100">
+                  {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                        page === p
+                          ? "gradient-primary text-white"
+                          : "text-neutral hover:bg-gray-100"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
