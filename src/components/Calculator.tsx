@@ -35,7 +35,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.2 }}
           className="text-center mb-12"
         >
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">Калькулятор</span>
@@ -50,7 +50,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.2 }}
           transition={{ delay: 0.1 }}
           className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl p-6 sm:p-10"
         >

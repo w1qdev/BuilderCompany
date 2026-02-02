@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getIO } from "@/lib/socket";
 
 export async function PATCH(
   req: NextRequest,
@@ -22,6 +23,12 @@ export async function PATCH(
     where: { id: Number(id) },
     data: { status },
   });
+
+  // Emit realtime event to admin panel
+  const io = getIO();
+  if (io) {
+    io.emit("status-update", updated);
+  }
 
   return NextResponse.json(updated);
 }

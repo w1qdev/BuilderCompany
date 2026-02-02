@@ -20,7 +20,7 @@ export default function Partners() {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.3 }}
           className="text-center mb-12"
         >
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">Партнёры</span>
@@ -33,18 +33,22 @@ export default function Partners() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.05 } },
+          }}
           className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4"
         >
-          {partners.map((partner, i) => (
+          {partners.map((partner) => (
             <motion.div
               key={partner.name}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
+              variants={{
+                hidden: { opacity: 0, scale: 0.9 },
+                visible: { opacity: 1, scale: 1 },
+              }}
               className="group bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 flex flex-col items-center justify-center hover:-translate-y-1"
             >
               <div className="w-14 h-14 bg-warm-bg rounded-xl flex items-center justify-center mb-2 group-hover:bg-primary/10 transition-colors">

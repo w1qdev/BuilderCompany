@@ -143,7 +143,10 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
       </button>
 
       <p className="text-xs text-neutral-light text-center">
-        Нажимая кнопку, вы соглашаетесь с политикой конфиденциальности
+        Нажимая кнопку, вы соглашаетесь с{" "}
+        <a href="/privacy" className="text-primary hover:underline">
+          политикой конфиденциальности
+        </a>
       </p>
     </form>
   );

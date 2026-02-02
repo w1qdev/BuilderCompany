@@ -3,20 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node server.js",
     "build": "next build",
-    "start": "next start",
+    "start": "cross-env NODE_ENV=production node server.js",
     "lint": "next lint"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.29.3",
     "next": "14.2.35",
     "nodemailer": "^7.0.13",
     "prisma": "^5.22.0",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@types/node": "^20",

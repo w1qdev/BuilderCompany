@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendTelegramNotification } from "@/lib/telegram";
 import { sendEmailNotification } from "@/lib/email";
+import { getIO } from "@/lib/socket";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +19,12 @@ export async function POST(req: NextRequest) {
     const request = await prisma.request.create({
       data: { name, phone, email, service, message: message || null },
     });
+
+    // Emit realtime event to admin panel
+    const io = getIO();
+    if (io) {
+      io.emit("new-request", request);
+    }
 
     // Send notifications in background (don't block response)
     Promise.allSettled([

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { io as ioClient, Socket } from "socket.io-client";
 
 interface RequestItem {
   id: number;
@@ -31,6 +32,8 @@ export default function AdminPage() {
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [connected, setConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -61,10 +64,63 @@ export default function AdminPage() {
     if (authenticated) fetchRequests();
   }, [authenticated, fetchRequests]);
 
+  // Socket.io connection
+  useEffect(() => {
+    if (!authenticated) {
+      // Disconnect on logout
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setConnected(false);
+      }
+      return;
+    }
+
+    const socket = ioClient({
+      path: "/api/socketio",
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      setConnected(true);
+    });
+
+    socket.on("disconnect", () => {
+      setConnected(false);
+    });
+
+    socket.on("new-request", (request: RequestItem) => {
+      setRequests((prev) => {
+        // Deduplicate
+        if (prev.some((r) => r.id === request.id)) return prev;
+        return [request, ...prev];
+      });
+      setTotal((prev) => prev + 1);
+    });
+
+    socket.on("status-update", (updated: RequestItem) => {
+      setRequests((prev) =>
+        prev.map((r) => (r.id === updated.id ? { ...r, status: updated.status } : r))
+      );
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+      setConnected(false);
+    };
+  }, [authenticated]);
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setAuthenticated(false);
+    setPassword("");
   };
 
   const cycleStatus = async (id: number, currentStatus: string) => {
@@ -155,12 +211,14 @@ export default function AdminPage() {
             <span className="text-white/40 text-sm">/ Админ-панель</span>
           </div>
           <div className="flex items-center gap-4">
+            {/* Connection indicator */}
+            <div className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`} />
+              <span className="text-xs text-white/50">{connected ? "Онлайн" : "Оффлайн"}</span>
+            </div>
             <span className="text-sm text-white/60">Заявок: {total}</span>
             <button
-              onClick={() => {
-                setAuthenticated(false);
-                setPassword("");
-              }}
+              onClick={handleLogout}
               className="text-sm text-white/60 hover:text-white transition-colors"
             >
               Выйти
