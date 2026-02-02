@@ -2,26 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #E87A2E;
+  --primary-light: #F5A623;
+  --primary-dark: #D4601A;
+  --dark: #2D1B0E;
+  --dark-light: #3D2B1A;
+  --warm-bg: #FFF8F0;
+  --warm-light: #FFFDF9;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--warm-bg);
+  color: #333;
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .gradient-primary {
+    background: linear-gradient(135deg, #E87A2E, #F5A623);
+  }
+  .gradient-dark {
+    background: linear-gradient(135deg, #2D1B0E, #3D2B1A);
+  }
+  .text-gradient {
+    background: linear-gradient(135deg, #E87A2E, #F5A623);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }

@@ -1,0 +1,62 @@
+"use client";
+
+import { motion } from "framer-motion";
+
+const partners = [
+  { name: "КнауфГипс", initials: "КГ" },
+  { name: "ТехноНиколь", initials: "ТН" },
+  { name: "Сен-Гобен", initials: "СГ" },
+  { name: "Керама Марацци", initials: "КМ" },
+  { name: "Данфосс", initials: "ДФ" },
+  { name: "Рехау", initials: "РХ" },
+  { name: "Velux", initials: "VX" },
+  { name: "Ceresit", initials: "CR" },
+];
+
+export default function Partners() {
+  return (
+    <section id="partners" className="py-20 sm:py-28">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <span className="text-primary font-semibold text-sm uppercase tracking-wider">Партнёры</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mt-2">
+            Работаем с лучшими
+          </h2>
+          <p className="text-neutral mt-3 max-w-xl mx-auto">
+            Сотрудничаем с ведущими производителями строительных материалов
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4"
+        >
+          {partners.map((partner, i) => (
+            <motion.div
+              key={partner.name}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.05 }}
+              className="group bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 flex flex-col items-center justify-center hover:-translate-y-1"
+            >
+              <div className="w-14 h-14 bg-warm-bg rounded-xl flex items-center justify-center mb-2 group-hover:bg-primary/10 transition-colors">
+                <span className="text-lg font-bold text-dark group-hover:text-primary transition-colors">
+                  {partner.initials}
+                </span>
+              </div>
+              <span className="text-xs text-neutral text-center font-medium">{partner.name}</span>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
