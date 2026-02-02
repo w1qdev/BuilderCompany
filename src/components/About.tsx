@@ -1,6 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import AnimatedCounter from "./AnimatedCounter";
 
 const advantages = [
   {
@@ -42,8 +44,25 @@ const advantages = [
 ];
 
 export default function About() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const decorY = useTransform(scrollYProgress, [0, 1], [40, -40]);
+
   return (
-    <section id="about" className="py-20 sm:py-28 bg-warm-light">
+    <section id="about" className="py-20 sm:py-28 bg-warm-light" ref={sectionRef}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* About text block */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-20 overflow-hidden">
@@ -125,21 +144,24 @@ export default function About() {
             <div className="bg-gradient-to-br from-dark to-dark-light rounded-3xl p-8 sm:p-10">
               <div className="grid grid-cols-2 gap-6">
                 {[
-                  { value: "15+", label: "Лет на рынке" },
-                  { value: "500+", label: "Проектов сдано" },
-                  { value: "120+", label: "Специалистов" },
-                  { value: "50K+", label: "м² построено" },
+                  { target: 15, suffix: "+", label: "Лет на рынке" },
+                  { target: 500, suffix: "+", label: "Проектов сдано" },
+                  { target: 120, suffix: "+", label: "Специалистов" },
+                  { target: 50, suffix: "K+", label: "м² построено" },
                 ].map((stat, i) => (
                   <div key={i} className="text-center">
                     <div className="text-3xl sm:text-4xl font-extrabold text-primary mb-1">
-                      {stat.value}
+                      <AnimatedCounter target={stat.target} suffix={stat.suffix} />
                     </div>
                     <div className="text-white/60 text-sm">{stat.label}</div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 gradient-primary rounded-2xl opacity-20 blur-xl" />
+            <motion.div
+              className="absolute -bottom-4 -right-4 w-24 h-24 gradient-primary rounded-2xl opacity-20 blur-xl"
+              style={isMobile ? undefined : { y: decorY }}
+            />
           </motion.div>
         </div>
 
