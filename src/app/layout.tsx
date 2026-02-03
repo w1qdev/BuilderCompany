@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ThemeProvider from "@/components/ThemeProvider";
+import CookieConsent from "@/components/CookieConsent";
 
 export const metadata: Metadata = {
   title: "ЦСМ — Центр Стандартизации и Метрологии",
@@ -14,8 +16,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru">
-      <body className="antialiased">{children}</body>
+    <html lang="ru" suppressHydrationWarning>
+      <body className="antialiased">
+        <ThemeProvider>
+          {children}
+          <CookieConsent />
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

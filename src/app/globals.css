@@ -35,6 +35,31 @@
     --warm-bg: #FFF8F0;
     --warm-light: #FFFDF9;
   }
+
+  .dark {
+    --background: 24 54% 8%;
+    --foreground: 30 20% 94%;
+    --card: 24 40% 12%;
+    --card-foreground: 30 20% 94%;
+    --popover: 24 40% 12%;
+    --popover-foreground: 30 20% 94%;
+    --primary: 24 82% 54%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 24 30% 16%;
+    --secondary-foreground: 30 20% 94%;
+    --muted: 24 30% 16%;
+    --muted-foreground: 30 10% 60%;
+    --accent: 24 30% 16%;
+    --accent-foreground: 30 20% 94%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 24 20% 20%;
+    --input: 24 20% 20%;
+    --ring: 24 82% 54%;
+
+    --warm-bg: #1a1410;
+    --warm-light: #231a14;
+  }
 }
 
 @layer base {
@@ -51,6 +76,12 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: var(--warm-bg);
   color: #333;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  background-color: var(--warm-bg);
+  color: #e5e5e5;
 }
 
 @layer utilities {

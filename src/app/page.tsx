@@ -15,6 +15,7 @@ import FAQ from "@/components/FAQ";
 import Partners from "@/components/Partners";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
+import BackToTop from "@/components/BackToTop";
 
 export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,6 +41,7 @@ export default function Home() {
       </main>
       <Footer onOpenModal={openModal} />
       <Modal isOpen={modalOpen} onClose={closeModal} />
+      <BackToTop />
     </>
   );
 }

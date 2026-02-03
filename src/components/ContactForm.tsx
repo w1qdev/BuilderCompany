@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,8 @@ const services = [
   "Другое",
 ];
 
+const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp"];
+
 interface ContactFormProps {
   onSuccess?: () => void;
 }
@@ -35,8 +37,37 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
     service: services[0],
     message: "",
   });
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<"idle" | "uploading" | "done" | "error">("idle");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    const ext = "." + selectedFile.name.split(".").pop()?.toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      setErrorMsg("Недопустимый тип файла. Разрешены: PDF, Word, JPEG, PNG");
+      return;
+    }
+
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setErrorMsg("Размер файла превышает 10 МБ");
+      return;
+    }
+
+    setFile(selectedFile);
+    setErrorMsg("");
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,10 +75,35 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
     setErrorMsg("");
 
     try {
+      let fileName: string | undefined;
+      let filePath: string | undefined;
+
+      // Upload file first if selected
+      if (file) {
+        setUploadProgress("uploading");
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          const data = await uploadRes.json();
+          throw new Error(data.error || "Ошибка загрузки файла");
+        }
+
+        const uploadData = await uploadRes.json();
+        fileName = uploadData.fileName;
+        filePath = uploadData.filePath;
+        setUploadProgress("done");
+      }
+
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, fileName, filePath }),
       });
 
       if (!res.ok) {
@@ -57,6 +113,8 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
 
       setStatus("success");
       setForm({ name: "", phone: "", email: "", service: services[0], message: "" });
+      setFile(null);
+      setUploadProgress("idle");
 
       setTimeout(() => {
         onSuccess?.();
@@ -64,6 +122,7 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
       }, 2000);
     } catch (err) {
       setStatus("error");
+      setUploadProgress("error");
       setErrorMsg(err instanceof Error ? err.message : "Произошла ошибка");
     }
   };
@@ -145,6 +204,60 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
           onChange={(e) => setForm({ ...form, message: e.target.value })}
           className="resize-none"
         />
+      </div>
+
+      {/* File Upload */}
+      <div className="space-y-1.5">
+        <Label>Карточка предприятия</Label>
+        <div className="relative">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+            onChange={handleFileChange}
+            className="hidden"
+            id="file-upload"
+          />
+          {!file ? (
+            <label
+              htmlFor="file-upload"
+              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 dark:border-white/20 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+            >
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <span className="text-sm text-gray-500 dark:text-white/60">
+                Прикрепить файл (PDF, Word, фото)
+              </span>
+            </label>
+          ) : (
+            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+              <div className="flex items-center gap-2 min-w-0">
+                <svg className="w-5 h-5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-sm text-dark dark:text-white truncate">
+                  {file.name}
+                </span>
+                <span className="text-xs text-gray-400 shrink-0">
+                  ({(file.size / 1024 / 1024).toFixed(2)} МБ)
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={removeFile}
+                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+        <p className="text-xs text-gray-400">
+          Макс. размер: 10 МБ. Форматы: PDF, DOC, DOCX, JPG, PNG
+        </p>
       </div>
 
       {status === "error" && (
