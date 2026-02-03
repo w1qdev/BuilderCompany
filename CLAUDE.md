@@ -33,7 +33,7 @@ Admin auth is header-based (`x-admin-password` checked against `ADMIN_PASSWORD` 
 - `src/components/` — client components with Framer Motion animations
 - `src/lib/` — server utilities: `prisma.ts` (singleton client), `email.ts` (Nodemailer), `telegram.ts` (Bot API)
 - `src/app/admin/` — admin dashboard (client-side auth, request table with filters)
-- `prisma/` — schema and SQLite database (`dev.db`)
+- `prisma/` — schema and SQLite database
 
 ### Styling
 
@@ -41,7 +41,7 @@ Tailwind CSS with custom warm-orange palette defined in `tailwind.config.ts`. Cu
 
 ### Database
 
-Single `Request` model in Prisma with SQLite. Status values: `"new"`, `"in_progress"`, `"done"`. Prisma v5 (`prisma-client-js` generator).
+Single `Request` model in Prisma with SQLite. Status values: `"new"`, `"in_progress"`, `"done"`. Prisma v5 (`prisma-client-js` generator). Deployed on Render.com with persistent disk.
 
 ## Environment Variables
 
