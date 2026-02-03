@@ -66,9 +66,7 @@ const projects: Project[] = [
 
 export default function Portfolio() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [showAll, setShowAll] = useState(false);
-
-  const visibleProjects = showAll ? projects : projects;
+  const visibleProjects = projects;
 
   return (
     <section id="portfolio" className="py-20 sm:py-28 bg-white">

@@ -33,7 +33,7 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <span className="font-bold text-xl">
-                ЦСМ "Центр Стандартизации и Метрологии"
+                ЦСМ «Центр Стандартизации и Метрологии»
               </span>
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
