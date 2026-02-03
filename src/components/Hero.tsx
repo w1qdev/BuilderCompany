@@ -54,7 +54,7 @@ export default function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           transition={{ duration: 0.8 }}
         >
           <span className="inline-block gradient-primary text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-            Надёжный партнёр в строительстве
+            Аккредитованный центр сертификации
           </span>
         </motion.div>
 
@@ -64,7 +64,7 @@ export default function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           transition={{ duration: 0.8, delay: 0.1 }}
           className="text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white leading-tight mb-6"
         >
-          Выполняем работу <RotatingText />
+          Работаем <RotatingText />
         </motion.h1>
 
         <motion.p
@@ -73,8 +73,8 @@ export default function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto mb-10"
         >
-          Полный спектр строительных услуг — от проектирования до сдачи объекта.
-          Более 15 лет опыта, 500+ реализованных проектов.
+          Сертификация, поверка и калибровка измерительного оборудования.
+          Более 10 лет опыта, 5000+ выданных сертификатов.
         </motion.p>
 
         <motion.div
@@ -87,13 +87,13 @@ export default function Hero({ onOpenModal }: { onOpenModal: () => void }) {
             onClick={onOpenModal}
             className="gradient-primary text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
           >
-            Получить консультацию
+            Оставить заявку
           </button>
           <a
-            href="#calculator"
+            href="#services"
             className="border-2 border-white/30 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-white/10 transition-all duration-300"
           >
-            Рассчитать стоимость
+            Наши услуги
           </a>
         </motion.div>
 
@@ -105,10 +105,10 @@ export default function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto"
         >
           {[
-            { target: 15, suffix: "+", label: "Лет опыта" },
-            { target: 500, suffix: "+", label: "Проектов" },
-            { target: 120, suffix: "+", label: "Специалистов" },
-            { target: 98, suffix: "%", label: "Довольных клиентов" },
+            { target: 10, suffix: "+", label: "Лет опыта" },
+            { target: 5000, suffix: "+", label: "Сертификатов" },
+            { target: 50, suffix: "+", label: "Специалистов" },
+            { target: 99, suffix: "%", label: "Точность измерений" },
           ].map((stat, i) => (
             <div key={i} className="text-center">
               <div className="text-3xl sm:text-4xl font-extrabold text-primary">

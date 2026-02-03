@@ -11,27 +11,27 @@ import {
 } from "@/components/ui/select";
 
 const serviceTypes = [
-  { id: "building", label: "Строительство дома", pricePerSqm: 45000 },
-  { id: "renovation", label: "Капитальный ремонт", pricePerSqm: 15000 },
-  { id: "design", label: "Проектирование", pricePerSqm: 2500 },
-  { id: "facade", label: "Отделка фасада", pricePerSqm: 8000 },
-  { id: "roof", label: "Кровельные работы", pricePerSqm: 12000 },
+  { id: "calibration", label: "Калибровка СИ", pricePerUnit: 2000 },
+  { id: "verification", label: "Поверка приборов", pricePerUnit: 1200 },
+  { id: "certification", label: "Сертификация продукции", pricePerUnit: 15000 },
+  { id: "declaration", label: "Декларирование", pricePerUnit: 12000 },
+  { id: "iso", label: "Сертификация ISO", pricePerUnit: 35000 },
 ];
 
 const urgencyOptions = [
   { id: "standard", label: "Стандартные сроки", multiplier: 1 },
-  { id: "fast", label: "Ускоренные сроки", multiplier: 1.3 },
-  { id: "urgent", label: "Срочно", multiplier: 1.6 },
+  { id: "fast", label: "Ускоренные (3-5 дней)", multiplier: 1.5 },
+  { id: "urgent", label: "Срочно (1-2 дня)", multiplier: 2 },
 ];
 
 export default function Calculator({ onOpenModal }: { onOpenModal: () => void }) {
   const [service, setService] = useState(serviceTypes[0].id);
-  const [area, setArea] = useState(100);
+  const [quantity, setQuantity] = useState(5);
   const [urgency, setUrgency] = useState(urgencyOptions[0].id);
 
   const selectedService = serviceTypes.find((s) => s.id === service)!;
   const selectedUrgency = urgencyOptions.find((u) => u.id === urgency)!;
-  const totalPrice = selectedService.pricePerSqm * area * selectedUrgency.multiplier;
+  const totalPrice = selectedService.pricePerUnit * quantity * selectedUrgency.multiplier;
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("ru-RU").format(Math.round(price));
@@ -50,7 +50,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
             Рассчитайте стоимость
           </h2>
           <p className="text-neutral mt-3 max-w-xl mx-auto">
-            Получите предварительную оценку стоимости вашего проекта
+            Получите предварительную оценку стоимости услуг
           </p>
         </motion.div>
 
@@ -76,30 +76,30 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
                   <SelectContent>
                     {serviceTypes.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
-                        {s.label} — от {formatPrice(s.pricePerSqm)} руб/м²
+                        {s.label} — от {formatPrice(s.pricePerUnit)} руб
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Area */}
+              {/* Quantity */}
               <div>
                 <label className="block text-sm font-semibold text-dark mb-2">
-                  Площадь: <span className="text-primary">{area} м²</span>
+                  Количество: <span className="text-primary">{quantity} шт.</span>
                 </label>
                 <input
                   type="range"
-                  min={20}
-                  max={1000}
-                  step={10}
-                  value={area}
-                  onChange={(e) => setArea(Number(e.target.value))}
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <div className="flex justify-between text-xs text-neutral-light mt-1">
-                  <span>20 м²</span>
-                  <span>1000 м²</span>
+                  <span>1 шт.</span>
+                  <span>50 шт.</span>
                 </div>
               </div>
 
@@ -134,7 +134,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
               </div>
               <div className="text-primary-light text-lg mb-1">руб.</div>
               <div className="text-white/50 text-xs mb-6">
-                от {formatPrice(selectedService.pricePerSqm)} руб/м²
+                от {formatPrice(selectedService.pricePerUnit)} руб/шт.
               </div>
               <button
                 onClick={onOpenModal}
@@ -143,7 +143,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
                 Получить точный расчёт
               </button>
               <p className="text-white/40 text-xs mt-3">
-                Точная стоимость определяется после осмотра объекта
+                Точная стоимость зависит от типа оборудования
               </p>
             </div>
           </div>

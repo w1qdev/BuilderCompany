@@ -10,8 +10,8 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <h3 className="text-2xl sm:text-3xl font-extrabold mb-2">
-              Готовы начать{" "}
-              <span className="text-gradient">строительство?</span>
+              Нужна{" "}
+              <span className="text-gradient">сертификация?</span>
             </h3>
             <p className="text-white/60">
               Оставьте заявку и получите бесплатную консультацию
@@ -37,8 +37,8 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
               </span>
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
-              Надёжный партнёр в строительстве с 2009 года. Полный спектр
-              строительных услуг для частных и коммерческих объектов.
+              Аккредитованный центр сертификации с 2014 года. Полный спектр
+              метрологических услуг для бизнеса и производства.
             </p>
           </div>
 
@@ -71,12 +71,12 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
             <h4 className="font-bold text-lg mb-4">Услуги</h4>
             <ul className="space-y-2">
               {[
-                "Строительство",
-                "Ремонт",
-                "Проектирование",
-                "Дизайн",
-                "Кровля",
-                "Фасады",
+                "Калибровка",
+                "Поверка",
+                "Сертификация",
+                "Декларирование",
+                "Испытания",
+                "Консультации",
               ].map((s) => (
                 <li key={s}>
                   <a
@@ -141,7 +141,7 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
               </li>
               <li>
                 <a
-                  href="mailto:info@stroycompany.ru"
+                  href="mailto:info@csm-center.ru"
                   className="flex items-center gap-2 text-white/60 hover:text-primary transition-colors text-sm"
                 >
                   <svg
@@ -157,7 +157,7 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
                       d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  info@stroycompany.ru
+                  info@csm-center.ru
                 </a>
               </li>
               <li className="flex items-center gap-2 text-white/60 text-sm">
@@ -185,7 +185,7 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-white/40 text-sm">
-            &copy; {currentYear} СтройКомпани. Все права защищены.
+            &copy; {currentYear} ЦСМ. Все права защищены.
           </p>
           <div className="flex gap-6">
             <a

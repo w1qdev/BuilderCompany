@@ -3,14 +3,14 @@
 import { motion } from "framer-motion";
 
 const partners = [
-  { name: "КнауфГипс", initials: "КГ" },
-  { name: "ТехноНиколь", initials: "ТН" },
-  { name: "Сен-Гобен", initials: "СГ" },
-  { name: "Керама Марацци", initials: "КМ" },
-  { name: "Данфосс", initials: "ДФ" },
-  { name: "Рехау", initials: "РХ" },
-  { name: "Velux", initials: "VX" },
-  { name: "Ceresit", initials: "CR" },
+  { name: "Росстандарт", initials: "РС" },
+  { name: "Росаккредитация", initials: "РА" },
+  { name: "ВНИИМ", initials: "ВМ" },
+  { name: "ВНИИМС", initials: "ВС" },
+  { name: "Fluke", initials: "FL" },
+  { name: "Yokogawa", initials: "YK" },
+  { name: "Mettler Toledo", initials: "MT" },
+  { name: "Keysight", initials: "KS" },
 ];
 
 export default function Partners() {
@@ -28,7 +28,7 @@ export default function Partners() {
             Работаем с лучшими
           </h2>
           <p className="text-neutral mt-3 max-w-xl mx-auto">
-            Сотрудничаем с ведущими производителями строительных материалов
+            Сотрудничаем с ведущими организациями и производителями оборудования
           </p>
         </motion.div>
 

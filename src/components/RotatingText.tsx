@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-const words = ["качественно", "надёжно", "с гарантией", "в срок"];
+const words = ["точно", "надёжно", "по стандартам", "в срок"];
 
 // Find the longest word for the invisible sizer
 const longestWord = words.reduce((a, b) => (a.length >= b.length ? a : b));

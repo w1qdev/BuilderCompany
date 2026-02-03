@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-Next.js 14 App Router site for a construction company (Russian language UI). Single-page marketing site with backend for lead capture.
+Next.js 14 App Router site for a metrology and certification center (Russian language UI). Single-page marketing site with backend for lead capture.
 
 ### Data Flow
 

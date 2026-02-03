@@ -52,7 +52,7 @@ export default function Header({ onOpenModal }: { onOpenModal: () => void }) {
               8 (800) 123-45-67
             </a>
             <a
-              href="mailto:info@stroycompany.ru"
+              href="mailto:info@csm-center.ru"
               className="hover:text-primary transition-colors hidden sm:flex items-center gap-1"
             >
               <svg
@@ -68,7 +68,7 @@ export default function Header({ onOpenModal }: { onOpenModal: () => void }) {
                   d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
               </svg>
-              info@stroycompany.ru
+              info@csm-center.ru
             </a>
           </div>
           <div className="hidden md:flex items-center gap-1">
