@@ -15,7 +15,7 @@ export default function ContactsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <span className="font-bold">СтройКомпани</span>
+            <span className="font-bold">ЦСМ</span>
           </Link>
           <span className="text-white/40 text-sm">/ Контакты</span>
         </div>
@@ -49,7 +49,7 @@ export default function ContactsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-dark text-sm">Адрес</p>
-                    <p className="text-neutral text-sm">г. Москва, ул. Строителей, д. 15, офис 301</p>
+                    <p className="text-neutral text-sm">г. Москва, ул. Метрологическая, д. 10, офис 205</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
@@ -71,7 +71,7 @@ export default function ContactsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-dark text-sm">Email</p>
-                    <a href="mailto:info@stroycompany.ru" className="text-primary hover:underline text-sm">info@stroycompany.ru</a>
+                    <a href="mailto:info@csm-center.ru" className="text-primary hover:underline text-sm">info@csm-center.ru</a>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">

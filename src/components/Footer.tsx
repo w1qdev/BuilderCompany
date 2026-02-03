@@ -115,7 +115,7 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
                   />
                 </svg>
                 <span className="text-white/60 text-sm">
-                  г. Москва, ул. Строителей, д. 15, офис 301
+                  г. Москва, ул. Метрологическая, д. 10, офис 205
                 </span>
               </li>
               <li>

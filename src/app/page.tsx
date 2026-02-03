@@ -3,10 +3,15 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import Calculator from "@/components/Calculator";
 import Services from "@/components/Services";
+import Process from "@/components/Process";
+import Science from "@/components/Science";
+import Calculator from "@/components/Calculator";
 import About from "@/components/About";
+import Certificates from "@/components/Certificates";
 import Portfolio from "@/components/Portfolio";
+import Testimonials from "@/components/Testimonials";
+import FAQ from "@/components/FAQ";
 import Partners from "@/components/Partners";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
@@ -23,9 +28,14 @@ export default function Home() {
       <main>
         <Hero onOpenModal={openModal} />
         <Services />
+        <Process />
+        <Science />
         <Calculator onOpenModal={openModal} />
         <About />
+        <Certificates />
         <Portfolio />
+        <Testimonials />
+        <FAQ />
         <Partners />
       </main>
       <Footer onOpenModal={openModal} />

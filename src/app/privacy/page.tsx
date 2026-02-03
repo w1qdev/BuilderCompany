@@ -12,7 +12,7 @@ export default function PrivacyPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <span className="font-bold">СтройКомпани</span>
+            <span className="font-bold">ЦСМ</span>
           </Link>
           <span className="text-white/40 text-sm">/ Политика конфиденциальности</span>
         </div>
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
               <h2 className="text-lg font-bold text-dark mb-3">1. Общие положения</h2>
               <p>
                 Настоящая Политика конфиденциальности (далее — «Политика») определяет порядок обработки
-                и защиты персональных данных пользователей сайта СтройКомпани (далее — «Оператор»).
+                и защиты персональных данных пользователей сайта ЦСМ (далее — «Оператор»).
                 Используя сайт и предоставляя свои персональные данные, вы соглашаетесь с условиями данной Политики.
               </p>
             </section>
@@ -99,9 +99,9 @@ export default function PrivacyPage() {
                 По вопросам, связанным с обработкой персональных данных, вы можете обратиться:
               </p>
               <ul className="list-none mt-2 space-y-1">
-                <li>Email: <a href="mailto:info@stroycompany.ru" className="text-primary hover:underline">info@stroycompany.ru</a></li>
+                <li>Email: <a href="mailto:info@csm-center.ru" className="text-primary hover:underline">info@csm-center.ru</a></li>
                 <li>Телефон: <a href="tel:+78001234567" className="text-primary hover:underline">8 (800) 123-45-67</a></li>
-                <li>Адрес: г. Москва, ул. Строителей, д. 15, офис 301</li>
+                <li>Адрес: г. Москва, ул. Метрологическая, д. 10, офис 205</li>
               </ul>
             </section>
 
