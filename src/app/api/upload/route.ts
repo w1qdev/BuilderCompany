@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    const uploadsDir = path.join(process.cwd(), "uploads");
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
     }
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       fileName: file.name,
-      filePath: `/uploads/${safeFileName}`,
+      filePath: `/api/uploads/${safeFileName}`,
     });
   } catch (error) {
     console.error("Upload error:", error);

@@ -1,3 +1,7 @@
+function escapeTelegram(str: string): string {
+  return str.replace(/[*_`\[\]]/g, "\\$&");
+}
+
 export async function sendTelegramNotification(data: {
   name: string;
   phone: string;
@@ -16,11 +20,11 @@ export async function sendTelegramNotification(data: {
   const text = [
     "📋 *Новая заявка с сайта*",
     "",
-    `👤 *Имя:* ${data.name}`,
-    `📞 *Телефон:* ${data.phone}`,
-    `📧 *Email:* ${data.email}`,
-    `🔧 *Услуга:* ${data.service}`,
-    data.message ? `💬 *Сообщение:* ${data.message}` : "",
+    `👤 *Имя:* ${escapeTelegram(data.name)}`,
+    `📞 *Телефон:* ${escapeTelegram(data.phone)}`,
+    `📧 *Email:* ${escapeTelegram(data.email)}`,
+    `🔧 *Услуга:* ${escapeTelegram(data.service)}`,
+    data.message ? `💬 *Сообщение:* ${escapeTelegram(data.message)}` : "",
   ]
     .filter(Boolean)
     .join("\n");

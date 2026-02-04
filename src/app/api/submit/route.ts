@@ -4,10 +4,12 @@ import { sendTelegramNotification } from "@/lib/telegram";
 import { sendEmailNotification, sendConfirmationEmail } from "@/lib/email";
 import { getIO } from "@/lib/socket";
 import { jwtVerify } from "jose";
+import { JWT_SECRET } from "@/lib/jwt";
+import { unlink } from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-secret-key-change-in-production"
-);
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +19,13 @@ export async function POST(req: NextRequest) {
     if (!name || !phone || !email || !service) {
       return NextResponse.json(
         { error: "Заполните все обязательные поля" },
+        { status: 400 }
+      );
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      return NextResponse.json(
+        { error: "Некорректный формат email" },
         { status: 400 }
       );
     }

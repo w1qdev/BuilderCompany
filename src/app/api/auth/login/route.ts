@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
+import { JWT_SECRET } from "@/lib/jwt";
+import { createRateLimiter } from "@/lib/rateLimit";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-secret-key-change-in-production"
-);
+const loginLimiter = createRateLimiter({ max: 5, windowMs: 15 * 60 * 1000 });
 
 export async function POST(request: NextRequest) {
+  if (!loginLimiter(request)) {
+    return NextResponse.json(
+      { error: "Слишком много попыток. Попробуйте через 15 минут" },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { email, password } = body;

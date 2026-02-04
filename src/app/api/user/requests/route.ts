@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-secret-key-change-in-production"
-);
+import { JWT_SECRET } from "@/lib/jwt";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,12 +17,26 @@ export async function GET(request: NextRequest) {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const userId = payload.userId as number;
 
-    const requests = await prisma.request.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-    });
+    const { searchParams } = new URL(request.url);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = 20;
 
-    return NextResponse.json({ requests });
+    const [requests, total] = await Promise.all([
+      prisma.request.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.request.count({ where: { userId } }),
+    ]);
+
+    return NextResponse.json({
+      requests,
+      total,
+      pages: Math.ceil(total / limit),
+      page,
+    });
   } catch (error) {
     console.error("Get requests error:", error);
     return NextResponse.json(

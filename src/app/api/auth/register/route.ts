@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { createRateLimiter } from "@/lib/rateLimit";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const registerLimiter = createRateLimiter({ max: 3, windowMs: 15 * 60 * 1000 });
 
 export async function POST(request: NextRequest) {
+  if (!registerLimiter(request)) {
+    return NextResponse.json(
+      { error: "Слишком много попыток. Попробуйте через 15 минут" },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { email, password, name, phone, company } = body;
@@ -10,6 +21,13 @@ export async function POST(request: NextRequest) {
     if (!email || !password || !name) {
       return NextResponse.json(
         { error: "Email, пароль и имя обязательны" },
+        { status: 400 }
+      );
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      return NextResponse.json(
+        { error: "Некорректный формат email" },
         { status: 400 }
       );
     }

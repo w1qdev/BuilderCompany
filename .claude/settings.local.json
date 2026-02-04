@@ -15,7 +15,8 @@
       "Bash(npx next lint:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run dev:*)",
-      "Bash(npx prisma studio)"
+      "Bash(npx prisma studio)",
+      "Bash(curl:*)"
     ]
   }
 }

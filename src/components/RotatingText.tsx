@@ -3,7 +3,15 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-const words = ["точно", "надёжно", "по стандартам", "в срок"];
+const words = [
+  "точно",
+  "надёжно",
+  "по стандартам",
+  "в срок",
+  "качественно",
+  "выгодно",
+  "профессионально",
+];
 
 // Find the longest word for the invisible sizer
 const longestWord = words.reduce((a, b) => (a.length >= b.length ? a : b));
@@ -37,7 +45,7 @@ export default function RotatingText() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.4 }}
-          className="text-gradient absolute inset-0 flex left-0 justify-start"
+          className="text-gradient absolute inset-0 flex justify-center"
         >
           {words[index]}
         </motion.span>

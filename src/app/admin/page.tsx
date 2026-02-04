@@ -341,6 +341,17 @@ export default function AdminPage() {
     }
   };
 
+  const openFile = async (filePath: string) => {
+    const res = await fetch(filePath, {
+      headers: { "x-admin-password": password },
+    });
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    }
+  };
+
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -670,17 +681,15 @@ export default function AdminPage() {
                                 {r.fileName && r.filePath && (
                                   <div>
                                     <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Прикрепленный файл</div>
-                                    <a
-                                      href={r.filePath}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                    <button
+                                      onClick={() => openFile(r.filePath!)}
                                       className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors"
                                     >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                       </svg>
                                       {r.fileName}
-                                    </a>
+                                    </button>
                                   </div>
                                 )}
                               </div>
