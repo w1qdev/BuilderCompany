@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -9,6 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { motion } from "framer-motion";
+import { useState } from "react";
 
 const serviceTypes = [
   { id: "calibration", label: "Калибровка СИ", pricePerUnit: 2000 },
@@ -24,20 +24,28 @@ const urgencyOptions = [
   { id: "urgent", label: "Срочно (1-2 дня)", multiplier: 2 },
 ];
 
-export default function Calculator({ onOpenModal }: { onOpenModal: () => void }) {
+interface CalculatorProps {
+  onOpenModal: () => void;
+}
+
+export default function Calculator({ onOpenModal }: CalculatorProps) {
   const [service, setService] = useState(serviceTypes[0].id);
   const [quantity, setQuantity] = useState(5);
   const [urgency, setUrgency] = useState(urgencyOptions[0].id);
 
   const selectedService = serviceTypes.find((s) => s.id === service)!;
   const selectedUrgency = urgencyOptions.find((u) => u.id === urgency)!;
-  const totalPrice = selectedService.pricePerUnit * quantity * selectedUrgency.multiplier;
+  const totalPrice =
+    selectedService.pricePerUnit * quantity * selectedUrgency.multiplier;
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("ru-RU").format(Math.round(price));
 
   return (
-    <section id="calculator" className="py-20 sm:py-28 bg-warm-light dark:bg-dark">
+    <section
+      id="calculator"
+      className="py-20 sm:py-28 bg-warm-light dark:bg-dark"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -45,7 +53,9 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
           viewport={{ once: true, amount: 0.2 }}
           className="text-center mb-12"
         >
-          <span className="text-primary font-semibold text-sm uppercase tracking-wider">Калькулятор</span>
+          <span className="text-primary font-semibold text-sm uppercase tracking-wider">
+            Калькулятор
+          </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mt-2">
             Рассчитайте стоимость
           </h2>
@@ -86,7 +96,8 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
               {/* Quantity */}
               <div>
                 <label className="block text-sm font-semibold text-dark dark:text-white mb-2">
-                  Количество: <span className="text-primary">{quantity} шт.</span>
+                  Количество:{" "}
+                  <span className="text-primary">{quantity} шт.</span>
                 </label>
                 <input
                   type="range"
@@ -128,7 +139,9 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
 
             {/* Right: result */}
             <div className="flex flex-col items-center justify-center bg-gradient-to-br from-dark to-dark-light rounded-2xl p-8 text-center">
-              <div className="text-white/60 text-sm mb-2">Предварительная стоимость</div>
+              <div className="text-white/60 text-sm mb-2">
+                Предварительная стоимость
+              </div>
               <div className="text-4xl sm:text-5xl font-extrabold text-white mb-1">
                 {formatPrice(totalPrice)}
               </div>

@@ -2,7 +2,11 @@
 
 import { useSiteSettings } from "@/lib/SiteSettingsContext";
 
-export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
+interface FooterProps {
+  onOpenModal: () => void;
+}
+
+export default function Footer({ onOpenModal }: FooterProps) {
   const currentYear = new Date().getFullYear();
   const { phone, email, address } = useSiteSettings();
   const telHref = `tel:+7${phone.replace(/\D/g, "").slice(1)}`;
@@ -14,8 +18,7 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <h3 className="text-2xl sm:text-3xl font-extrabold mb-2">
-              Нужна{" "}
-              <span className="text-gradient">сертификация?</span>
+              Нужна <span className="text-gradient">сертификация?</span>
             </h3>
             <p className="text-white/60">
               Оставьте заявку и получите бесплатную консультацию
@@ -118,9 +121,7 @@ export default function Footer({ onOpenModal }: { onOpenModal: () => void }) {
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   />
                 </svg>
-                <span className="text-white/60 text-sm">
-                  {address}
-                </span>
+                <span className="text-white/60 text-sm">{address}</span>
               </li>
               <li>
                 <a

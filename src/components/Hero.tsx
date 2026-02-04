@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import AnimatedCounter from "./AnimatedCounter";
 import RotatingText from "./RotatingText";
 
-export default function Hero({ onOpenModal }: { onOpenModal: () => void }) {
+interface HeroProps {
+  onOpenModal: () => void;
+}
+
+export default function Hero({ onOpenModal }: HeroProps) {
   const { scrollY } = useScroll();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -64,7 +68,7 @@ export default function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           transition={{ duration: 0.8, delay: 0.1 }}
           className="text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white leading-tight mb-6"
         >
-          Работаем <RotatingText />
+          Выполняем работу <RotatingText />
         </motion.h1>
 
         <motion.p
@@ -73,8 +77,8 @@ export default function Hero({ onOpenModal }: { onOpenModal: () => void }) {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto mb-10"
         >
-          Сертификация, поверка и калибровка измерительного оборудования.
-          Более 10 лет опыта, 5000+ выданных сертификатов.
+          Сертификация, поверка и калибровка измерительного оборудования. Более
+          10 лет опыта, 5000+ выданных сертификатов.
         </motion.p>
 
         <motion.div

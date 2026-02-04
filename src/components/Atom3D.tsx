@@ -1,11 +1,18 @@
 "use client";
 
-import { useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Sphere, Trail } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useRef } from "react";
 import * as THREE from "three";
 
-function Electron({ radius, speed, offset, color }: { radius: number; speed: number; offset: number; color: string }) {
+interface ElectronProps {
+  radius: number;
+  speed: number;
+  offset: number;
+  color: string;
+}
+
+function Electron({ radius, speed, offset, color }: ElectronProps) {
   const ref = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
@@ -19,13 +26,27 @@ function Electron({ radius, speed, offset, color }: { radius: number; speed: num
   return (
     <Trail width={0.5} length={8} color={color} attenuation={(t) => t * t}>
       <Sphere ref={ref} args={[0.15, 16, 16]} position={[radius, 0, 0]}>
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={0.5}
+        />
       </Sphere>
     </Trail>
   );
 }
 
-function ElectronOrbit({ rotation, radius, speed, color }: { rotation: [number, number, number]; radius: number; speed: number; color: string }) {
+function ElectronOrbit({
+  rotation,
+  radius,
+  speed,
+  color,
+}: {
+  rotation: [number, number, number];
+  radius: number;
+  speed: number;
+  color: string;
+}) {
   return (
     <group rotation={rotation}>
       {/* Orbit ring */}
@@ -53,17 +74,33 @@ function Nucleus() {
     <group ref={ref}>
       {/* Protons */}
       <Sphere args={[0.35, 32, 32]} position={[0.15, 0.1, 0]}>
-        <meshStandardMaterial color="#E87A2E" emissive="#E87A2E" emissiveIntensity={0.3} />
+        <meshStandardMaterial
+          color="#E87A2E"
+          emissive="#E87A2E"
+          emissiveIntensity={0.3}
+        />
       </Sphere>
       <Sphere args={[0.35, 32, 32]} position={[-0.15, -0.1, 0.1]}>
-        <meshStandardMaterial color="#E87A2E" emissive="#E87A2E" emissiveIntensity={0.3} />
+        <meshStandardMaterial
+          color="#E87A2E"
+          emissive="#E87A2E"
+          emissiveIntensity={0.3}
+        />
       </Sphere>
       {/* Neutrons */}
       <Sphere args={[0.32, 32, 32]} position={[0, 0.15, -0.15]}>
-        <meshStandardMaterial color="#1F2937" emissive="#374151" emissiveIntensity={0.2} />
+        <meshStandardMaterial
+          color="#1F2937"
+          emissive="#374151"
+          emissiveIntensity={0.2}
+        />
       </Sphere>
       <Sphere args={[0.32, 32, 32]} position={[-0.1, -0.15, 0.05]}>
-        <meshStandardMaterial color="#1F2937" emissive="#374151" emissiveIntensity={0.2} />
+        <meshStandardMaterial
+          color="#1F2937"
+          emissive="#374151"
+          emissiveIntensity={0.2}
+        />
       </Sphere>
     </group>
   );

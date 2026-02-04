@@ -1,9 +1,9 @@
 "use client";
 
+import { useSiteSettings } from "@/lib/SiteSettingsContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
-import { useSiteSettings } from "@/lib/SiteSettingsContext";
 
 const navLinks = [
   { href: "#services", label: "Услуги" },
@@ -15,7 +15,11 @@ const navLinks = [
   { href: "/dashboard", label: "Личный кабинет" },
 ];
 
-export default function Header({ onOpenModal }: { onOpenModal: () => void }) {
+interface HeaderProps {
+  onOpenModal: () => void;
+}
+
+export default function Header({ onOpenModal }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { phone, email } = useSiteSettings();
