@@ -6,6 +6,7 @@ import Hero from "@/components/Hero";
 import Services from "@/components/Services";
 import Process from "@/components/Process";
 import Science from "@/components/Science";
+import EquipmentShowcase from "@/components/EquipmentShowcase";
 import Calculator from "@/components/Calculator";
 import About from "@/components/About";
 import Certificates from "@/components/Certificates";
@@ -16,6 +17,7 @@ import Partners from "@/components/Partners";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import BackToTop from "@/components/BackToTop";
+import ScrollProgress from "@/components/ScrollProgress";
 
 export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -25,12 +27,14 @@ export default function Home() {
 
   return (
     <>
+      <ScrollProgress />
       <Header onOpenModal={openModal} />
       <main>
         <Hero onOpenModal={openModal} />
         <Services />
         <Process />
         <Science />
+        <EquipmentShowcase />
         <Calculator onOpenModal={openModal} />
         <About />
         <Certificates />
