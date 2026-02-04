@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Modal from "@/components/Modal";
 
 interface User {
   id: number;
@@ -82,6 +83,7 @@ export default function DashboardPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"requests" | "reference">("requests");
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,6 +119,14 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/");
+  };
+
+  const refreshRequests = async () => {
+    const res = await fetch("/api/user/requests");
+    if (res.ok) {
+      const data = await res.json();
+      setRequests(data.requests);
+    }
   };
 
   if (loading) {
@@ -194,30 +204,37 @@ export default function DashboardPage() {
 
         {/* Requests Tab */}
         {activeTab === "requests" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-4"
-          >
-            {requests.length === 0 ? (
-              <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-8 text-center">
-                <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <>
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setModalOpen(true)}
+                className="inline-flex items-center gap-2 gradient-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                <h3 className="text-lg font-semibold text-dark dark:text-white mb-2">
-                  У вас пока нет заявок
-                </h3>
-                <p className="text-neutral dark:text-white/70 mb-4">
-                  Оставьте заявку на нашем сайте, и она появится здесь
-                </p>
-                <Link
-                  href="/"
-                  className="inline-flex items-center gap-2 gradient-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all"
-                >
-                  Оставить заявку
-                </Link>
-              </div>
-            ) : (
+                Новая заявка
+              </button>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-4"
+            >
+              {requests.length === 0 ? (
+                <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-8 text-center">
+                  <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-dark dark:text-white mb-2">
+                    У вас пока нет заявок
+                  </h3>
+                  <p className="text-neutral dark:text-white/70">
+                    Нажимайте кнопку «Новая заявка», чтобы создать заявку
+                  </p>
+                </div>
+              ) : (
               requests.map((request, index) => (
                 <motion.div
                   key={request.id}
@@ -269,7 +286,8 @@ export default function DashboardPage() {
                 </motion.div>
               ))
             )}
-          </motion.div>
+            </motion.div>
+          </>
         )}
 
         {/* Reference Tab */}
@@ -316,6 +334,16 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={() => {
+          setModalOpen(false);
+          refreshRequests();
+        }}
+        initialValues={{ name: user?.name || "", phone: user?.phone || "", email: user?.email || "" }}
+      />
     </div>
   );
 }

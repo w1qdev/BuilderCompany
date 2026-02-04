@@ -18,6 +18,11 @@ model User {
   requests  Request[]
 }
 
+model Setting {
+  key   String @id
+  value String @default("true")
+}
+
 model Request {
   id        Int      @id @default(autoincrement())
   name      String

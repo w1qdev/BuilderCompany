@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { useSiteSettings } from "@/lib/SiteSettingsContext";
 
 export default function PrivacyPage() {
+  const { phone, email, address } = useSiteSettings();
+  const telHref = `tel:+7${phone.replace(/\D/g, "").slice(1)}`;
   return (
-    <div className="min-h-screen bg-warm-bg">
+    <div className="min-h-screen bg-warm-bg dark:bg-dark">
       {/* Header */}
       <div className="gradient-dark text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
@@ -20,12 +25,12 @@ export default function PrivacyPage() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
-        <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
-          <h1 className="text-3xl font-extrabold text-dark mb-8">Политика конфиденциальности</h1>
+        <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-8 sm:p-12">
+          <h1 className="text-3xl font-extrabold text-dark dark:text-white mb-8">Политика конфиденциальности</h1>
 
-          <div className="space-y-6 text-neutral text-sm leading-relaxed">
+          <div className="space-y-6 text-neutral dark:text-white/60 text-sm leading-relaxed">
             <section>
-              <h2 className="text-lg font-bold text-dark mb-3">1. Общие положения</h2>
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-3">1. Общие положения</h2>
               <p>
                 Настоящая Политика конфиденциальности (далее — «Политика») определяет порядок обработки
                 и защиты персональных данных пользователей сайта ЦСМ (далее — «Оператор»).
@@ -34,7 +39,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-dark mb-3">2. Какие данные мы собираем</h2>
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-3">2. Какие данные мы собираем</h2>
               <p>Мы можем собирать следующие персональные данные:</p>
               <ul className="list-disc pl-6 mt-2 space-y-1">
                 <li>Имя и фамилия</li>
@@ -46,7 +51,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-dark mb-3">3. Цели обработки данных</h2>
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-3">3. Цели обработки данных</h2>
               <p>Персональные данные обрабатываются в следующих целях:</p>
               <ul className="list-disc pl-6 mt-2 space-y-1">
                 <li>Обработка входящих заявок и обращений</li>
@@ -57,7 +62,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-dark mb-3">4. Защита данных</h2>
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-3">4. Защита данных</h2>
               <p>
                 Оператор принимает необходимые организационные и технические меры для защиты персональных
                 данных от неправомерного доступа, уничтожения, изменения, блокирования, копирования,
@@ -66,7 +71,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-dark mb-3">5. Передача данных третьим лицам</h2>
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-3">5. Передача данных третьим лицам</h2>
               <p>
                 Оператор не передаёт персональные данные третьим лицам, за исключением случаев,
                 предусмотренных законодательством Российской Федерации. Данные могут быть переданы
@@ -75,7 +80,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-dark mb-3">6. Хранение данных</h2>
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-3">6. Хранение данных</h2>
               <p>
                 Персональные данные хранятся не дольше, чем этого требуют цели их обработки.
                 По достижении целей обработки данные удаляются или обезличиваются.
@@ -83,7 +88,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-dark mb-3">7. Права пользователя</h2>
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-3">7. Права пользователя</h2>
               <p>Пользователь имеет право:</p>
               <ul className="list-disc pl-6 mt-2 space-y-1">
                 <li>Запросить информацию о хранящихся персональных данных</li>
@@ -94,19 +99,19 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-dark mb-3">8. Контактная информация</h2>
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-3">8. Контактная информация</h2>
               <p>
                 По вопросам, связанным с обработкой персональных данных, вы можете обратиться:
               </p>
               <ul className="list-none mt-2 space-y-1">
-                <li>Email: <a href="mailto:info@csm-center.ru" className="text-primary hover:underline">info@csm-center.ru</a></li>
-                <li>Телефон: <a href="tel:+78001234567" className="text-primary hover:underline">8 (800) 123-45-67</a></li>
-                <li>Адрес: г. Москва, ул. Метрологическая, д. 10, офис 205</li>
+                <li>Email: <a href={`mailto:${email}`} className="text-primary hover:underline">{email}</a></li>
+                <li>Телефон: <a href={telHref} className="text-primary hover:underline">{phone}</a></li>
+                <li>Адрес: {address}</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-dark mb-3">9. Изменения в Политике</h2>
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-3">9. Изменения в Политике</h2>
               <p>
                 Оператор оставляет за собой право вносить изменения в настоящую Политику
                 конфиденциальности. Актуальная версия Политики всегда доступна на данной странице.
@@ -114,7 +119,7 @@ export default function PrivacyPage() {
             </section>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-gray-100">
+          <div className="mt-10 pt-6 border-t border-gray-100 dark:border-white/10">
             <Link href="/" className="text-primary hover:underline text-sm font-medium">
               ← Вернуться на главную
             </Link>

@@ -69,7 +69,7 @@ export default function Portfolio() {
   const visibleProjects = projects;
 
   return (
-    <section id="portfolio" className="py-20 sm:py-28 bg-white">
+    <section id="portfolio" className="py-20 sm:py-28 bg-white dark:bg-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -80,10 +80,10 @@ export default function Portfolio() {
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">
             Портфолио
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mt-2">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mt-2">
             Наши <span className="text-gradient">клиенты</span>
           </h2>
-          <p className="text-neutral mt-4 max-w-2xl mx-auto">
+          <p className="text-neutral dark:text-white/60 mt-4 max-w-2xl mx-auto">
             Нам доверяют крупнейшие предприятия России.
             Посмотрите наши реализованные проекты.
           </p>

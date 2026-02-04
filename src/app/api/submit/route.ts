@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendTelegramNotification } from "@/lib/telegram";
-import { sendEmailNotification } from "@/lib/email";
+import { sendEmailNotification, sendConfirmationEmail } from "@/lib/email";
 import { getIO } from "@/lib/socket";
 import { jwtVerify } from "jose";
 
@@ -52,11 +52,31 @@ export async function POST(req: NextRequest) {
       io.emit("new-request", request);
     }
 
+    // Read notification settings
+    const settings = await prisma.setting.findMany({
+      where: { key: { in: ["emailNotifyAdmin", "emailNotifyCustomer", "notifyEmail", "telegramNotify"] } },
+    });
+    const isEnabled = (key: string) => {
+      const found = settings.find((item) => item.key === key);
+      return found ? found.value === "true" : true;
+    };
+    const getSetting = (key: string) => {
+      const found = settings.find((item) => item.key === key);
+      return found?.value;
+    };
+
     // Send notifications in background (don't block response)
-    Promise.allSettled([
-      sendTelegramNotification({ name, phone, email, service, message }),
-      sendEmailNotification({ name, phone, email, service, message }),
-    ]).catch(console.error);
+    const notifications: Promise<void>[] = [];
+    if (isEnabled("telegramNotify")) {
+      notifications.push(sendTelegramNotification({ name, phone, email, service, message }));
+    }
+    if (isEnabled("emailNotifyAdmin")) {
+      notifications.push(sendEmailNotification({ name, phone, email, service, message, toEmail: getSetting("notifyEmail") }));
+    }
+    if (isEnabled("emailNotifyCustomer")) {
+      notifications.push(sendConfirmationEmail({ name, email, service }));
+    }
+    Promise.allSettled(notifications).catch(console.error);
 
     return NextResponse.json({ success: true, id: request.id });
   } catch (error) {

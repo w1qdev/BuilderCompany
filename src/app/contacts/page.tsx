@@ -13,9 +13,13 @@ const YandexMap = dynamic(() => import("@/components/YandexMap"), {
   ),
 });
 
+import { useSiteSettings } from "@/lib/SiteSettingsContext";
+
 export default function ContactsPage() {
+  const { phone, email, address } = useSiteSettings();
+  const telHref = `tel:+7${phone.replace(/\D/g, "").slice(1)}`;
   return (
-    <div className="min-h-screen bg-warm-bg">
+    <div className="min-h-screen bg-warm-bg dark:bg-dark">
       {/* Header */}
       <div className="gradient-dark text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
@@ -34,10 +38,10 @@ export default function ContactsPage() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-dark mb-4">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mb-4">
             Свяжитесь <span className="text-gradient">с нами</span>
           </h1>
-          <p className="text-neutral max-w-2xl mx-auto">
+          <p className="text-neutral dark:text-white/60 max-w-2xl mx-auto">
             Оставьте заявку или свяжитесь с нами любым удобным способом.
             Мы ответим в ближайшее время.
           </p>
@@ -47,8 +51,8 @@ export default function ContactsPage() {
           {/* Contact info */}
           <div className="space-y-6">
             {/* Info cards */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-lg font-bold text-dark mb-4">Контактная информация</h2>
+            <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-6">
+              <h2 className="text-lg font-bold text-dark dark:text-white mb-4">Контактная информация</h2>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shrink-0">
@@ -58,8 +62,8 @@ export default function ContactsPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-dark text-sm">Адрес</p>
-                    <p className="text-neutral text-sm">г. Москва, ул. Метрологическая, д. 10, офис 205</p>
+                    <p className="font-semibold text-dark dark:text-white text-sm">Адрес</p>
+                    <p className="text-neutral dark:text-white/60 text-sm">{address}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
@@ -69,8 +73,8 @@ export default function ContactsPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-dark text-sm">Телефон</p>
-                    <a href="tel:+78001234567" className="text-primary hover:underline text-sm">8 (800) 123-45-67</a>
+                    <p className="font-semibold text-dark dark:text-white text-sm">Телефон</p>
+                    <a href={telHref} className="text-primary hover:underline text-sm">{phone}</a>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
@@ -80,8 +84,8 @@ export default function ContactsPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-dark text-sm">Email</p>
-                    <a href="mailto:info@csm-center.ru" className="text-primary hover:underline text-sm">info@csm-center.ru</a>
+                    <p className="font-semibold text-dark dark:text-white text-sm">Email</p>
+                    <a href={`mailto:${email}`} className="text-primary hover:underline text-sm">{email}</a>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
@@ -91,8 +95,8 @@ export default function ContactsPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-dark text-sm">Время работы</p>
-                    <p className="text-neutral text-sm">Пн-Пт: 9:00 - 18:00</p>
+                    <p className="font-semibold text-dark dark:text-white text-sm">Время работы</p>
+                    <p className="text-neutral dark:text-white/60 text-sm">Пн-Пт: 9:00 - 18:00</p>
                   </div>
                 </li>
               </ul>
@@ -103,14 +107,14 @@ export default function ContactsPage() {
               <YandexMap
                 center={[55.751244, 37.618423]}
                 zoom={16}
-                address="г. Москва, ул. Метрологическая, д. 10, офис 205"
+                address={address}
               />
             </div>
           </div>
 
           {/* Contact form */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
-            <h2 className="text-lg font-bold text-dark mb-6">Оставить заявку</h2>
+          <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-dark dark:text-white mb-6">Оставить заявку</h2>
             <ContactForm />
           </div>
         </div>

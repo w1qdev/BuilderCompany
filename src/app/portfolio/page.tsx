@@ -55,16 +55,16 @@ const projects = [
 ];
 
 const categoryColors: Record<string, string> = {
-  "Калибровка": "bg-blue-100 text-blue-700",
-  "Поверка": "bg-purple-100 text-purple-700",
-  "Сертификация": "bg-green-100 text-green-700",
-  "Сертификация ISO": "bg-orange-100 text-orange-700",
-  "Испытания": "bg-yellow-100 text-yellow-700",
+  "Калибровка": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  "Поверка": "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  "Сертификация": "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+  "Сертификация ISO": "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+  "Испытания": "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
 };
 
 export default function PortfolioPage() {
   return (
-    <div className="min-h-screen bg-warm-bg">
+    <div className="min-h-screen bg-warm-bg dark:bg-dark">
       {/* Header */}
       <div className="gradient-dark text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
@@ -83,10 +83,10 @@ export default function PortfolioPage() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-dark mb-4">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mb-4">
             Наши <span className="text-gradient">клиенты</span>
           </h1>
-          <p className="text-neutral max-w-2xl mx-auto">
+          <p className="text-neutral dark:text-white/60 max-w-2xl mx-auto">
             Нам доверяют крупнейшие предприятия России. За 10+ лет работы мы выполнили
             более 5000 проектов по калибровке, поверке и сертификации.
           </p>
@@ -99,7 +99,7 @@ export default function PortfolioPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+              className="bg-white dark:bg-dark-light rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
             >
               {/* Placeholder image area */}
               <div className="h-48 gradient-dark flex items-center justify-center">
@@ -110,16 +110,16 @@ export default function PortfolioPage() {
 
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${categoryColors[project.category] || "bg-gray-100 text-gray-700"}`}>
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${categoryColors[project.category] || "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300"}`}>
                     {project.category}
                   </span>
-                  <span className="text-xs text-neutral-light">{project.year}</span>
+                  <span className="text-xs text-neutral-light dark:text-white/40">{project.year}</span>
                 </div>
 
-                <h3 className="text-lg font-bold text-dark mb-2">{project.title}</h3>
-                <p className="text-neutral text-sm leading-relaxed mb-4">{project.description}</p>
+                <h3 className="text-lg font-bold text-dark dark:text-white mb-2">{project.title}</h3>
+                <p className="text-neutral dark:text-white/60 text-sm leading-relaxed mb-4">{project.description}</p>
 
-                <div className="flex items-center gap-4 text-xs text-neutral-light">
+                <div className="flex items-center gap-4 text-xs text-neutral-light dark:text-white/40">
                   <div className="flex items-center gap-1">
                     <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />

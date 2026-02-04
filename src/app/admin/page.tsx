@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface RequestItem {
   id: number;
@@ -78,6 +79,12 @@ export default function AdminPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState({ emailNotifyAdmin: true, emailNotifyCustomer: true, telegramNotify: true, notifyEmail: "", companyPhone: "", companyEmail: "", companyAddress: "" });
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -90,6 +97,20 @@ export default function AdminPage() {
       }
     } catch {
       // Stats are non-critical
+    }
+  }, [password]);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/settings", {
+        headers: { "x-admin-password": password },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSettings(data);
+      }
+    } catch {
+      // Non-critical
     }
   }, [password]);
 
@@ -126,12 +147,81 @@ export default function AdminPage() {
     }
   }, [password, filter, page, search, sortBy, sortOrder]);
 
+  const changePassword = async () => {
+    setPasswordError("");
+    setPasswordSuccess(false);
+    if (newPassword.length < 4) {
+      setPasswordError("Пароль должен быть не менее 4 символов");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Пароли не совпадают");
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+      if (res.ok) {
+        setPassword(newPassword);
+        setNewPassword("");
+        setConfirmPassword("");
+        setPasswordSuccess(true);
+      } else {
+        const data = await res.json();
+        setPasswordError(data.error || "Ошибка смены пароля");
+      }
+    } catch {
+      setPasswordError("Ошибка соединения");
+    }
+  };
+
+  const toggleSetting = async (key: "emailNotifyAdmin" | "emailNotifyCustomer" | "telegramNotify") => {
+    const updated = { ...settings, [key]: !settings[key] };
+    setSettings(updated);
+    try {
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify(updated),
+      });
+    } catch {
+      setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+    }
+  };
+
+  const closeSettings = () => {
+    fetch("/api/admin/settings", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-password": password,
+      },
+      body: JSON.stringify(settings),
+    }).catch(() => {});
+    setShowSettings(false);
+  };
+
   useEffect(() => {
     if (authenticated) {
       fetchRequests();
       fetchStats();
+      fetchSettings();
     }
-  }, [authenticated, fetchRequests, fetchStats]);
+  }, [authenticated, fetchRequests, fetchStats, fetchSettings]);
+
+  useEffect(() => {
+    document.body.style.overflow = showSettings ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [showSettings]);
 
   // Debounced search
   const handleSearchInput = (value: string) => {
@@ -385,6 +475,14 @@ export default function AdminPage() {
               <span className="text-white/40 text-sm">/ Админ-панель</span>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+              </button>
               <div className="flex items-center gap-1.5">
                 <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`} />
                 <span className="text-xs text-white/50">{connected ? "Онлайн" : "Оффлайн"}</span>
@@ -646,6 +744,173 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {showSettings && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeSettings}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md"
+            >
+              <button
+                onClick={closeSettings}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors z-10"
+              >
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-extrabold text-dark">Настройки</h3>
+                  <p className="text-neutral text-sm mt-1">Уведомления, сайт и безопасность</p>
+                </div>
+
+                <div className="divide-y divide-gray-100">
+                  {/* Email admin */}
+                  <div className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-dark">Уведомление по email</div>
+                        <div className="text-xs text-neutral mt-0.5">Получать письма о новых заявках</div>
+                      </div>
+                      <button
+                        onClick={() => toggleSetting("emailNotifyAdmin")}
+                        className={`relative w-11 h-6 rounded-full transition-colors ${settings.emailNotifyAdmin ? "bg-primary" : "bg-gray-300"}`}
+                      >
+                        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.emailNotifyAdmin ? "translate-x-5" : "translate-x-0"}`} />
+                      </button>
+                    </div>
+                    {settings.emailNotifyAdmin && (
+                      <div className="mt-3">
+                        <label className="text-xs text-neutral mb-1 block">Адрес для уведомлений</label>
+                        <Input
+                          type="email"
+                          placeholder="admin@company.com"
+                          value={settings.notifyEmail}
+                          onChange={(e) => setSettings((prev) => ({ ...prev, notifyEmail: e.target.value }))}
+                        />
+                        <p className="text-xs text-neutral/60 mt-1">Если пусто — используется NOTIFY_EMAIL из окружения</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Email customer */}
+                  <div className="flex items-center justify-between py-4">
+                    <div>
+                      <div className="text-sm font-medium text-dark">Подтверждение заявки</div>
+                      <div className="text-xs text-neutral mt-0.5">Отправлять клиенту письмо о принятии заявки</div>
+                    </div>
+                    <button
+                      onClick={() => toggleSetting("emailNotifyCustomer")}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${settings.emailNotifyCustomer ? "bg-primary" : "bg-gray-300"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.emailNotifyCustomer ? "translate-x-5" : "translate-x-0"}`} />
+                    </button>
+                  </div>
+
+                  {/* Telegram */}
+                  <div className="flex items-center justify-between py-4">
+                    <div>
+                      <div className="text-sm font-medium text-dark">Уведомление в Telegram</div>
+                      <div className="text-xs text-neutral mt-0.5">Отправлять сообщение в чат бота</div>
+                    </div>
+                    <button
+                      onClick={() => toggleSetting("telegramNotify")}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${settings.telegramNotify ? "bg-primary" : "bg-gray-300"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.telegramNotify ? "translate-x-5" : "translate-x-0"}`} />
+                    </button>
+                  </div>
+
+                  {/* Контакты компании */}
+                  <div className="py-4 space-y-3">
+                    <div className="text-xs font-semibold text-neutral uppercase tracking-wide">Контакты компании</div>
+                    <div>
+                      <label className="text-xs text-neutral mb-1 block">Телефон</label>
+                      <Input
+                        type="text"
+                        placeholder="8 (800) 123-45-67"
+                        value={settings.companyPhone}
+                        onChange={(e) => setSettings((prev) => ({ ...prev, companyPhone: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-neutral mb-1 block">Email</label>
+                      <Input
+                        type="email"
+                        placeholder="info@company.com"
+                        value={settings.companyEmail}
+                        onChange={(e) => setSettings((prev) => ({ ...prev, companyEmail: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-neutral mb-1 block">Адрес</label>
+                      <Input
+                        type="text"
+                        placeholder="г. Москва, ул. Примерная, д. 1"
+                        value={settings.companyAddress}
+                        onChange={(e) => setSettings((prev) => ({ ...prev, companyAddress: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Смена пароля */}
+                  <div className="py-4 space-y-3">
+                    <div className="text-xs font-semibold text-neutral uppercase tracking-wide">Смена пароля</div>
+                    <div>
+                      <label className="text-xs text-neutral mb-1 block">Новый пароль</label>
+                      <Input
+                        type="password"
+                        placeholder="Минимум 4 символа"
+                        value={newPassword}
+                        onChange={(e) => { setNewPassword(e.target.value); setPasswordError(""); setPasswordSuccess(false); }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-neutral mb-1 block">Повторите пароль</label>
+                      <Input
+                        type="password"
+                        placeholder="Повторите новый пароль"
+                        value={confirmPassword}
+                        onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(""); setPasswordSuccess(false); }}
+                      />
+                    </div>
+                    {passwordError && (
+                      <p className="text-xs text-red-500">{passwordError}</p>
+                    )}
+                    {passwordSuccess && (
+                      <p className="text-xs text-green-600">Пароль успешно изменён</p>
+                    )}
+                    <button
+                      onClick={changePassword}
+                      className="w-full gradient-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all"
+                    >
+                      Сменить пароль
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </TooltipProvider>
   );
 }

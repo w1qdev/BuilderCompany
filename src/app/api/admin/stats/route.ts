@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { verifyAdminPassword } from "@/lib/adminAuth";
 
 export async function GET(req: NextRequest) {
-  const password = req.headers.get("x-admin-password");
-  if (password !== process.env.ADMIN_PASSWORD) {
+  const headerPassword = req.headers.get("x-admin-password");
+  if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

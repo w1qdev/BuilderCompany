@@ -15,7 +15,7 @@ const partners = [
 
 export default function Partners() {
   return (
-    <section id="partners" className="py-20 sm:py-28">
+    <section id="partners" className="py-20 sm:py-28 dark:bg-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -24,10 +24,10 @@ export default function Partners() {
           className="text-center mb-12"
         >
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">Партнёры</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mt-2">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mt-2">
             Работаем с лучшими
           </h2>
-          <p className="text-neutral mt-3 max-w-xl mx-auto">
+          <p className="text-neutral dark:text-white/60 mt-3 max-w-xl mx-auto">
             Сотрудничаем с ведущими организациями и производителями оборудования
           </p>
         </motion.div>

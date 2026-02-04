@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import CookieConsent from "@/components/CookieConsent";
+import { SiteSettingsProvider } from "@/lib/SiteSettingsContext";
 
 export const metadata: Metadata = {
   title: "ЦСМ — Центр Стандартизации и Метрологии",
@@ -19,8 +20,10 @@ export default function RootLayout({
     <html lang="ru" suppressHydrationWarning>
       <body className="antialiased">
         <ThemeProvider>
-          {children}
-          <CookieConsent />
+          <SiteSettingsProvider>
+            {children}
+            <CookieConsent />
+          </SiteSettingsProvider>
         </ThemeProvider>
       </body>
     </html>

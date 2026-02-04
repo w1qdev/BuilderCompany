@@ -37,7 +37,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
     new Intl.NumberFormat("ru-RU").format(Math.round(price));
 
   return (
-    <section id="calculator" className="py-20 sm:py-28 bg-warm-light">
+    <section id="calculator" className="py-20 sm:py-28 bg-warm-light dark:bg-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -46,10 +46,10 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
           className="text-center mb-12"
         >
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">Калькулятор</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mt-2">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mt-2">
             Рассчитайте стоимость
           </h2>
-          <p className="text-neutral mt-3 max-w-xl mx-auto">
+          <p className="text-neutral dark:text-white/60 mt-3 max-w-xl mx-auto">
             Получите предварительную оценку стоимости услуг
           </p>
         </motion.div>
@@ -59,14 +59,14 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ delay: 0.1 }}
-          className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl p-6 sm:p-10"
+          className="max-w-4xl mx-auto bg-white dark:bg-dark-light rounded-3xl shadow-xl p-6 sm:p-10"
         >
           <div className="grid md:grid-cols-2 gap-8">
             {/* Left: inputs */}
             <div className="space-y-6">
               {/* Service type */}
               <div>
-                <label className="block text-sm font-semibold text-dark mb-2">
+                <label className="block text-sm font-semibold text-dark dark:text-white mb-2">
                   Тип услуги
                 </label>
                 <Select value={service} onValueChange={setService}>
@@ -85,7 +85,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
 
               {/* Quantity */}
               <div>
-                <label className="block text-sm font-semibold text-dark mb-2">
+                <label className="block text-sm font-semibold text-dark dark:text-white mb-2">
                   Количество: <span className="text-primary">{quantity} шт.</span>
                 </label>
                 <input
@@ -95,7 +95,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
                   step={1}
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                  className="w-full h-2 bg-gray-200 dark:bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <div className="flex justify-between text-xs text-neutral-light mt-1">
                   <span>1 шт.</span>
@@ -105,7 +105,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
 
               {/* Urgency */}
               <div>
-                <label className="block text-sm font-semibold text-dark mb-2">
+                <label className="block text-sm font-semibold text-dark dark:text-white mb-2">
                   Сроки выполнения
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -116,7 +116,7 @@ export default function Calculator({ onOpenModal }: { onOpenModal: () => void })
                       className={`px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
                         urgency === u.id
                           ? "gradient-primary text-white shadow-lg shadow-primary/20"
-                          : "bg-warm-bg text-neutral hover:bg-gray-100"
+                          : "bg-warm-bg dark:bg-white/10 text-neutral dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/20"
                       }`}
                     >
                       {u.label}

@@ -39,7 +39,7 @@ const certificates = [
 
 export default function Certificates() {
   return (
-    <section className="py-20 sm:py-28 bg-white">
+    <section className="py-20 sm:py-28 bg-white dark:bg-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -50,10 +50,10 @@ export default function Certificates() {
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">
             Аккредитации
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mt-2">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mt-2">
             Наши <span className="text-gradient">сертификаты</span>
           </h2>
-          <p className="text-neutral mt-4 max-w-2xl mx-auto">
+          <p className="text-neutral dark:text-white/60 mt-4 max-w-2xl mx-auto">
             Все работы выполняются в соответствии с международными стандартами
           </p>
         </motion.div>
@@ -68,7 +68,7 @@ export default function Certificates() {
               transition={{ delay: index * 0.1 }}
               className="group relative"
             >
-              <div className="bg-warm-bg rounded-3xl p-6 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-transparent hover:border-primary/20">
+              <div className="bg-warm-bg dark:bg-dark-light rounded-3xl p-6 h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-transparent hover:border-primary/20">
                 {/* Certificate icon */}
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${cert.color} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 transition-transform`}>
                   <svg
@@ -87,10 +87,10 @@ export default function Certificates() {
                 </div>
 
                 {/* Certificate details */}
-                <h3 className="text-lg font-bold text-dark mb-1">{cert.title}</h3>
+                <h3 className="text-lg font-bold text-dark dark:text-white mb-1">{cert.title}</h3>
                 <p className="text-primary text-sm font-medium mb-2">{cert.issuer}</p>
-                <p className="text-neutral-light text-xs mb-3">{cert.number}</p>
-                <p className="text-neutral text-sm leading-relaxed">{cert.description}</p>
+                <p className="text-neutral-light dark:text-white/40 text-xs mb-3">{cert.number}</p>
+                <p className="text-neutral dark:text-white/60 text-sm leading-relaxed">{cert.description}</p>
 
                 {/* Decorative seal */}
                 <div className="absolute top-4 right-4 w-10 h-10 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -108,7 +108,7 @@ export default function Certificates() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          className="mt-12 flex flex-wrap items-center justify-center gap-8 text-neutral-light"
+          className="mt-12 flex flex-wrap items-center justify-center gap-8 text-neutral-light dark:text-white/50"
         >
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">

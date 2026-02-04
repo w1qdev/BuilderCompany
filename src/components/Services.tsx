@@ -113,7 +113,7 @@ export default function Services() {
   const activeTabData = tabs.find((t) => t.id === activeTab)!;
 
   return (
-    <section id="services" className="py-20 sm:py-28">
+    <section id="services" className="py-20 sm:py-28 dark:bg-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -124,17 +124,17 @@ export default function Services() {
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">
             Что мы делаем
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mt-2">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mt-2">
             Наши услуги
           </h2>
-          <p className="text-neutral mt-3 max-w-xl mx-auto">
+          <p className="text-neutral dark:text-white/60 mt-3 max-w-xl mx-auto">
             Полный спектр метрологических услуг — от поверки до сертификации
           </p>
         </motion.div>
 
         {/* Tabs */}
         <div className="flex justify-center mb-10">
-          <div className="inline-flex bg-white rounded-2xl p-1.5 shadow-lg">
+          <div className="inline-flex bg-white dark:bg-dark-light rounded-2xl p-1.5 shadow-lg">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -142,7 +142,7 @@ export default function Services() {
                 className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
                   activeTab === tab.id
                     ? "gradient-primary text-white shadow-md"
-                    : "text-neutral hover:text-dark"
+                    : "text-neutral dark:text-white/60 hover:text-dark dark:hover:text-white"
                 }`}
               >
                 {tab.label}
@@ -167,7 +167,7 @@ export default function Services() {
             {activeTabData.services.map((service) => (
               <motion.div
                 key={service.title}
-                className="group bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                className="group bg-white dark:bg-dark-light rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <svg
@@ -184,10 +184,10 @@ export default function Services() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-dark mb-2">
+                <h3 className="text-lg font-bold text-dark dark:text-white mb-2">
                   {service.title}
                 </h3>
-                <p className="text-sm text-neutral leading-relaxed mb-4">
+                <p className="text-sm text-neutral dark:text-white/60 leading-relaxed mb-4">
                   {service.description}
                 </p>
                 <div className="text-primary font-bold text-sm">

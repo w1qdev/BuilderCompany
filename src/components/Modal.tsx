@@ -7,9 +7,15 @@ import ContactForm from "./ContactForm";
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
+  initialValues?: {
+    name?: string;
+    phone?: string;
+    email?: string;
+  };
 }
 
-export default function Modal({ isOpen, onClose }: ModalProps) {
+export default function Modal({ isOpen, onClose, onSuccess, initialValues }: ModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -40,12 +46,12 @@ export default function Modal({ isOpen, onClose }: ModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            className="relative bg-white dark:bg-dark-light rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
           >
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors z-10"
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors z-10"
             >
               <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -59,13 +65,13 @@ export default function Modal({ isOpen, onClose }: ModalProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-extrabold text-dark">Оставить заявку</h3>
-                <p className="text-neutral text-sm mt-1">
+                <h3 className="text-2xl font-extrabold text-dark dark:text-white">Оставить заявку</h3>
+                <p className="text-neutral dark:text-white/60 text-sm mt-1">
                   Заполните форму и мы свяжемся с вами в течение 15 минут
                 </p>
               </div>
 
-              <ContactForm onSuccess={onClose} />
+              <ContactForm onSuccess={onSuccess || onClose} initialValues={initialValues} />
             </div>
           </motion.div>
         </div>

@@ -62,7 +62,7 @@ export default function About() {
   const decorY = useTransform(scrollYProgress, [0, 1], [40, -40]);
 
   return (
-    <section id="about" className="py-20 sm:py-28 bg-warm-light" ref={sectionRef}>
+    <section id="about" className="py-20 sm:py-28 bg-warm-light dark:bg-dark" ref={sectionRef}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* About text block */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-20 overflow-hidden">
@@ -74,21 +74,21 @@ export default function About() {
             <span className="text-primary font-semibold text-sm uppercase tracking-wider">
               О нас
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mt-2 mb-6">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mt-2 mb-6">
               Работаем <span className="text-gradient">с 2014 года</span>
             </h2>
-            <p className="text-neutral leading-relaxed mb-4">
+            <p className="text-neutral dark:text-white/60 leading-relaxed mb-4">
               Центр Стандартизации и Метрологии — аккредитованная организация,
               оказывающая полный спектр метрологических услуг. За более чем 10 лет
               работы мы выдали свыше 5000 сертификатов и свидетельств о поверке.
             </p>
-            <p className="text-neutral leading-relaxed mb-6">
+            <p className="text-neutral dark:text-white/60 leading-relaxed mb-6">
               Наша команда из 50+ квалифицированных метрологов использует
               современное эталонное оборудование. Мы гарантируем точность
               измерений и соответствие всем требованиям законодательства.
             </p>
             <div className="flex flex-wrap gap-4 p-3">
-              <div className="bg-white rounded-2xl p-4 shadow-md flex items-center gap-3">
+              <div className="bg-white dark:bg-dark-light rounded-2xl p-4 shadow-md flex items-center gap-3">
                 <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
                   <svg
                     className="w-5 h-5 text-white"
@@ -105,11 +105,11 @@ export default function About() {
                   </svg>
                 </div>
                 <div>
-                  <div className="font-bold text-dark text-sm">Росаккредитация</div>
-                  <div className="text-xs text-neutral">Аккредитация</div>
+                  <div className="font-bold text-dark dark:text-white text-sm">Росаккредитация</div>
+                  <div className="text-xs text-neutral dark:text-white/60">Аккредитация</div>
                 </div>
               </div>
-              <div className="bg-white rounded-2xl p-4 shadow-md flex items-center gap-3">
+              <div className="bg-white dark:bg-dark-light rounded-2xl p-4 shadow-md flex items-center gap-3">
                 <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
                   <svg
                     className="w-5 h-5 text-white"
@@ -126,8 +126,8 @@ export default function About() {
                   </svg>
                 </div>
                 <div>
-                  <div className="font-bold text-dark text-sm">ISO 17025</div>
-                  <div className="text-xs text-neutral">Сертификат</div>
+                  <div className="font-bold text-dark dark:text-white text-sm">ISO 17025</div>
+                  <div className="text-xs text-neutral dark:text-white/60">Сертификат</div>
                 </div>
               </div>
             </div>
@@ -170,7 +170,7 @@ export default function About() {
           viewport={{ once: true, amount: 0.3 }}
           className="text-center mb-12"
         >
-          <h3 className="text-2xl sm:text-3xl font-extrabold text-dark">
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-dark dark:text-white">
             Почему выбирают нас
           </h3>
         </motion.div>
@@ -192,7 +192,7 @@ export default function About() {
                 hidden: { opacity: 0, y: 20 },
                 visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
               }}
-              className="group bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300"
+              className="group bg-white dark:bg-dark-light rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300"
             >
               <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg
@@ -209,8 +209,8 @@ export default function About() {
                   />
                 </svg>
               </div>
-              <h4 className="text-lg font-bold text-dark mb-2">{adv.title}</h4>
-              <p className="text-sm text-neutral leading-relaxed">
+              <h4 className="text-lg font-bold text-dark dark:text-white mb-2">{adv.title}</h4>
+              <p className="text-sm text-neutral dark:text-white/60 leading-relaxed">
                 {adv.description}
               </p>
             </motion.div>

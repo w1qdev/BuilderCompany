@@ -27,13 +27,18 @@ const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".
 
 interface ContactFormProps {
   onSuccess?: () => void;
+  initialValues?: {
+    name?: string;
+    phone?: string;
+    email?: string;
+  };
 }
 
-export default function ContactForm({ onSuccess }: ContactFormProps) {
+export default function ContactForm({ onSuccess, initialValues }: ContactFormProps) {
   const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
+    name: initialValues?.name || "",
+    phone: initialValues?.phone || "",
+    email: initialValues?.email || "",
     service: services[0],
     message: "",
   });
@@ -130,13 +135,13 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
   if (status === "success") {
     return (
       <div className="text-center py-8">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h4 className="text-xl font-bold text-dark mb-2">Заявка отправлена!</h4>
-        <p className="text-neutral text-sm">Мы свяжемся с вами в ближайшее время</p>
+        <h4 className="text-xl font-bold text-dark dark:text-white mb-2">Заявка отправлена!</h4>
+        <p className="text-neutral dark:text-white/60 text-sm">Мы свяжемся с вами в ближайшее время</p>
       </div>
     );
   }
@@ -261,7 +266,7 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
       </div>
 
       {status === "error" && (
-        <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3">
+        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3">
           {errorMsg}
         </div>
       )}
