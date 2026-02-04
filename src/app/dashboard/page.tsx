@@ -84,6 +84,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"requests" | "reference">("requests");
   const [modalOpen, setModalOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,6 +106,7 @@ export default function DashboardPage() {
         if (requestsRes.ok) {
           const requestsData = await requestsRes.json();
           setRequests(requestsData.requests);
+          setTotalPages(requestsData.pages || 1);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -126,6 +129,19 @@ export default function DashboardPage() {
     if (res.ok) {
       const data = await res.json();
       setRequests(data.requests);
+      setPage(1);
+      setTotalPages(data.pages || 1);
+    }
+  };
+
+  const loadMore = async () => {
+    const nextPage = page + 1;
+    const res = await fetch(`/api/user/requests?page=${nextPage}`);
+    if (res.ok) {
+      const data = await res.json();
+      setRequests((prev) => [...prev, ...data.requests]);
+      setPage(nextPage);
+      setTotalPages(data.pages || 1);
     }
   };
 
@@ -286,6 +302,16 @@ export default function DashboardPage() {
                 </motion.div>
               ))
             )}
+              {page < totalPages && (
+                <div className="text-center pt-4">
+                  <button
+                    onClick={loadMore}
+                    className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-white dark:bg-dark-light text-dark dark:text-white shadow-lg hover:shadow-xl transition-all"
+                  >
+                    Загрузить ещё
+                  </button>
+                </div>
+              )}
             </motion.div>
           </>
         )}

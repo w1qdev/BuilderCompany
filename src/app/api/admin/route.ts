@@ -32,6 +32,16 @@ export async function GET(req: NextRequest) {
 
   const where = { ...statusFilter, ...searchFilter };
 
+  const isExport = searchParams.get("export") === "true";
+
+  if (isExport) {
+    const requests = await prisma.request.findMany({
+      where,
+      orderBy: { [orderField]: sortOrder },
+    });
+    return NextResponse.json({ requests, total: requests.length });
+  }
+
   const [requests, total] = await Promise.all([
     prisma.request.findMany({
       where,

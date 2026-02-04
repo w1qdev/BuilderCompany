@@ -12,9 +12,13 @@ import path from "path";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
+  let uploadedFilePath: string | null = null;
   try {
     const body = await req.json();
     const { name, phone, email, service, message, fileName, filePath } = body;
+    if (filePath) {
+      uploadedFilePath = path.join(process.cwd(), "uploads", path.basename(filePath));
+    }
 
     if (!name || !phone || !email || !service) {
       return NextResponse.json(
@@ -89,6 +93,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, id: request.id });
   } catch (error) {
+    if (uploadedFilePath && existsSync(uploadedFilePath)) {
+      await unlink(uploadedFilePath).catch(() => {});
+    }
     console.error("Submit error:", error);
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
