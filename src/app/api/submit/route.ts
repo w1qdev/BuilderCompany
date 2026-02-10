@@ -3,6 +3,8 @@ import { JWT_SECRET } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { getIO } from "@/lib/socket";
 import { sendTelegramNotification } from "@/lib/telegram";
+
+export const dynamic = 'force-dynamic';
 import { existsSync } from "fs";
 import { unlink } from "fs/promises";
 import { jwtVerify } from "jose";

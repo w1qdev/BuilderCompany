@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getIO } from "@/lib/socket";
 import { verifyAdminPassword } from "@/lib/adminAuth";
 
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   const headerPassword = req.headers.get("x-admin-password");
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {

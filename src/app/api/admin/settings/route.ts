@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
 
+export const dynamic = 'force-dynamic';
+
 const BOOL_KEYS = ["emailNotifyAdmin", "emailNotifyCustomer", "telegramNotify"];
 const STRING_KEYS = ["notifyEmail", "companyPhone", "companyEmail", "companyAddress"];
 

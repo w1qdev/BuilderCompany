@@ -3,6 +3,8 @@ import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_TYPES = [
   "application/pdf",
   "application/msword",

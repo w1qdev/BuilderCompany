@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createRateLimiter } from "@/lib/rateLimit";
 
+export const dynamic = 'force-dynamic';
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const registerLimiter = createRateLimiter({ max: 3, windowMs: 15 * 60 * 1000 });
 

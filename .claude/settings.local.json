@@ -25,7 +25,8 @@
       "Bash(findstr:*)",
       "Bash(dir:*)",
       "Bash(npm run build:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: resolve build errors — lint, type issues, and framer-motion API usage\n\nFix unused variables, replace `any` types with `Record<string, unknown>`,\nadd null checks for admin password, use correct `amount` prop instead of\n`threshold` for framer-motion useInView, and escape special characters in JSX.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

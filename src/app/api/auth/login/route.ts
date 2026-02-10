@@ -5,6 +5,8 @@ import { SignJWT } from "jose";
 import { JWT_SECRET } from "@/lib/jwt";
 import { createRateLimiter } from "@/lib/rateLimit";
 
+export const dynamic = 'force-dynamic';
+
 const loginLimiter = createRateLimiter({ max: 5, windowMs: 15 * 60 * 1000 });
 
 export async function POST(request: NextRequest) {

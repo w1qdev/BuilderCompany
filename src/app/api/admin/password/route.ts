@@ -4,6 +4,8 @@ import { createRateLimiter } from "@/lib/rateLimit";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 const passwordLimiter = createRateLimiter({ max: 3, windowMs: 15 * 60 * 1000 });
 
 export async function POST(req: NextRequest) {

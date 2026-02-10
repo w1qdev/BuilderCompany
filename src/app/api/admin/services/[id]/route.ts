@@ -2,6 +2,8 @@ import { verifyAdminPassword } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 // PATCH update service (admin)
 export async function PATCH(
   req: NextRequest,

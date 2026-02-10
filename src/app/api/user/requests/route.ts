@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
 import { JWT_SECRET } from "@/lib/jwt";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get("auth-token")?.value;
