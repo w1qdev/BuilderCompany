@@ -6,13 +6,19 @@ function getIP(req: NextRequest): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
 }
 
-export function createRateLimiter({ max, windowMs }: { max: number; windowMs: number }) {
+export function createRateLimiter({
+  max,
+  windowMs,
+}: {
+  max: number;
+  windowMs: number;
+}) {
   return function isAllowed(req: NextRequest): boolean {
     const key = getIP(req);
-    const now = Date.now();
+    const currentMoment = Date.now();
     const record = store.get(key);
-    if (!record || now > record.resetAt) {
-      store.set(key, { count: 1, resetAt: now + windowMs });
+    if (!record || currentMoment > record.resetAt) {
+      store.set(key, { count: 1, resetAt: currentMoment + windowMs });
       return true;
     }
     if (record.count >= max) {

@@ -2,7 +2,12 @@
 
 import { motion } from "framer-motion";
 
-const partners = [
+interface Partners {
+  name: string;
+  initials: string;
+}
+
+const partners: Partners[] = [
   { name: "Росстандарт", initials: "РС" },
   { name: "Росаккредитация", initials: "РА" },
   { name: "ВНИИМ", initials: "ВМ" },
@@ -23,7 +28,9 @@ export default function Partners() {
           viewport={{ once: true, amount: 0.3 }}
           className="text-center mb-12"
         >
-          <span className="text-primary font-semibold text-sm uppercase tracking-wider">Партнёры</span>
+          <span className="text-primary font-semibold text-sm uppercase tracking-wider">
+            Партнёры
+          </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-dark dark:text-white mt-2">
             Работаем с лучшими
           </h2>
@@ -56,7 +63,9 @@ export default function Partners() {
                   {partner.initials}
                 </span>
               </div>
-              <span className="text-xs text-neutral text-center font-medium">{partner.name}</span>
+              <span className="text-xs text-neutral text-center font-medium">
+                {partner.name}
+              </span>
             </motion.div>
           ))}
         </motion.div>

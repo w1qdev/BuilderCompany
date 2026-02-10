@@ -2,7 +2,12 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+enum ThemeTypes {
+  LIGHT = "light",
+  DARK = "dark",
+}
+
+type Theme = ThemeTypes.LIGHT | ThemeTypes.DARK;
 
 interface ThemeContextType {
   theme: Theme;
@@ -25,7 +30,7 @@ interface ThemeProviderProps {
 }
 
 export default function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>(ThemeTypes.LIGHT);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -35,7 +40,7 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
     if (savedTheme) {
       setTheme(savedTheme);
     } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setTheme("dark");
+      setTheme(ThemeTypes.DARK);
     }
   }, []);
 
@@ -52,7 +57,9 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
   }, [theme, mounted]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    setTheme((prev) =>
+      prev === ThemeTypes.LIGHT ? ThemeTypes.DARK : ThemeTypes.LIGHT,
+    );
   };
 
   return (

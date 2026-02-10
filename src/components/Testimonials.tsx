@@ -3,7 +3,15 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-const testimonials = [
+interface Testimonials {
+  name: string;
+  position: string;
+  company: string;
+  text: string;
+  rating: number;
+}
+
+const testimonials: Testimonials[] = [
   {
     name: "Алексей Петров",
     position: "Главный метролог",

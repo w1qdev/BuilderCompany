@@ -3,9 +3,9 @@
 import { motion, useInView } from "framer-motion";
 import {
   Activity,
-  ArrowUpRight,
   Droplets,
   Gauge,
+  Plus,
   Target,
   Thermometer,
   Wifi,
@@ -155,7 +155,9 @@ function TiltCard({ item, index }: { item: EquipmentItem; index: number }) {
           <h3 className="text-sm font-bold text-dark dark:text-white leading-snug mb-1">
             {item.name}
           </h3>
-          <p className="text-[11px] text-neutral-light dark:text-white/40 mb-3.5">{item.brand}</p>
+          <p className="text-[11px] text-neutral-light dark:text-white/40 mb-3.5">
+            {item.brand}
+          </p>
 
           <div className="flex items-end justify-between">
             <div>
@@ -164,7 +166,7 @@ function TiltCard({ item, index }: { item: EquipmentItem; index: number }) {
               </p>
               <p className="text-sm font-bold text-primary">{item.spec}</p>
             </div>
-            <ArrowUpRight
+            <Plus
               className={`w-4 h-4 transition-colors duration-300 ${hovering ? "text-primary" : "text-neutral-light dark:text-white/20"}`}
             />
           </div>
@@ -179,10 +181,7 @@ export default function EquipmentShowcase() {
   const inView = useInView(ref, { once: true, threshold: 0.1 });
 
   return (
-    <section
-      ref={ref}
-      className="relative py-20 px-4 bg-warm-bg dark:bg-dark"
-    >
+    <section ref={ref} className="relative py-20 px-4 bg-warm-bg dark:bg-dark">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div

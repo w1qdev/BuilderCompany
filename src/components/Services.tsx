@@ -3,7 +3,18 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 
-const tabs = [
+interface Tabs {
+  id: string;
+  label: string;
+  services: {
+    title: string;
+    description: string;
+    icon: string;
+    price: string;
+  }[];
+}
+
+const tabs: Tabs[] = [
   {
     id: "calibration",
     label: "Калибровка",

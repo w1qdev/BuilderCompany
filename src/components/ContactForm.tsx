@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -11,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useRef, useState } from "react";
 
 const services = [
   "Калибровка СИ",
@@ -23,7 +23,15 @@ const services = [
   "Другое",
 ];
 
-const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp"];
+const ALLOWED_EXTENSIONS = [
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+];
 
 interface ContactFormProps {
   onSuccess?: () => void;
@@ -34,7 +42,37 @@ interface ContactFormProps {
   };
 }
 
-export default function ContactForm({ onSuccess, initialValues }: ContactFormProps) {
+enum UploadProgressEnums {
+  IDLE = "idle",
+  UPLOADING = "uploading",
+  DONE = "done",
+  ERROR = "error",
+}
+
+enum SubmitStatusEnums {
+  IDLE = "idle",
+  LOADING = "loading",
+  SUCCESS = "success",
+  ERROR = "error",
+}
+
+type UploadProgress =
+  | UploadProgressEnums.IDLE
+  | UploadProgressEnums.UPLOADING
+  | UploadProgressEnums.DONE
+  | UploadProgressEnums.ERROR;
+
+type SubmitStatus =
+  | SubmitStatusEnums.IDLE
+  | SubmitStatusEnums.LOADING
+  | SubmitStatusEnums.SUCCESS
+  | SubmitStatusEnums.ERROR;
+
+export default function ContactForm({
+  onSuccess,
+  initialValues,
+}: ContactFormProps) {
+  const maxAllowedFileSizeInBytes = 10 * 1024 * 1024;
   const [form, setForm] = useState({
     name: initialValues?.name || "",
     phone: initialValues?.phone || "",
@@ -43,9 +81,13 @@ export default function ContactForm({ onSuccess, initialValues }: ContactFormPro
     message: "",
   });
   const [file, setFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<"idle" | "uploading" | "done" | "error">("idle");
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress>(
+    UploadProgressEnums.IDLE,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(
+    SubmitStatusEnums.IDLE,
+  );
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +100,7 @@ export default function ContactForm({ onSuccess, initialValues }: ContactFormPro
       return;
     }
 
-    if (selectedFile.size > 10 * 1024 * 1024) {
+    if (selectedFile.size > maxAllowedFileSizeInBytes) {
       setErrorMsg("Размер файла превышает 10 МБ");
       return;
     }
@@ -76,7 +118,7 @@ export default function ContactForm({ onSuccess, initialValues }: ContactFormPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus("loading");
+    setSubmitStatus(SubmitStatusEnums.LOADING);
     setErrorMsg("");
 
     try {
@@ -85,7 +127,7 @@ export default function ContactForm({ onSuccess, initialValues }: ContactFormPro
 
       // Upload file first if selected
       if (file) {
-        setUploadProgress("uploading");
+        setUploadProgress(UploadProgressEnums.UPLOADING);
         const formData = new FormData();
         formData.append("file", file);
 
@@ -102,7 +144,7 @@ export default function ContactForm({ onSuccess, initialValues }: ContactFormPro
         const uploadData = await uploadRes.json();
         fileName = uploadData.fileName;
         filePath = uploadData.filePath;
-        setUploadProgress("done");
+        setUploadProgress(UploadProgressEnums.DONE);
       }
 
       const res = await fetch("/api/submit", {
@@ -116,32 +158,52 @@ export default function ContactForm({ onSuccess, initialValues }: ContactFormPro
         throw new Error(data.error || "Ошибка отправки");
       }
 
-      setStatus("success");
-      setForm({ name: "", phone: "", email: "", service: services[0], message: "" });
+      setSubmitStatus(SubmitStatusEnums.SUCCESS);
+      setForm({
+        name: "",
+        phone: "",
+        email: "",
+        service: services[0],
+        message: "",
+      });
       setFile(null);
-      setUploadProgress("idle");
+      setUploadProgress(UploadProgressEnums.IDLE);
 
       setTimeout(() => {
         onSuccess?.();
-        setStatus("idle");
+        setSubmitStatus(SubmitStatusEnums.IDLE);
       }, 2000);
     } catch (err) {
-      setStatus("error");
-      setUploadProgress("error");
+      setSubmitStatus(SubmitStatusEnums.ERROR);
+      setUploadProgress(UploadProgressEnums.ERROR);
       setErrorMsg(err instanceof Error ? err.message : "Произошла ошибка");
     }
   };
 
-  if (status === "success") {
+  if (submitStatus === "success") {
     return (
       <div className="text-center py-8">
         <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          <svg
+            className="w-8 h-8 text-green-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
-        <h4 className="text-xl font-bold text-dark dark:text-white mb-2">Заявка отправлена!</h4>
-        <p className="text-neutral dark:text-white/60 text-sm">Мы свяжемся с вами в ближайшее время</p>
+        <h4 className="text-xl font-bold text-dark dark:text-white mb-2">
+          Заявка отправлена!
+        </h4>
+        <p className="text-neutral dark:text-white/60 text-sm">
+          Мы свяжемся с вами в ближайшее время
+        </p>
       </div>
     );
   }
@@ -228,8 +290,18 @@ export default function ContactForm({ onSuccess, initialValues }: ContactFormPro
               htmlFor="file-upload"
               className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 dark:border-white/20 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
             >
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
               </svg>
               <span className="text-sm text-gray-500 dark:text-white/60">
                 Прикрепить файл (PDF, Word, фото)
@@ -238,8 +310,18 @@ export default function ContactForm({ onSuccess, initialValues }: ContactFormPro
           ) : (
             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-white/5 rounded-xl">
               <div className="flex items-center gap-2 min-w-0">
-                <svg className="w-5 h-5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg
+                  className="w-5 h-5 text-primary shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
                 <span className="text-sm text-dark dark:text-white truncate">
                   {file.name}
@@ -253,8 +335,18 @@ export default function ContactForm({ onSuccess, initialValues }: ContactFormPro
                 onClick={removeFile}
                 className="p-1 text-gray-400 hover:text-red-500 transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>

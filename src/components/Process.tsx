@@ -2,7 +2,15 @@
 
 import { motion } from "framer-motion";
 
-const steps = [
+interface Steps {
+  number: string;
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+}
+
+const steps: Steps[] = [
   {
     number: "01",
     title: "Заявка",

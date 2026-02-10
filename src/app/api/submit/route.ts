@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { sendTelegramNotification } from "@/lib/telegram";
-import { sendEmailNotification, sendConfirmationEmail } from "@/lib/email";
-import { getIO } from "@/lib/socket";
-import { jwtVerify } from "jose";
+import { sendConfirmationEmail, sendEmailNotification } from "@/lib/email";
 import { JWT_SECRET } from "@/lib/jwt";
-import { unlink } from "fs/promises";
+import { prisma } from "@/lib/prisma";
+import { getIO } from "@/lib/socket";
+import { sendTelegramNotification } from "@/lib/telegram";
 import { existsSync } from "fs";
+import { unlink } from "fs/promises";
+import { jwtVerify } from "jose";
+import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,20 +17,24 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, phone, email, service, message, fileName, filePath } = body;
     if (filePath) {
-      uploadedFilePath = path.join(process.cwd(), "uploads", path.basename(filePath));
+      uploadedFilePath = path.join(
+        process.cwd(),
+        "uploads",
+        path.basename(filePath),
+      );
     }
 
     if (!name || !phone || !email || !service) {
       return NextResponse.json(
         { error: "Заполните все обязательные поля" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!EMAIL_REGEX.test(email)) {
       return NextResponse.json(
         { error: "Некорректный формат email" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -67,24 +71,33 @@ export async function POST(req: NextRequest) {
 
     // Read notification settings
     const settings = await prisma.setting.findMany({
-      where: { key: { in: ["emailNotifyAdmin", "emailNotifyCustomer", "notifyEmail", "telegramNotify"] } },
+      where: {
+        key: {
+          in: [
+            "emailNotifyAdmin",
+            "emailNotifyCustomer",
+            "notifyEmail",
+            "telegramNotify",
+          ],
+        },
+      },
     });
     const isEnabled = (key: string) => {
       const found = settings.find((item) => item.key === key);
       return found ? found.value === "true" : true;
     };
-    const getSetting = (key: string) => {
-      const found = settings.find((item) => item.key === key);
-      return found?.value;
-    };
 
     // Send notifications in background (don't block response)
     const notifications: Promise<void>[] = [];
     if (isEnabled("telegramNotify")) {
-      notifications.push(sendTelegramNotification({ name, phone, email, service, message }));
+      notifications.push(
+        sendTelegramNotification({ name, phone, email, service, message }),
+      );
     }
     if (isEnabled("emailNotifyAdmin")) {
-      notifications.push(sendEmailNotification({ name, phone, email, service, message, toEmail: getSetting("notifyEmail") }));
+      notifications.push(
+        sendEmailNotification({ name, phone, email, service, message }),
+      );
     }
     if (isEnabled("emailNotifyCustomer")) {
       notifications.push(sendConfirmationEmail({ name, email, service }));
@@ -99,7 +112,7 @@ export async function POST(req: NextRequest) {
     console.error("Submit error:", error);
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
