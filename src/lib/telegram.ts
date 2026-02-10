@@ -2,16 +2,20 @@ function escapeTelegram(str: string): string {
   return str.replace(/[*_`\[\]]/g, "\\$&");
 }
 
+interface NotificationItem {
+  service: string;
+  poverk?: string;
+  object?: string;
+  fabricNumber?: string;
+  registry?: string;
+}
+
 interface SendTelegramNotification {
   name: string;
   phone: string;
   email: string;
-  service: string;
-  object?: string;
-  fabricNumber?: string;
-  registry?: string;
-  poverk?: string;
   message?: string;
+  items: NotificationItem[];
 }
 
 export async function sendTelegramNotification(data: SendTelegramNotification) {
@@ -23,18 +27,27 @@ export async function sendTelegramNotification(data: SendTelegramNotification) {
     return;
   }
 
+  const itemsText = data.items.map((item, idx) => {
+    const lines = [
+      `  *Позиция ${idx + 1}:* ${escapeTelegram(item.service)}`,
+      item.poverk ? `  ✅ Поверка: ${escapeTelegram(item.poverk)}` : "",
+      item.object ? `  📦 СИ: ${escapeTelegram(item.object)}` : "",
+      item.fabricNumber ? `  🔢 Зав. №: ${escapeTelegram(item.fabricNumber)}` : "",
+      item.registry ? `  📝 Реестр: ${escapeTelegram(item.registry)}` : "",
+    ];
+    return lines.filter(Boolean).join("\n");
+  }).join("\n\n");
+
   const text = [
     "📋 *Новая заявка с сайта*",
     "",
     `👤 *Имя:* ${escapeTelegram(data.name)}`,
     `📞 *Телефон:* ${escapeTelegram(data.phone)}`,
     `📧 *Email:* ${escapeTelegram(data.email)}`,
-    `🔧 *Услуга:* ${escapeTelegram(data.service)}`,
-    data.object ? `📦 *Наименование СИ:* ${escapeTelegram(data.object)}` : "",
-    data.fabricNumber ? `🔢 *Заводской номер:* ${escapeTelegram(data.fabricNumber)}` : "",
-    data.registry ? `📝 *Номер реестра:* ${escapeTelegram(data.registry)}` : "",
-    data.poverk ? `✅ *Тип поверки:* ${escapeTelegram(data.poverk)}` : "",
-    data.message ? `💬 *Сообщение:* ${escapeTelegram(data.message)}` : "",
+    "",
+    `🔧 *Позиций:* ${data.items.length}`,
+    itemsText,
+    data.message ? `\n💬 *Сообщение:* ${escapeTelegram(data.message)}` : "",
   ]
     .filter(Boolean)
     .join("\n");

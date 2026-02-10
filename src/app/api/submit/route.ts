@@ -13,11 +13,19 @@ import path from "path";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+interface SubmitItem {
+  service: string;
+  poverk?: string;
+  object?: string;
+  fabricNumber?: string;
+  registry?: string;
+}
+
 export async function POST(req: NextRequest) {
   let uploadedFilePath: string | null = null;
   try {
     const body = await req.json();
-    const { name, phone, email, service, object, fabricNumber, registry, poverk, message, fileName, filePath } = body;
+    const { name, phone, email, message, fileName, filePath, items } = body;
     if (filePath) {
       uploadedFilePath = path.join(
         process.cwd(),
@@ -26,11 +34,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!name || !phone || !email || !service) {
+    // Support both old format (single service) and new format (items array)
+    let serviceItems: SubmitItem[];
+    if (Array.isArray(items) && items.length > 0) {
+      serviceItems = items;
+    } else if (body.service) {
+      // Backwards compatibility: single service field
+      serviceItems = [{
+        service: body.service,
+        poverk: body.poverk,
+        object: body.object,
+        fabricNumber: body.fabricNumber,
+        registry: body.registry,
+      }];
+    } else {
       return NextResponse.json(
         { error: "Заполните все обязательные поля" },
         { status: 400 },
       );
+    }
+
+    if (!name || !phone || !email) {
+      return NextResponse.json(
+        { error: "Заполните все обязательные поля" },
+        { status: 400 },
+      );
+    }
+
+    // Validate each item has a service
+    for (const item of serviceItems) {
+      if (!item.service) {
+        return NextResponse.json(
+          { error: "Каждая позиция должна содержать услугу" },
+          { status: 400 },
+        );
+      }
     }
 
     if (!EMAIL_REGEX.test(email)) {
@@ -52,21 +90,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Backwards compat: fill flat fields from first item
+    const firstItem = serviceItems[0];
+    const serviceJoined = serviceItems.map(i => i.service).join(", ");
+
     const request = await prisma.request.create({
       data: {
         name,
         phone,
         email,
-        service,
-        object: object || null,
-        fabricNumber: fabricNumber || null,
-        registry: registry || null,
-        poverk: poverk || null,
+        service: serviceJoined,
+        object: firstItem.object || null,
+        fabricNumber: firstItem.fabricNumber || null,
+        registry: firstItem.registry || null,
+        poverk: firstItem.poverk || null,
         message: message || null,
         fileName: fileName || null,
         filePath: filePath || null,
         userId,
+        items: {
+          create: serviceItems.map(item => ({
+            service: item.service,
+            poverk: item.poverk || null,
+            object: item.object || null,
+            fabricNumber: item.fabricNumber || null,
+            registry: item.registry || null,
+          })),
+        },
       },
+      include: { items: true },
     });
 
     // Emit realtime event to admin panel
@@ -101,22 +153,18 @@ export async function POST(req: NextRequest) {
           name,
           phone,
           email,
-          service,
-          object,
-          fabricNumber,
-          registry,
-          poverk,
           message,
+          items: serviceItems,
         }),
       );
     }
     if (isEnabled("emailNotifyAdmin")) {
       notifications.push(
-        sendEmailNotification({ name, phone, email, service, object, fabricNumber, registry, poverk, message }),
+        sendEmailNotification({ name, phone, email, message, items: serviceItems }),
       );
     }
     if (isEnabled("emailNotifyCustomer")) {
-      notifications.push(sendConfirmationEmail({ name, email, service, object, fabricNumber, registry, poverk }));
+      notifications.push(sendConfirmationEmail({ name, email, items: serviceItems }));
     }
     Promise.allSettled(notifications).catch(console.error);
 

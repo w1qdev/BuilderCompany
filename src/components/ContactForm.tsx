@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRef, useState } from "react";
 
 const services = ["Поверка СИ", "Калибровка", "Аттестация", "Другое"];
-const poverk = ["Первичная", "Периодическая"];
+const poverkOptions = ["Первичная", "Периодическая"];
 
 const ALLOWED_EXTENSIONS = [
   ".pdf",
@@ -63,34 +63,51 @@ type SubmitStatus =
   | SubmitStatusEnums.SUCCESS
   | SubmitStatusEnums.ERROR;
 
-type FormType = {
+type FormFields = {
   name: string;
   phone: string;
   email: string;
+  message: string;
+};
+
+type ServiceItem = {
+  id: string;
+  service: string;
+  poverk: string;
   object: string;
   fabricNumber: string;
   registry: string;
-  service: string;
-  poverk: string;
-  message: string;
 };
+
+function createServiceItem(initial?: Partial<ServiceItem>): ServiceItem {
+  return {
+    id: crypto.randomUUID(),
+    service: initial?.service || services[0],
+    poverk: initial?.poverk || poverkOptions[0],
+    object: initial?.object || "",
+    fabricNumber: initial?.fabricNumber || "",
+    registry: initial?.registry || "",
+  };
+}
 
 export default function ContactForm({
   onSuccess,
   initialValues,
 }: ContactFormProps) {
   const maxAllowedFileSizeInBytes = 10 * 1024 * 1024;
-  const [form, setForm] = useState<FormType>({
+  const [form, setForm] = useState<FormFields>({
     name: initialValues?.name || "",
     phone: initialValues?.phone || "",
     email: initialValues?.email || "",
-    object: initialValues?.object || "",
-    fabricNumber: initialValues?.fabricNumber || "",
-    registry: initialValues?.registry || "",
-    service: services[0],
-    poverk: poverk[0],
     message: "",
   });
+  const [serviceItems, setServiceItems] = useState<ServiceItem[]>([
+    createServiceItem({
+      object: initialValues?.object,
+      fabricNumber: initialValues?.fabricNumber,
+      registry: initialValues?.registry,
+    }),
+  ]);
   const [file, setFile] = useState<File | null>(null);
   const [, setUploadProgress] = useState<UploadProgress>(
     UploadProgressEnums.IDLE,
@@ -100,6 +117,21 @@ export default function ContactForm({
     SubmitStatusEnums.IDLE,
   );
   const [errorMsg, setErrorMsg] = useState("");
+
+  const updateItem = (id: string, updates: Partial<ServiceItem>) => {
+    setServiceItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
+    );
+  };
+
+  const addItem = () => {
+    setServiceItems((prev) => [...prev, createServiceItem()]);
+  };
+
+  const removeItem = (id: string) => {
+    if (serviceItems.length <= 1) return;
+    setServiceItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -132,6 +164,15 @@ export default function ContactForm({
     setSubmitStatus(SubmitStatusEnums.LOADING);
     setErrorMsg("");
 
+    // Validate registry for Поверка СИ items
+    for (let i = 0; i < serviceItems.length; i++) {
+      if (serviceItems[i].service === "Поверка СИ" && !serviceItems[i].registry.trim()) {
+        setSubmitStatus(SubmitStatusEnums.ERROR);
+        setErrorMsg(`Позиция ${i + 1}: номер реестра обязателен для поверки СИ`);
+        return;
+      }
+    }
+
     try {
       let fileName: string | undefined;
       let filePath: string | undefined;
@@ -161,7 +202,18 @@ export default function ContactForm({
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, fileName, filePath }),
+        body: JSON.stringify({
+          ...form,
+          items: serviceItems.map(({ service, poverk, object, fabricNumber, registry }) => ({
+            service,
+            poverk: service === "Поверка СИ" ? poverk : undefined,
+            object,
+            fabricNumber,
+            registry: service === "Поверка СИ" ? registry : undefined,
+          })),
+          fileName,
+          filePath,
+        }),
       });
 
       if (!res.ok) {
@@ -174,13 +226,9 @@ export default function ContactForm({
         name: "",
         phone: "",
         email: "",
-        object: "",
-        service: services[0],
-        poverk: poverk[0],
-        fabricNumber: "",
-        registry: "",
         message: "",
       });
+      setServiceItems([createServiceItem()]);
       setFile(null);
       setUploadProgress(UploadProgressEnums.IDLE);
 
@@ -225,122 +273,167 @@ export default function ContactForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="contact-name">Ваше имя</Label>
-        <Input
-          id="contact-name"
-          type="text"
-          placeholder="Ваше имя *"
-          required
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="contact-phone">Телефон</Label>
-        <Input
-          id="contact-phone"
-          type="tel"
-          placeholder="Телефон *"
-          required
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="contact-email">Email</Label>
-        <Input
-          id="contact-email"
-          type="email"
-          placeholder="Email *"
-          required
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label>Услуга</Label>
-        <Select
-          value={form.service}
-          onValueChange={(value) => {
-            setForm({ ...form, service: value });
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Выберите услугу" />
-          </SelectTrigger>
-          <SelectContent>
-            {services.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {form.service === services[0] && (
+      <div className="grid sm:grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <Label>Поверка</Label>
-          <Select
-            value={form.poverk}
-            onValueChange={(value) => {
-              setForm({ ...form, poverk: value });
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Выберите тип поверки" />
-            </SelectTrigger>
-            <SelectContent>
-              {poverk.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      <div className="space-y-1.5">
-        <Label htmlFor="object-type">
-          Полное наименовение СИ или оборудования
-        </Label>
-        <Input
-          id="object-type"
-          type="text"
-          placeholder=""
-          value={form.object}
-          onChange={(e) => setForm({ ...form, object: e.target.value })}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="fabric-number">Заводской номер</Label>
-        <Input
-          id="object-type"
-          type="text"
-          placeholder="123"
-          value={form.fabricNumber}
-          onChange={(e) => setForm({ ...form, fabricNumber: e.target.value })}
-        />
-      </div>
-
-      {form.service === services[0] && (
-        <div className="space-y-1.5">
-          <Label htmlFor="object-type">
-            Номер реестра (обязательно при поверке)
-          </Label>
+          <Label htmlFor="contact-name">Ваше имя</Label>
           <Input
-            id="registry"
+            id="contact-name"
             type="text"
-            placeholder="12345-12"
+            placeholder="Ваше имя *"
             required
-            value={form.registry}
-            onChange={(e) => setForm({ ...form, registry: e.target.value })}
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
         </div>
-      )}
+        <div className="space-y-1.5">
+          <Label htmlFor="contact-phone">Телефон</Label>
+          <Input
+            id="contact-phone"
+            type="tel"
+            placeholder="Телефон *"
+            required
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="contact-email">Email</Label>
+          <Input
+            id="contact-email"
+            type="email"
+            placeholder="Email *"
+            required
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+        </div>
+      </div>
+
+      {/* Service Items */}
+      <div className="space-y-3">
+        {serviceItems.map((item, index) => (
+          <div
+            key={item.id}
+            className="relative border border-gray-200 dark:border-white/10 rounded-xl p-4 space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-dark dark:text-white">
+                Позиция {index + 1}
+              </span>
+              {serviceItems.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeItem(item.id)}
+                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Удалить позицию"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Услуга</Label>
+                <Select
+                  value={item.service}
+                  onValueChange={(value) => updateItem(item.id, { service: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите услугу" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {services.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {item.service === "Поверка СИ" && (
+                <div className="space-y-1.5">
+                  <Label>Поверка</Label>
+                  <Select
+                    value={item.poverk}
+                    onValueChange={(value) => updateItem(item.id, { poverk: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите тип поверки" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {poverkOptions.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Полное наименовение СИ или оборудования</Label>
+              <Input
+                type="text"
+                placeholder=""
+                value={item.object}
+                onChange={(e) => updateItem(item.id, { object: e.target.value })}
+              />
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Заводской номер</Label>
+                <Input
+                  type="text"
+                  placeholder="123"
+                  value={item.fabricNumber}
+                  onChange={(e) => updateItem(item.id, { fabricNumber: e.target.value })}
+                />
+              </div>
+
+              {item.service === "Поверка СИ" && (
+                <div className="space-y-1.5">
+                  <Label>Номер реестра (обязательно)</Label>
+                  <Input
+                    type="text"
+                    placeholder="12345-12"
+                    required
+                    value={item.registry}
+                    onChange={(e) => updateItem(item.id, { registry: e.target.value })}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={addItem}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-200 dark:border-white/20 rounded-xl text-sm text-neutral dark:text-white/60 hover:border-primary hover:text-primary transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Добавить позицию
+        </button>
+      </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="contact-message">Комментарии</Label>

@@ -46,7 +46,7 @@ export default function Modal({ isOpen, onClose, onSuccess, initialValues }: Mod
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative bg-white dark:bg-dark-light rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            className="relative bg-white dark:bg-dark-light rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
           >
             {/* Close button */}
             <button

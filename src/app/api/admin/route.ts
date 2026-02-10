@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
     const requests = await prisma.request.findMany({
       where,
       orderBy: { [orderField]: sortOrder },
+      include: { items: true },
     });
     return NextResponse.json({ requests, total: requests.length });
   }
@@ -50,6 +51,7 @@ export async function GET(req: NextRequest) {
       orderBy: { [orderField]: sortOrder },
       skip: (page - 1) * limit,
       take: limit,
+      include: { items: true },
     }),
     prisma.request.count({ where }),
   ]);

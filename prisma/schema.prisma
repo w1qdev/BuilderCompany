@@ -44,6 +44,18 @@ model Request {
   executorPrice Float?
   markup        Float?
   clientPrice   Float?
+  items         RequestItem[]
+}
+
+model RequestItem {
+  id           Int      @id @default(autoincrement())
+  requestId    Int
+  request      Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  service      String
+  poverk       String?
+  object       String?
+  fabricNumber String?
+  registry     String?
 }
 
 model Service {

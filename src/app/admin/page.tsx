@@ -28,7 +28,16 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { io as ioClient, Socket } from "socket.io-client";
 import { toast, Toaster } from "sonner";
 
-interface RequestItem {
+interface ServiceItemData {
+  id: number;
+  service: string;
+  poverk: string | null;
+  object: string | null;
+  fabricNumber: string | null;
+  registry: string | null;
+}
+
+interface AdminRequest {
   id: number;
   name: string;
   phone: string;
@@ -47,6 +56,7 @@ interface RequestItem {
   executorPrice: number | null;
   markup: number | null;
   clientPrice: number | null;
+  items?: ServiceItemData[];
 }
 
 interface Stats {
@@ -77,7 +87,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [initializing, setInitializing] = useState(true);
-  const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
@@ -203,7 +213,7 @@ export default function AdminPage() {
       setConnected(false);
     });
 
-    socket.on("new-request", (request: RequestItem) => {
+    socket.on("new-request", (request: AdminRequest) => {
       setRequests((prev) => {
         if (prev.some((r) => r.id === request.id)) return prev;
         return [request, ...prev];
@@ -212,7 +222,7 @@ export default function AdminPage() {
       fetchStats();
     });
 
-    socket.on("request-update", (updated: RequestItem) => {
+    socket.on("request-update", (updated: AdminRequest) => {
       setRequests((prev) =>
         prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r))
       );
@@ -299,7 +309,7 @@ export default function AdminPage() {
     }
   };
 
-  const hasChanges = (id: number, request: RequestItem) => {
+  const hasChanges = (id: number, request: AdminRequest) => {
     const editing = editingPricing[id];
     if (!editing) return false;
 
@@ -381,7 +391,7 @@ export default function AdminPage() {
     const res = await fetch(`/api/admin?${params}`, { headers: { "x-admin-password": password } });
     if (!res.ok) return;
     const data = await res.json();
-    const allRequests: RequestItem[] = data.requests;
+    const allRequests: AdminRequest[] = data.requests;
     const headers = ["ID", "Дата", "Имя", "Телефон", "Email", "Услуга", "Сообщение", "Статус"];
     const rows = allRequests.map((r) => [
       r.id,
@@ -712,33 +722,54 @@ export default function AdminPage() {
                                   <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Контакты</div>
                                   <div className="text-sm text-dark">{r.name} &middot; {r.phone} &middot; {r.email}</div>
                                 </div>
-                                <div>
-                                  <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Услуга</div>
-                                  <div className="text-sm text-dark">{r.service}</div>
-                                </div>
-                                {r.object && (
+                                {r.items && r.items.length > 0 ? (
                                   <div>
-                                    <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Наименование СИ</div>
-                                    <div className="text-sm text-dark">{r.object}</div>
+                                    <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">Позиции ({r.items.length})</div>
+                                    <div className="space-y-2">
+                                      {r.items.map((item, idx) => (
+                                        <div key={item.id} className="bg-white rounded-lg p-3 border border-gray-100">
+                                          <div className="text-xs font-semibold text-primary mb-1">Позиция {idx + 1}: {item.service}</div>
+                                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                                            {item.poverk && <div><span className="text-neutral">Поверка:</span> {item.poverk}</div>}
+                                            {item.object && <div><span className="text-neutral">СИ:</span> {item.object}</div>}
+                                            {item.fabricNumber && <div><span className="text-neutral">Зав. №:</span> {item.fabricNumber}</div>}
+                                            {item.registry && <div><span className="text-neutral">Реестр:</span> {item.registry}</div>}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
-                                )}
-                                {r.fabricNumber && (
-                                  <div>
-                                    <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Заводской номер</div>
-                                    <div className="text-sm text-dark">{r.fabricNumber}</div>
-                                  </div>
-                                )}
-                                {r.registry && (
-                                  <div>
-                                    <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Номер реестра</div>
-                                    <div className="text-sm text-dark">{r.registry}</div>
-                                  </div>
-                                )}
-                                {r.poverk && (
-                                  <div>
-                                    <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Тип поверки</div>
-                                    <div className="text-sm text-dark">{r.poverk}</div>
-                                  </div>
+                                ) : (
+                                  <>
+                                    <div>
+                                      <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Услуга</div>
+                                      <div className="text-sm text-dark">{r.service}</div>
+                                    </div>
+                                    {r.object && (
+                                      <div>
+                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Наименование СИ</div>
+                                        <div className="text-sm text-dark">{r.object}</div>
+                                      </div>
+                                    )}
+                                    {r.fabricNumber && (
+                                      <div>
+                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Заводской номер</div>
+                                        <div className="text-sm text-dark">{r.fabricNumber}</div>
+                                      </div>
+                                    )}
+                                    {r.registry && (
+                                      <div>
+                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Номер реестра</div>
+                                        <div className="text-sm text-dark">{r.registry}</div>
+                                      </div>
+                                    )}
+                                    {r.poverk && (
+                                      <div>
+                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Тип поверки</div>
+                                        <div className="text-sm text-dark">{r.poverk}</div>
+                                      </div>
+                                    )}
+                                  </>
                                 )}
                                 {r.fileName && r.filePath && (
                                   <div>
