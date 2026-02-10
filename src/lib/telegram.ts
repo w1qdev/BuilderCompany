@@ -7,6 +7,10 @@ interface SendTelegramNotification {
   phone: string;
   email: string;
   service: string;
+  object?: string;
+  fabricNumber?: string;
+  registry?: string;
+  poverk?: string;
   message?: string;
 }
 
@@ -26,6 +30,10 @@ export async function sendTelegramNotification(data: SendTelegramNotification) {
     `📞 *Телефон:* ${escapeTelegram(data.phone)}`,
     `📧 *Email:* ${escapeTelegram(data.email)}`,
     `🔧 *Услуга:* ${escapeTelegram(data.service)}`,
+    data.object ? `📦 *Наименование СИ:* ${escapeTelegram(data.object)}` : "",
+    data.fabricNumber ? `🔢 *Заводской номер:* ${escapeTelegram(data.fabricNumber)}` : "",
+    data.registry ? `📝 *Номер реестра:* ${escapeTelegram(data.registry)}` : "",
+    data.poverk ? `✅ *Тип поверки:* ${escapeTelegram(data.poverk)}` : "",
     data.message ? `💬 *Сообщение:* ${escapeTelegram(data.message)}` : "",
   ]
     .filter(Boolean)

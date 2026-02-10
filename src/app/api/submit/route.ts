@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   let uploadedFilePath: string | null = null;
   try {
     const body = await req.json();
-    const { name, phone, email, service, message, fileName, filePath } = body;
+    const { name, phone, email, service, object, fabricNumber, registry, poverk, message, fileName, filePath } = body;
     if (filePath) {
       uploadedFilePath = path.join(
         process.cwd(),
@@ -56,6 +56,10 @@ export async function POST(req: NextRequest) {
         phone,
         email,
         service,
+        object: object || null,
+        fabricNumber: fabricNumber || null,
+        registry: registry || null,
+        poverk: poverk || null,
         message: message || null,
         fileName: fileName || null,
         filePath: filePath || null,
@@ -96,17 +100,21 @@ export async function POST(req: NextRequest) {
           phone,
           email,
           service,
+          object,
+          fabricNumber,
+          registry,
+          poverk,
           message,
         }),
       );
     }
     if (isEnabled("emailNotifyAdmin")) {
       notifications.push(
-        sendEmailNotification({ name, phone, email, service, message }),
+        sendEmailNotification({ name, phone, email, service, object, fabricNumber, registry, poverk, message }),
       );
     }
     if (isEnabled("emailNotifyCustomer")) {
-      notifications.push(sendConfirmationEmail({ name, email, service }));
+      notifications.push(sendConfirmationEmail({ name, email, service, object, fabricNumber, registry, poverk }));
     }
     Promise.allSettled(notifications).catch(console.error);
 

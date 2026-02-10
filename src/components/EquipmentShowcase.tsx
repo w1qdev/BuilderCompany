@@ -76,7 +76,7 @@ function TiltCard({ item, index }: { item: EquipmentItem; index: number }) {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [hovering, setHovering] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, threshold: 0.15 });
+  const inView = useInView(ref, { once: true, amount: 0.15 });
   const Icon = item.icon;
 
   const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -178,7 +178,7 @@ function TiltCard({ item, index }: { item: EquipmentItem; index: number }) {
 
 export default function EquipmentShowcase() {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, threshold: 0.1 });
+  const inView = useInView(ref, { once: true, amount: 0.1 });
 
   return (
     <section ref={ref} className="relative py-20 px-4 bg-warm-bg dark:bg-dark">

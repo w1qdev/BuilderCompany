@@ -92,7 +92,7 @@ export default function ContactForm({
     message: "",
   });
   const [file, setFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<UploadProgress>(
+  const [, setUploadProgress] = useState<UploadProgress>(
     UploadProgressEnums.IDLE,
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -336,8 +336,8 @@ export default function ContactForm({
             type="text"
             placeholder="12345-12"
             required
-            value={form.object}
-            onChange={(e) => setForm({ ...form, object: e.target.value })}
+            value={form.registry}
+            onChange={(e) => setForm({ ...form, registry: e.target.value })}
           />
         </div>
       )}

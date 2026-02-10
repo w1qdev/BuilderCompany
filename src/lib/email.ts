@@ -14,6 +14,10 @@ export async function sendEmailNotification(data: {
   phone: string;
   email: string;
   service: string;
+  object?: string;
+  fabricNumber?: string;
+  registry?: string;
+  poverk?: string;
   message?: string;
   toEmail?: string;
 }) {
@@ -42,6 +46,10 @@ export async function sendEmailNotification(data: {
       <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Телефон</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(data.phone)}</td></tr>
       <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Email</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(data.email)}</td></tr>
       <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Услуга</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(data.service)}</td></tr>
+      ${data.object ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Наименование СИ</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(data.object)}</td></tr>` : ""}
+      ${data.fabricNumber ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Заводской номер</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(data.fabricNumber)}</td></tr>` : ""}
+      ${data.registry ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Номер реестра</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(data.registry)}</td></tr>` : ""}
+      ${data.poverk ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Тип поверки</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(data.poverk)}</td></tr>` : ""}
       ${data.message ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Сообщение</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(data.message)}</td></tr>` : ""}
     </table>
   `;
@@ -62,6 +70,10 @@ export async function sendConfirmationEmail(data: {
   name: string;
   email: string;
   service: string;
+  object?: string;
+  fabricNumber?: string;
+  registry?: string;
+  poverk?: string;
 }) {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT) || 587;
@@ -90,7 +102,11 @@ export async function sendConfirmationEmail(data: {
         <p>Благодарим вас за обращение. Ваша заявка по услуге <strong>${escapeHtml(data.service)}</strong> успешно принята к рассмотрению.</p>
         <p>Наши специалисты свяжутся с вами в ближайшее время для уточнения деталей и согласования сроков.</p>
         <div style="background: #fdf5f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
-          <p style="margin: 0; font-size: 14px; color: #666;"><strong>Услуга:</strong> ${escapeHtml(data.service)}</p>
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;"><strong>Услуга:</strong> ${escapeHtml(data.service)}</p>
+          ${data.object ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #666;"><strong>Наименование СИ:</strong> ${escapeHtml(data.object)}</p>` : ""}
+          ${data.fabricNumber ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #666;"><strong>Заводской номер:</strong> ${escapeHtml(data.fabricNumber)}</p>` : ""}
+          ${data.registry ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #666;"><strong>Номер реестра:</strong> ${escapeHtml(data.registry)}</p>` : ""}
+          ${data.poverk ? `<p style="margin: 0; font-size: 14px; color: #666;"><strong>Тип поверки:</strong> ${escapeHtml(data.poverk)}</p>` : ""}
         </div>
         <p style="color: #888; font-size: 13px; margin-bottom: 0;">Если вы задали вопрос по ошибке, пожалуйста, проигнорируйте это письмо.</p>
       </div>

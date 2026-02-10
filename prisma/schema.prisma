@@ -29,6 +29,7 @@ model Request {
   phone         String
   email         String
   service       String
+  object        String?
   fabricNumber  String?
   registry      String?
   poverk        String?
@@ -43,4 +44,16 @@ model Request {
   executorPrice Float?
   markup        Float?
   clientPrice   Float?
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  price       Int
+  image       String?
+  category    String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

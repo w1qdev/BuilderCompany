@@ -7,6 +7,7 @@ import ThemeToggle from "./ThemeToggle";
 
 const navLinks = [
   { href: "#services", label: "Услуги" },
+  { href: "#payment", label: "Оплата" },
   { href: "#calculator", label: "Калькулятор" },
   { href: "/portfolio", label: "Портфолио" },
   { href: "#about", label: "О компании" },

@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ymaps: any;
   }
 }
@@ -20,6 +21,7 @@ export default function YandexMap({
   address = "г. Москва, ул. Метрологическая, д. 10",
 }: YandexMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstance = useRef<any>(null);
 
   useEffect(() => {

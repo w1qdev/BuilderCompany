@@ -12,6 +12,7 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import Modal from "@/components/Modal";
 import Partners from "@/components/Partners";
+import Payment from "@/components/Payment";
 import Portfolio from "@/components/Portfolio";
 import Process from "@/components/Process";
 import Science from "@/components/Science";
@@ -34,8 +35,9 @@ export default function Home() {
         <Hero onOpenModal={openModal} />
         <Services />
         <Process />
-        <Delivery />
         <Science />
+        <Delivery />
+        <Payment />
         <EquipmentShowcase />
         <Calculator onOpenModal={openModal} />
         <About />
