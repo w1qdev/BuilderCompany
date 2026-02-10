@@ -11,11 +11,9 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 
 const serviceTypes = [
-  { id: "calibration", label: "Калибровка СИ", pricePerUnit: 2000 },
-  { id: "verification", label: "Поверка приборов", pricePerUnit: 1200 },
-  { id: "certification", label: "Сертификация продукции", pricePerUnit: 15000 },
-  { id: "declaration", label: "Декларирование", pricePerUnit: 12000 },
-  { id: "iso", label: "Сертификация ISO", pricePerUnit: 35000 },
+  { id: "calibration", label: "Поверка СИ", pricePerUnit: 1200 },
+  { id: "verification", label: "Калибровка", pricePerUnit: 2500 },
+  { id: "certification", label: "Аттестаци", pricePerUnit: 15000 },
 ];
 
 const urgencyOptions = [

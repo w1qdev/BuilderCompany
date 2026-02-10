@@ -1,23 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import About from "@/components/About";
+import BackToTop from "@/components/BackToTop";
+import Calculator from "@/components/Calculator";
+import Certificates from "@/components/Certificates";
+import Delivery from "@/components/Delivery";
+import EquipmentShowcase from "@/components/EquipmentShowcase";
+import FAQ from "@/components/FAQ";
+import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import Services from "@/components/Services";
+import Modal from "@/components/Modal";
+import Partners from "@/components/Partners";
+import Portfolio from "@/components/Portfolio";
 import Process from "@/components/Process";
 import Science from "@/components/Science";
-import EquipmentShowcase from "@/components/EquipmentShowcase";
-import Calculator from "@/components/Calculator";
-import About from "@/components/About";
-import Certificates from "@/components/Certificates";
-import Portfolio from "@/components/Portfolio";
-import Testimonials from "@/components/Testimonials";
-import FAQ from "@/components/FAQ";
-import Partners from "@/components/Partners";
-import Footer from "@/components/Footer";
-import Modal from "@/components/Modal";
-import BackToTop from "@/components/BackToTop";
 import ScrollProgress from "@/components/ScrollProgress";
+import Services from "@/components/Services";
+import Testimonials from "@/components/Testimonials";
+import { useState } from "react";
 
 export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -33,6 +34,7 @@ export default function Home() {
         <Hero onOpenModal={openModal} />
         <Services />
         <Process />
+        <Delivery />
         <Science />
         <EquipmentShowcase />
         <Calculator onOpenModal={openModal} />

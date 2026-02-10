@@ -2,13 +2,15 @@ function escapeTelegram(str: string): string {
   return str.replace(/[*_`\[\]]/g, "\\$&");
 }
 
-export async function sendTelegramNotification(data: {
+interface SendTelegramNotification {
   name: string;
   phone: string;
   email: string;
   service: string;
   message?: string;
-}) {
+}
+
+export async function sendTelegramNotification(data: SendTelegramNotification) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
@@ -30,18 +32,15 @@ export async function sendTelegramNotification(data: {
     .join("\n");
 
   try {
-    await fetch(
-      `https://api.telegram.org/bot${token}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text,
-          parse_mode: "Markdown",
-        }),
-      }
-    );
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "Markdown",
+      }),
+    });
   } catch (error) {
     console.error("Telegram notification error:", error);
   }

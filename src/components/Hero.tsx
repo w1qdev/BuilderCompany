@@ -58,7 +58,7 @@ export default function Hero({ onOpenModal }: HeroProps) {
           transition={{ duration: 0.8 }}
         >
           <span className="inline-block gradient-primary text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-            Аккредитованный центр сертификации
+            Аккредитованный центр аттестации
           </span>
         </motion.div>
 
@@ -77,8 +77,8 @@ export default function Hero({ onOpenModal }: HeroProps) {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto mb-10"
         >
-          Сертификация, поверка и калибровка измерительного оборудования. Более
-          10 лет опыта, 5000+ выданных сертификатов.
+          Аттестация, поверка и калибровка измерительного оборудования. Более 10
+          лет опыта.
         </motion.p>
 
         <motion.div
@@ -106,14 +106,9 @@ export default function Hero({ onOpenModal }: HeroProps) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto"
+          className="mt-16 flex justify-center items-center md:grid-cols-4 gap-6"
         >
-          {[
-            { target: 10, suffix: "+", label: "Лет опыта" },
-            { target: 5000, suffix: "+", label: "Сертификатов" },
-            { target: 50, suffix: "+", label: "Специалистов" },
-            { target: 99, suffix: "%", label: "Точность измерений" },
-          ].map((stat, i) => (
+          {[{ target: 10, suffix: "+", label: "Лет опыта" }].map((stat, i) => (
             <div key={i} className="text-center">
               <div className="text-3xl sm:text-4xl font-extrabold text-primary">
                 <AnimatedCounter target={stat.target} suffix={stat.suffix} />

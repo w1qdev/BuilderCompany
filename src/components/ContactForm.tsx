@@ -12,16 +12,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useRef, useState } from "react";
 
-const services = [
-  "Калибровка СИ",
-  "Поверка приборов",
-  "Сертификация продукции",
-  "Декларирование соответствия",
-  "Сертификация ISO",
-  "Испытания продукции",
-  "Консультация",
-  "Другое",
-];
+const services = ["Поверка СИ", "Калибровка", "Аттестация", "Другое"];
+const poverk = ["Первичная", "Периодическая"];
 
 const ALLOWED_EXTENSIONS = [
   ".pdf",
@@ -39,6 +31,9 @@ interface ContactFormProps {
     name?: string;
     phone?: string;
     email?: string;
+    object?: string;
+    fabricNumber?: string;
+    registry?: string;
   };
 }
 
@@ -68,16 +63,32 @@ type SubmitStatus =
   | SubmitStatusEnums.SUCCESS
   | SubmitStatusEnums.ERROR;
 
+type FormType = {
+  name: string;
+  phone: string;
+  email: string;
+  object: string;
+  fabricNumber: string;
+  registry: string;
+  service: string;
+  poverk: string;
+  message: string;
+};
+
 export default function ContactForm({
   onSuccess,
   initialValues,
 }: ContactFormProps) {
   const maxAllowedFileSizeInBytes = 10 * 1024 * 1024;
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormType>({
     name: initialValues?.name || "",
     phone: initialValues?.phone || "",
     email: initialValues?.email || "",
+    object: initialValues?.object || "",
+    fabricNumber: initialValues?.fabricNumber || "",
+    registry: initialValues?.registry || "",
     service: services[0],
+    poverk: poverk[0],
     message: "",
   });
   const [file, setFile] = useState<File | null>(null);
@@ -163,7 +174,11 @@ export default function ContactForm({
         name: "",
         phone: "",
         email: "",
+        object: "",
         service: services[0],
+        poverk: poverk[0],
+        fabricNumber: "",
+        registry: "",
         message: "",
       });
       setFile(null);
@@ -247,7 +262,9 @@ export default function ContactForm({
         <Label>Услуга</Label>
         <Select
           value={form.service}
-          onValueChange={(value) => setForm({ ...form, service: value })}
+          onValueChange={(value) => {
+            setForm({ ...form, service: value });
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Выберите услугу" />
@@ -261,8 +278,72 @@ export default function ContactForm({
           </SelectContent>
         </Select>
       </div>
+
+      {form.service === services[0] && (
+        <div className="space-y-1.5">
+          <Label>Поверка</Label>
+          <Select
+            value={form.poverk}
+            onValueChange={(value) => {
+              setForm({ ...form, poverk: value });
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Выберите тип поверки" />
+            </SelectTrigger>
+            <SelectContent>
+              {poverk.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       <div className="space-y-1.5">
-        <Label htmlFor="contact-message">Сообщение</Label>
+        <Label htmlFor="object-type">
+          Полное наименовение СИ или оборудования
+        </Label>
+        <Input
+          id="object-type"
+          type="text"
+          placeholder=""
+          value={form.object}
+          onChange={(e) => setForm({ ...form, object: e.target.value })}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="fabric-number">Заводской номер</Label>
+        <Input
+          id="object-type"
+          type="text"
+          placeholder="123"
+          value={form.fabricNumber}
+          onChange={(e) => setForm({ ...form, fabricNumber: e.target.value })}
+        />
+      </div>
+
+      {form.service === services[0] && (
+        <div className="space-y-1.5">
+          <Label htmlFor="object-type">
+            Номер реестра (обязательно при поверке)
+          </Label>
+          <Input
+            id="registry"
+            type="text"
+            placeholder="12345-12"
+            required
+            value={form.object}
+            onChange={(e) => setForm({ ...form, object: e.target.value })}
+          />
+        </div>
+      )}
+
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-message">Комментарии</Label>
         <Textarea
           id="contact-message"
           placeholder="Сообщение (необязательно)"
@@ -275,7 +356,7 @@ export default function ContactForm({
 
       {/* File Upload */}
       <div className="space-y-1.5">
-        <Label>Карточка предприятия</Label>
+        <Label>Реквизиты компании</Label>
         <div className="relative">
           <input
             ref={fileInputRef}
@@ -357,7 +438,7 @@ export default function ContactForm({
         </p>
       </div>
 
-      {status === "error" && (
+      {submitStatus === "error" && (
         <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3">
           {errorMsg}
         </div>
@@ -365,10 +446,10 @@ export default function ContactForm({
 
       <button
         type="submit"
-        disabled={status === "loading"}
+        disabled={submitStatus === "loading"}
         className="w-full gradient-primary text-white py-3.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {status === "loading" ? "Отправка..." : "Отправить заявку"}
+        {submitStatus === "loading" ? "Отправка..." : "Отправить заявку"}
       </button>
 
       <p className="text-xs text-neutral-light text-center">

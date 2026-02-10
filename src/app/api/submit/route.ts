@@ -91,7 +91,13 @@ export async function POST(req: NextRequest) {
     const notifications: Promise<void>[] = [];
     if (isEnabled("telegramNotify")) {
       notifications.push(
-        sendTelegramNotification({ name, phone, email, service, message }),
+        sendTelegramNotification({
+          name,
+          phone,
+          email,
+          service,
+          message,
+        }),
       );
     }
     if (isEnabled("emailNotifyAdmin")) {

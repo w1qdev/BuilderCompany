@@ -29,6 +29,9 @@ model Request {
   phone         String
   email         String
   service       String
+  fabricNumber  String?
+  registry      String?
+  poverk        String?
   message       String?
   fileName      String?
   filePath      String?

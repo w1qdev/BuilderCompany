@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import AnimatedCounter from "./AnimatedCounter";
 
 const advantages = [
@@ -62,7 +62,11 @@ export default function About() {
   const decorY = useTransform(scrollYProgress, [0, 1], [40, -40]);
 
   return (
-    <section id="about" className="py-20 sm:py-28 bg-warm-light dark:bg-dark" ref={sectionRef}>
+    <section
+      id="about"
+      className="py-20 sm:py-28 bg-warm-light dark:bg-dark"
+      ref={sectionRef}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* About text block */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-20 overflow-hidden">
@@ -79,8 +83,9 @@ export default function About() {
             </h2>
             <p className="text-neutral dark:text-white/60 leading-relaxed mb-4">
               Центр Стандартизации и Метрологии — аккредитованная организация,
-              оказывающая полный спектр метрологических услуг. За более чем 10 лет
-              работы мы выдали свыше 5000 сертификатов и свидетельств о поверке.
+              оказывающая полный спектр метрологических услуг. За более чем 10
+              лет работы мы выдали свыше 5000 сертификатов и свидетельств о
+              поверке.
             </p>
             <p className="text-neutral dark:text-white/60 leading-relaxed mb-6">
               Наша команда из 50+ квалифицированных метрологов использует
@@ -105,29 +110,12 @@ export default function About() {
                   </svg>
                 </div>
                 <div>
-                  <div className="font-bold text-dark dark:text-white text-sm">Росаккредитация</div>
-                  <div className="text-xs text-neutral dark:text-white/60">Аккредитация</div>
-                </div>
-              </div>
-              <div className="bg-white dark:bg-dark-light rounded-2xl p-4 shadow-md flex items-center gap-3">
-                <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <div className="font-bold text-dark dark:text-white text-sm">ISO 17025</div>
-                  <div className="text-xs text-neutral dark:text-white/60">Сертификат</div>
+                  <div className="font-bold text-dark dark:text-white text-sm">
+                    ISO 17025
+                  </div>
+                  <div className="text-xs text-neutral dark:text-white/60">
+                    Сертификат
+                  </div>
                 </div>
               </div>
             </div>
@@ -149,7 +137,10 @@ export default function About() {
                 ].map((stat, i) => (
                   <div key={i} className="text-center">
                     <div className="text-3xl sm:text-4xl font-extrabold text-primary mb-1">
-                      <AnimatedCounter target={stat.target} suffix={stat.suffix} />
+                      <AnimatedCounter
+                        target={stat.target}
+                        suffix={stat.suffix}
+                      />
                     </div>
                     <div className="text-white/60 text-sm">{stat.label}</div>
                   </div>
@@ -209,7 +200,9 @@ export default function About() {
                   />
                 </svg>
               </div>
-              <h4 className="text-lg font-bold text-dark dark:text-white mb-2">{adv.title}</h4>
+              <h4 className="text-lg font-bold text-dark dark:text-white mb-2">
+                {adv.title}
+              </h4>
               <p className="text-sm text-neutral dark:text-white/60 leading-relaxed">
                 {adv.description}
               </p>
