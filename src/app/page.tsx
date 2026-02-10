@@ -5,7 +5,6 @@ import BackToTop from "@/components/BackToTop";
 import Calculator from "@/components/Calculator";
 import Certificates from "@/components/Certificates";
 import Delivery from "@/components/Delivery";
-import EquipmentShowcase from "@/components/EquipmentShowcase";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
@@ -38,7 +37,7 @@ export default function Home() {
         <Science />
         <Delivery />
         <Payment />
-        <EquipmentShowcase />
+        {/* <EquipmentShowcase /> */}
         <Calculator onOpenModal={openModal} />
         <About />
         <Certificates />

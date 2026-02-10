@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, MapPin, Bike, Truck } from "lucide-react";
+import { Check, Truck } from "lucide-react";
 
 interface Steps {
   number: string;
@@ -14,25 +14,9 @@ interface Steps {
 const steps: Steps[] = [
   {
     number: "01",
-    title: "Самостоятельно",
-    description:
-      "Привезите приборы в нашу лабораторию в Москве",
-    icon: MapPin,
-    color: "from-orange-500 to-amber-500",
-  },
-  {
-    number: "02",
-    title: "Курьерской службой",
-    description:
-      "Наш курьер заберёт и доставит приборы. Стоимость 600-1000 руб в одну сторону",
-    icon: Bike,
-    color: "from-blue-500 to-indigo-500",
-  },
-  {
-    number: "03",
     title: "Транспортной компанией",
     description:
-      "Отправьте через ТК (Деловые Линии, ПЭК). От 500 руб в зависимости от габаритов",
+      "Отправьте через ТК (Деловые Линии, ПЭК, СДЭК). От 500 руб в зависимости от габаритов",
     icon: Truck,
     color: "from-emerald-500 to-teal-500",
   },
@@ -61,7 +45,7 @@ export default function Delivery() {
         </motion.div>
 
         <div className="relative">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="flex justify-center items-center lg:grid-cols-3 gap-8">
             {steps.map((step, index) => (
               <motion.div
                 key={step.number}

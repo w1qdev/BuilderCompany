@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Search, X, Loader2 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { Loader2, Search, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 interface Service {
   id: number;
@@ -144,7 +144,8 @@ export default function Services() {
             Наши услуги
           </h2>
           <p className="text-neutral dark:text-white/60 mt-3 max-w-xl mx-auto">
-            Полный спектр метрологических услуг — от поверки до сертификации
+            Полный спектр метрологических услуг — от поверки до аттестации
+            оборудования
           </p>
         </motion.div>
 

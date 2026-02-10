@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CreditCard, FileText, Building2 } from "lucide-react";
+import { Building2, CreditCard, FileText } from "lucide-react";
 
 const steps = [
   {
@@ -15,7 +15,7 @@ const steps = [
     icon: Building2,
     title: "Система налогообложения",
     description:
-      "РЦСМ работает от двух юридических лиц. По умолчанию счёт выставляется без НДС (УСН – Упрощённая Система Налогообложения) либо с НДС + 20% (ОСНО – Общая Система Налогообложения).",
+      "ЦСМ работает от одного юридического лица. По умолчанию счёт выставляется без НДС (УСН – Упрощённая Система Налогообложения).",
     color: "from-orange-500 to-amber-500",
   },
   {

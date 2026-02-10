@@ -82,43 +82,10 @@ export default function About() {
               Работаем <span className="text-gradient">с 2014 года</span>
             </h2>
             <p className="text-neutral dark:text-white/60 leading-relaxed mb-4">
-              Центр Стандартизации и Метрологии — аккредитованная организация,
-              оказывающая полный спектр метрологических услуг. За более чем 10
-              лет работы мы выдали свыше 5000 сертификатов и свидетельств о
-              поверке.
+              Центр Стандартизации и Метрологии осуществляет организацию поверки
+              метрологических услуг. За более чем 10 лет работы мы выдали более
+              5000 свидетельств о поверке.
             </p>
-            <p className="text-neutral dark:text-white/60 leading-relaxed mb-6">
-              Наша команда из 50+ квалифицированных метрологов использует
-              современное эталонное оборудование. Мы гарантируем точность
-              измерений и соответствие всем требованиям законодательства.
-            </p>
-            <div className="flex flex-wrap gap-4 p-3">
-              <div className="bg-white dark:bg-dark-light rounded-2xl p-4 shadow-md flex items-center gap-3">
-                <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <div className="font-bold text-dark dark:text-white text-sm">
-                    ISO 17025
-                  </div>
-                  <div className="text-xs text-neutral dark:text-white/60">
-                    Сертификат
-                  </div>
-                </div>
-              </div>
-            </div>
           </motion.div>
 
           <motion.div
@@ -129,22 +96,19 @@ export default function About() {
           >
             <div className="bg-gradient-to-br from-dark to-dark-light rounded-3xl p-8 sm:p-10">
               <div className="grid grid-cols-2 gap-6">
-                {[
-                  { target: 10, suffix: "+", label: "Лет на рынке" },
-                  { target: 5000, suffix: "+", label: "Сертификатов" },
-                  { target: 50, suffix: "+", label: "Специалистов" },
-                  { target: 200, suffix: "+", label: "Клиентов" },
-                ].map((stat, i) => (
-                  <div key={i} className="text-center">
-                    <div className="text-3xl sm:text-4xl font-extrabold text-primary mb-1">
-                      <AnimatedCounter
-                        target={stat.target}
-                        suffix={stat.suffix}
-                      />
+                {[{ target: 10, suffix: "+", label: "Лет на рынке" }].map(
+                  (stat, i) => (
+                    <div key={i} className="text-center">
+                      <div className="text-3xl sm:text-4xl font-extrabold text-primary mb-1">
+                        <AnimatedCounter
+                          target={stat.target}
+                          suffix={stat.suffix}
+                        />
+                      </div>
+                      <div className="text-white/60 text-sm">{stat.label}</div>
                     </div>
-                    <div className="text-white/60 text-sm">{stat.label}</div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </div>
             <motion.div
