@@ -9,14 +9,18 @@ export interface SiteSettings {
 }
 
 const DEFAULTS: SiteSettings = {
-  phone: "8 (800) 123-45-67",
+  phone: "+7 (966) 730-30-03",
   email: "info@csm-center.ru",
   address: "г. Москва, ул. Метрологическая, д. 10, офис 205",
 };
 
 const SiteSettingsContext = createContext<SiteSettings>(DEFAULTS);
 
-export function SiteSettingsProvider({ children }: { children: React.ReactNode }) {
+export function SiteSettingsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULTS);
 
   useEffect(() => {

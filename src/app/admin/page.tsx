@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Fragment } from "react";
-import { io as ioClient, Socket } from "socket.io-client";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -11,13 +17,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { io as ioClient, Socket } from "socket.io-client";
+import { toast, Toaster } from "sonner";
 
 interface RequestItem {
   id: number;
@@ -30,6 +39,10 @@ interface RequestItem {
   filePath: string | null;
   status: string;
   createdAt: string;
+  adminNotes: string | null;
+  executorPrice: number | null;
+  markup: number | null;
+  clientPrice: number | null;
 }
 
 interface Stats {
@@ -79,6 +92,13 @@ export default function AdminPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editingPricing, setEditingPricing] = useState<{
+    [key: number]: {
+      adminNotes: string;
+      executorPrice: string;
+      markup: string;
+    };
+  }>({});
 
   useEffect(() => {
     const stored = sessionStorage.getItem("admin-password");
@@ -188,9 +208,9 @@ export default function AdminPage() {
       fetchStats();
     });
 
-    socket.on("status-update", (updated: RequestItem) => {
+    socket.on("request-update", (updated: RequestItem) => {
       setRequests((prev) =>
-        prev.map((r) => (r.id === updated.id ? { ...r, status: updated.status } : r))
+        prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r))
       );
       fetchStats();
     });
@@ -272,6 +292,72 @@ export default function AdminPage() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank");
+    }
+  };
+
+  const hasChanges = (id: number, request: RequestItem) => {
+    const editing = editingPricing[id];
+    if (!editing) return false;
+
+    const currentNotes = request.adminNotes || "";
+    const currentPrice = request.executorPrice?.toString() || "";
+    const currentMarkup = request.markup?.toString() || "";
+
+    return (
+      editing.adminNotes !== currentNotes ||
+      editing.executorPrice !== currentPrice ||
+      editing.markup !== currentMarkup
+    );
+  };
+
+  const handleSavePricing = async (id: number) => {
+    const editing = editingPricing[id];
+    if (!editing) return;
+
+    try {
+      const executorPrice = editing.executorPrice ? parseFloat(editing.executorPrice) : null;
+      const markup = editing.markup ? parseFloat(editing.markup) : null;
+      const adminNotes = editing.adminNotes || null;
+
+      const res = await fetch(`/api/admin/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({
+          adminNotes,
+          executorPrice,
+          markup,
+        }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setRequests((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, ...updated } : r))
+        );
+        // Clear editing state after successful save
+        setEditingPricing((prev) => {
+          const newState = { ...prev };
+          delete newState[id];
+          return newState;
+        });
+        toast.success("Данные успешно сохранены", {
+          description: "Заметки и ценообразование обновлены",
+          duration: 3000,
+        });
+      } else {
+        toast.error("Ошибка сохранения", {
+          description: "Не удалось сохранить данные",
+          duration: 3000,
+        });
+      }
+    } catch {
+      toast.error("Ошибка сохранения", {
+        description: "Произошла ошибка при сохранении",
+        duration: 3000,
+      });
     }
   };
 
@@ -407,6 +493,7 @@ export default function AdminPage() {
 
   return (
     <TooltipProvider>
+      <Toaster position="top-center" />
       <div className="min-h-screen bg-warm-bg">
         {/* Header */}
         <div className="gradient-dark text-white">
@@ -631,6 +718,141 @@ export default function AdminPage() {
                                 )}
                               </div>
                             </div>
+
+                            {/* Admin Notes and Pricing Section */}
+                            <div className="mt-6 pt-6 border-t border-gray-200">
+                              <div className="text-sm font-semibold text-dark mb-4 uppercase tracking-wide">Заметки и ценообразование</div>
+                              <div className="grid lg:grid-cols-2 gap-6">
+                                {/* Left column: Admin Notes */}
+                                <div>
+                                  <label className="block text-xs text-neutral mb-2 font-medium uppercase tracking-wide">
+                                    Заметки админа
+                                  </label>
+                                  <Textarea
+                                    placeholder="Внутренние заметки (видны только в админке)..."
+                                    value={
+                                      editingPricing[r.id]?.adminNotes !== undefined
+                                        ? editingPricing[r.id].adminNotes
+                                        : r.adminNotes || ""
+                                    }
+                                    onChange={(e) => {
+                                      setEditingPricing((prev) => ({
+                                        ...prev,
+                                        [r.id]: {
+                                          adminNotes: e.target.value,
+                                          executorPrice: prev[r.id]?.executorPrice ?? (r.executorPrice?.toString() || ""),
+                                          markup: prev[r.id]?.markup ?? (r.markup?.toString() || ""),
+                                        },
+                                      }));
+                                    }}
+                                    className="min-h-[100px] resize-none"
+                                  />
+                                </div>
+
+                                {/* Right column: Pricing */}
+                                <div className="space-y-4">
+                                  <div>
+                                    <label className="block text-xs text-neutral mb-2 font-medium uppercase tracking-wide">
+                                      Цена исполнителя (₽)
+                                    </label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      placeholder="10000"
+                                      value={
+                                        editingPricing[r.id]?.executorPrice !== undefined
+                                          ? editingPricing[r.id].executorPrice
+                                          : r.executorPrice?.toString() || ""
+                                      }
+                                      onChange={(e) => {
+                                        setEditingPricing((prev) => ({
+                                          ...prev,
+                                          [r.id]: {
+                                            adminNotes: prev[r.id]?.adminNotes ?? (r.adminNotes || ""),
+                                            executorPrice: e.target.value,
+                                            markup: prev[r.id]?.markup ?? (r.markup?.toString() || ""),
+                                          },
+                                        }));
+                                      }}
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-xs text-neutral mb-2 font-medium uppercase tracking-wide">
+                                      Процент наценки
+                                    </label>
+                                    <Select
+                                      value={
+                                        editingPricing[r.id]?.markup !== undefined
+                                          ? editingPricing[r.id].markup
+                                          : r.markup?.toString() || ""
+                                      }
+                                      onValueChange={(value) => {
+                                        setEditingPricing((prev) => ({
+                                          ...prev,
+                                          [r.id]: {
+                                            adminNotes: prev[r.id]?.adminNotes ?? (r.adminNotes || ""),
+                                            executorPrice: prev[r.id]?.executorPrice ?? (r.executorPrice?.toString() || ""),
+                                            markup: value,
+                                          },
+                                        }));
+                                      }}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Выберите наценку" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="5">5%</SelectItem>
+                                        <SelectItem value="10">10%</SelectItem>
+                                        <SelectItem value="15">15%</SelectItem>
+                                        <SelectItem value="20">20%</SelectItem>
+                                        <SelectItem value="25">25%</SelectItem>
+                                        <SelectItem value="30">30%</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  {/* Display calculated client price */}
+                                  {(() => {
+                                    const execPrice = editingPricing[r.id]?.executorPrice !== undefined
+                                      ? parseFloat(editingPricing[r.id].executorPrice)
+                                      : r.executorPrice;
+                                    const markupVal = editingPricing[r.id]?.markup !== undefined
+                                      ? parseFloat(editingPricing[r.id].markup)
+                                      : r.markup;
+
+                                    if (execPrice && markupVal && !isNaN(execPrice) && !isNaN(markupVal)) {
+                                      const clientPrice = execPrice * (1 + markupVal / 100);
+                                      return (
+                                        <div className="pt-2">
+                                          <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">
+                                            Финальная цена для клиента
+                                          </div>
+                                          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg font-semibold">
+                                            {clientPrice.toFixed(2)} ₽
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+
+                                  <button
+                                    onClick={() => handleSavePricing(r.id)}
+                                    disabled={!hasChanges(r.id, r)}
+                                    className={`w-full mt-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                      hasChanges(r.id, r)
+                                        ? "bg-primary text-white hover:bg-primary/90 cursor-pointer"
+                                        : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
+                                    }`}
+                                  >
+                                    Сохранить
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
                             <div className="mt-4 flex items-center gap-2">
                               {deleteConfirmId === r.id ? (
                                 <>

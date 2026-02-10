@@ -24,16 +24,20 @@ model Setting {
 }
 
 model Request {
-  id        Int      @id @default(autoincrement())
-  name      String
-  phone     String
-  email     String
-  service   String
-  message   String?
-  fileName  String?
-  filePath  String?
-  status    String   @default("new")
-  createdAt DateTime @default(now())
-  userId    Int?
-  user      User?    @relation(fields: [userId], references: [id])
+  id            Int      @id @default(autoincrement())
+  name          String
+  phone         String
+  email         String
+  service       String
+  message       String?
+  fileName      String?
+  filePath      String?
+  status        String   @default("new")
+  createdAt     DateTime @default(now())
+  userId        Int?
+  user          User?    @relation(fields: [userId], references: [id])
+  adminNotes    String?
+  executorPrice Float?
+  markup        Float?
+  clientPrice   Float?
 }

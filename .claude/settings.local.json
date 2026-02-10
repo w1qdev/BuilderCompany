@@ -16,7 +16,14 @@
       "Bash(npx tsc:*)",
       "Bash(npm run dev:*)",
       "Bash(npx prisma studio)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(ls -la \"H:\\\\Coding\\\\Project\\\\src\\\\components\\\\ui\"\" | grep -E \"badge)",
+      "Bash(table)",
+      "Bash(input \")",
+      "Bash(timeout:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)"
     ]
   }
 }

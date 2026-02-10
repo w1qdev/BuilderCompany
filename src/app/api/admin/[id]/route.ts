@@ -14,21 +14,79 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { status } = body;
+  const { status, adminNotes, executorPrice, markup } = body;
 
-  if (!status || !["new", "in_progress", "done"].includes(status)) {
-    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  // Build update data object with validated fields
+  const updateData: {
+    status?: string;
+    adminNotes?: string | null;
+    executorPrice?: number | null;
+    markup?: number | null;
+    clientPrice?: number | null;
+  } = {};
+
+  // Validate and add status
+  if (status !== undefined) {
+    if (!["new", "in_progress", "done"].includes(status)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
+    updateData.status = status;
+  }
+
+  // Validate and add adminNotes
+  if (adminNotes !== undefined) {
+    updateData.adminNotes = adminNotes === "" ? null : adminNotes;
+  }
+
+  // Validate and add executorPrice
+  if (executorPrice !== undefined) {
+    if (executorPrice !== null && (typeof executorPrice !== "number" || executorPrice < 0)) {
+      return NextResponse.json({ error: "Invalid executorPrice" }, { status: 400 });
+    }
+    updateData.executorPrice = executorPrice;
+  }
+
+  // Validate and add markup
+  if (markup !== undefined) {
+    if (markup !== null && (typeof markup !== "number" || markup < 0 || markup > 100)) {
+      return NextResponse.json({ error: "Invalid markup (must be 0-100)" }, { status: 400 });
+    }
+    updateData.markup = markup;
+  }
+
+  // Ensure at least one field is being updated
+  if (Object.keys(updateData).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  }
+
+  // Get current record to access existing values for clientPrice calculation
+  const current = await prisma.request.findUnique({
+    where: { id: Number(id) },
+  });
+
+  if (!current) {
+    return NextResponse.json({ error: "Request not found" }, { status: 404 });
+  }
+
+  // Auto-calculate clientPrice using new OR existing values
+  const finalExecutorPrice = executorPrice !== undefined ? executorPrice : current.executorPrice;
+  const finalMarkup = markup !== undefined ? markup : current.markup;
+
+  if (finalExecutorPrice !== null && finalMarkup !== null) {
+    updateData.clientPrice = finalExecutorPrice * (1 + finalMarkup / 100);
+  } else {
+    updateData.clientPrice = null;
   }
 
   const updated = await prisma.request.update({
     where: { id: Number(id) },
-    data: { status },
+    data: updateData,
   });
 
   // Emit realtime event to admin panel
   const io = getIO();
   if (io) {
-    io.emit("status-update", updated);
+    io.emit("request-update", updated);
   }
 
   return NextResponse.json(updated);
