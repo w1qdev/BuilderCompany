@@ -56,6 +56,7 @@ interface AdminRequest {
   executorPrice: number | null;
   markup: number | null;
   clientPrice: number | null;
+  needContract: boolean;
   items?: ServiceItemData[];
 }
 
@@ -295,6 +296,44 @@ export default function AdminPage() {
       }
     } catch {
       console.error("Delete failed");
+    }
+  };
+
+  const handleExportToExcel = async (id: number) => {
+    try {
+      toast.loading("Формирование Excel файла...", { id: `export-${id}` });
+
+      const res = await fetch(`/api/admin/export/${id}`, {
+        method: "GET",
+        headers: { "x-admin-password": password },
+      });
+
+      if (!res.ok) {
+        throw new Error("Export failed");
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = res.headers.get("Content-Disposition");
+      let filename = `Заявка_${id}.xlsx`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename\*=UTF-8''(.+)/);
+        if (match) {
+          filename = decodeURIComponent(match[1]);
+        }
+      }
+
+      // Download file
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast.success("Excel файл скачан", { id: `export-${id}` });
+    } catch {
+      toast.error("Не удалось экспортировать", { id: `export-${id}` });
     }
   };
 
@@ -785,6 +824,26 @@ export default function AdminPage() {
                                     </button>
                                   </div>
                                 )}
+                                <div>
+                                  <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Договор оказания услуг</div>
+                                  <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${r.needContract ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                    {r.needContract ? (
+                                      <>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Требуется
+                                      </>
+                                    ) : (
+                                      <>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Не требуется
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </div>
 
@@ -923,6 +982,19 @@ export default function AdminPage() {
                             </div>
 
                             <div className="mt-4 flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleExportToExcel(r.id);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-600 hover:bg-green-50 transition-colors"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Экспорт в Excel
+                              </button>
+
                               {deleteConfirmId === r.id ? (
                                 <>
                                   <span className="text-sm text-red-600">Удалить заявку?</span>

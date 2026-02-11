@@ -10,7 +10,7 @@ export interface SiteSettings {
 
 const DEFAULTS: SiteSettings = {
   phone: "+7 (966) 730-30-03",
-  email: "info@csm-center.ru",
+  email: "zakaz@csm-center.ru",
   address: "г. Москва, ул. Метрологическая, д. 10, офис 205",
 };
 

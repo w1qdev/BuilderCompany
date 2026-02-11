@@ -44,6 +44,7 @@ model Request {
   executorPrice Float?
   markup        Float?
   clientPrice   Float?
+  needContract  Boolean  @default(false)
   items         RequestItem[]
 }
 

@@ -40,3 +40,29 @@ next-env.d.ts
 # Uploaded files
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# Production environment
+.env.production
+
+# Database
+/data/
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/*.db
+/prisma/*.db-journal
+
+# Uploads directory
+/uploads/
+
+# Backups
+/backups/
+
+# Logs
+/logs/
+*.log
+
+# SSL certificates
+/ssl/
+
+# Docker volumes
+docker-compose.override.yml

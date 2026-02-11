@@ -11,15 +11,18 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 
 const serviceTypes = [
-  { id: "calibration", label: "Поверка СИ", pricePerUnit: 1200 },
-  { id: "verification", label: "Калибровка", pricePerUnit: 2500 },
-  { id: "certification", label: "Аттестаци", pricePerUnit: 15000 },
+  { id: "verification", label: "Калибровка", pricePerUnit: 1500 },
+  { id: "calibration", label: "Поверка СИ", pricePerUnit: 2500 },
+  { id: "certification", label: "Аттестация", pricePerUnit: 5000 },
 ];
 
 const urgencyOptions = [
-  { id: "standard", label: "Стандартные сроки", multiplier: 1 },
-  { id: "fast", label: "Ускоренные (3-5 дней)", multiplier: 1.5 },
-  { id: "urgent", label: "Срочно (1-2 дня)", multiplier: 2 },
+  {
+    id: "standard",
+    label: "Стандартные сроки (5-10 рабочих дней)",
+    multiplier: 1,
+  },
+  { id: "fast", label: "Ускоренные (3-5 рабочих дней)", multiplier: 1.5 },
 ];
 
 interface CalculatorProps {
@@ -117,7 +120,7 @@ export default function Calculator({ onOpenModal }: CalculatorProps) {
                 <label className="block text-sm font-semibold text-dark dark:text-white mb-2">
                   Сроки выполнения
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {urgencyOptions.map((u) => (
                     <button
                       key={u.id}
@@ -137,21 +140,11 @@ export default function Calculator({ onOpenModal }: CalculatorProps) {
 
             {/* Right: result */}
             <div className="flex flex-col items-center justify-center bg-gradient-to-br from-dark to-dark-light rounded-2xl p-8 text-center">
-              <div className="text-white/60 text-sm mb-2">
-                Предварительная стоимость
-              </div>
-              <div className="text-4xl sm:text-5xl font-extrabold text-white mb-1">
-                {formatPrice(totalPrice)}
-              </div>
-              <div className="text-primary-light text-lg mb-1">руб.</div>
-              <div className="text-white/50 text-xs mb-6">
-                от {formatPrice(selectedService.pricePerUnit)} руб/шт.
-              </div>
               <button
                 onClick={onOpenModal}
                 className="gradient-primary text-white px-6 py-3 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-105 w-full"
               >
-                Получить точный расчёт
+                Оставить заявку
               </button>
               <p className="text-white/40 text-xs mt-3">
                 Точная стоимость зависит от типа оборудования

@@ -1,5 +1,6 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -117,6 +118,7 @@ export default function ContactForm({
     SubmitStatusEnums.IDLE,
   );
   const [errorMsg, setErrorMsg] = useState("");
+  const [needContract, setNeedContract] = useState(false);
 
   const updateItem = (id: string, updates: Partial<ServiceItem>) => {
     setServiceItems((prev) =>
@@ -213,6 +215,7 @@ export default function ContactForm({
           })),
           fileName,
           filePath,
+          needContract,
         }),
       });
 
@@ -231,6 +234,7 @@ export default function ContactForm({
       setServiceItems([createServiceItem()]);
       setFile(null);
       setUploadProgress(UploadProgressEnums.IDLE);
+      setNeedContract(false);
 
       setTimeout(() => {
         onSuccess?.();
@@ -536,6 +540,21 @@ export default function ContactForm({
           {errorMsg}
         </div>
       )}
+
+      <div className="flex items-start gap-3 p-4 bg-warm-bg dark:bg-neutral-900 rounded-xl">
+        <Checkbox
+          id="needContract"
+          checked={needContract}
+          onCheckedChange={setNeedContract}
+          className="mt-0.5"
+        />
+        <Label
+          htmlFor="needContract"
+          className="text-sm text-dark dark:text-white cursor-pointer select-none leading-relaxed"
+        >
+          Требуется оформление договора оказания услуг
+        </Label>
+      </div>
 
       <button
         type="submit"

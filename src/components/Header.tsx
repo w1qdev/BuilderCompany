@@ -62,7 +62,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
               {phone}
             </a>
             <a
-              href={`mailto:${email}`}
+              href={`mailto:zakaz@csm-center.ru`}
               className="hover:text-primary transition-colors hidden sm:flex items-center gap-1"
             >
               <svg
@@ -78,7 +78,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
                   d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
               </svg>
-              {email}
+              zakaz@csm-center.ru
             </a>
           </div>
           <div className="hidden md:flex items-center gap-1">
@@ -104,7 +104,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2 w-[20%]">
           <span className="text-white font-bold text-xl">
-            Центр Стандартизации и Метрологии
+            ЦСМ - Центр Стандартизации и Метрологии
           </span>
         </a>
 
