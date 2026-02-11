@@ -107,8 +107,8 @@ export default function Science() {
             {/* Scientific equipment image */}
             <div className="relative w-full h-[400px] md:h-[500px] overflow-hidden rounded-2xl">
               <Image
-                src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=1200&q=80"
-                alt="Precision measurement equipment in laboratory"
+                src="https://images.unsplash.com/photo-1581093458791-9f3c3550f0e6?w=1200&q=80"
+                alt="Metrology laboratory with precision instruments"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"

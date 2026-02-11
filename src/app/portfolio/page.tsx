@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 const projects = [
@@ -11,6 +12,7 @@ const projects = [
     area: "250+ приборов",
     duration: "3 месяца",
     year: "2025",
+    image: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&q=80", // Industrial facility
   },
   {
     title: "Фармстандарт",
@@ -19,6 +21,7 @@ const projects = [
     area: "ISO 9001",
     duration: "4 месяца",
     year: "2024",
+    image: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80", // Pharmaceutical laboratory
   },
   {
     title: "ТГК-1",
@@ -27,6 +30,7 @@ const projects = [
     area: "1000+ счётчиков",
     duration: "6 месяцев",
     year: "2024",
+    image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=800&q=80", // Energy/electricity meters
   },
   {
     title: "Северсталь",
@@ -35,6 +39,7 @@ const projects = [
     area: "500+ приборов",
     duration: "2 месяца",
     year: "2024",
+    image: "https://images.unsplash.com/photo-1565071559227-20ab25b7685e?w=800&q=80", // Steel manufacturing
   },
   {
     title: "РЖД",
@@ -43,6 +48,7 @@ const projects = [
     area: "ТР ТС",
     duration: "5 месяцев",
     year: "2023",
+    image: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80", // Railway/trains
   },
   {
     title: "Биокад",
@@ -51,6 +57,7 @@ const projects = [
     area: "150+ единиц",
     duration: "1 месяц",
     year: "2023",
+    image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&q=80", // Laboratory equipment
   },
 ];
 
@@ -101,11 +108,17 @@ export default function PortfolioPage() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="bg-white dark:bg-dark-light rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
             >
-              {/* Placeholder image area */}
-              <div className="h-48 gradient-dark flex items-center justify-center">
-                <svg className="w-16 h-16 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              {/* Project image */}
+              <div className="relative h-48 overflow-hidden">
+                <Image
+                  src={project.image}
+                  alt={`${project.title} - ${project.category}`}
+                  fill
+                  className="object-cover transition-transform duration-300 hover:scale-110"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-dark/60 via-transparent to-transparent" />
               </div>
 
               <div className="p-6">
