@@ -2,6 +2,7 @@
 
 import { useSiteSettings } from "@/lib/SiteSettingsContext";
 import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 
@@ -23,7 +24,7 @@ interface HeaderProps {
 export default function Header({ onOpenModal }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { phone, email } = useSiteSettings();
+  const { phone, email: _email } = useSiteSettings();
   const telHref = `tel:+7${phone.replace(/\D/g, "").slice(1)}`;
 
   useEffect(() => {
@@ -102,11 +103,11 @@ export default function Header({ onOpenModal }: HeaderProps) {
 
       {/* Main nav */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2 w-[20%]">
+        <Link href="/" className="flex items-center gap-2 w-[20%]">
           <span className="text-white font-bold text-xl">
             ЦСМ - Центр Стандартизации и Метрологии
           </span>
-        </a>
+        </Link>
 
         {/* Desktop nav */}
         <nav className="hidden lg:flex items-center gap-8">

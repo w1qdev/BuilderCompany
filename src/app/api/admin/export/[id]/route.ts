@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Verify admin password
   const headerPassword = req.headers.get("x-admin-password");
@@ -15,7 +15,8 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const requestId = parseInt(params.id);
+  const { id } = await params;
+  const requestId = parseInt(id);
   if (isNaN(requestId)) {
     return NextResponse.json({ error: "Invalid request ID" }, { status: 400 });
   }

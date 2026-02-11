@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // PATCH update service (admin)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const password = req.headers.get("x-admin-password");
@@ -20,7 +20,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     const body = await req.json();
     const { title, description, price, image, category, isActive } = body;
 
@@ -49,7 +50,7 @@ export async function PATCH(
 // DELETE service (admin)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const password = req.headers.get("x-admin-password");
@@ -62,7 +63,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
 
     await prisma.service.delete({
       where: { id },

@@ -545,7 +545,7 @@ export default function ContactForm({
         <Checkbox
           id="needContract"
           checked={needContract}
-          onCheckedChange={setNeedContract}
+          onCheckedChange={(checked) => setNeedContract(checked === true)}
           className="mt-0.5"
         />
         <Label

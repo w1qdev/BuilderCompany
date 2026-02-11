@@ -36,7 +36,7 @@ export default function Calculator({ onOpenModal }: CalculatorProps) {
 
   const selectedService = serviceTypes.find((s) => s.id === service)!;
   const selectedUrgency = urgencyOptions.find((u) => u.id === urgency)!;
-  const totalPrice =
+  const _totalPrice =
     selectedService.pricePerUnit * quantity * selectedUrgency.multiplier;
 
   const formatPrice = (price: number) =>
