@@ -1,17 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import dynamic from "next/dynamic";
+import Image from "next/image";
 
-// Dynamic import to avoid SSR issues with Three.js
-const Atom3D = dynamic(() => import("./Atom3D"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[400px] md:h-[500px] flex items-center justify-center">
-      <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-    </div>
-  ),
-});
+// Temporarily disabled 3D atom due to React compatibility issues
+// TODO: Re-enable after React Three Fiber updates for React 19
+// const Atom3D = dynamic(() => import("./Atom3D"), {
+//   ssr: false,
+//   loading: () => (
+//     <div className="w-full h-[400px] md:h-[500px] flex items-center justify-center">
+//       <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+//     </div>
+//   ),
+// });
 
 interface Features {
   icon: string;
@@ -103,7 +104,30 @@ export default function Science() {
             {/* Glow effect */}
             <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
 
-            <Atom3D />
+            {/* Scientific equipment image */}
+            <div className="relative w-full h-[400px] md:h-[500px] overflow-hidden rounded-2xl">
+              <Image
+                src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=1200&q=80"
+                alt="Precision measurement equipment in laboratory"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority={false}
+              />
+              {/* Gradient overlay for better text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-dark/60 via-transparent to-transparent" />
+
+              {/* Optional: Add floating badge */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5 }}
+                className="absolute top-4 right-4 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20"
+              >
+                <span className="text-white text-sm font-semibold">Аккредитация</span>
+              </motion.div>
+            </div>
 
             {/* Interactive hint */}
             <motion.div
