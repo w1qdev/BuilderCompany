@@ -15,10 +15,10 @@ export default function Footer({ onOpenModal }: FooterProps) {
     <footer id="contacts" className="gradient-dark text-white">
       {/* CTA strip */}
       <div className="border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <h3 className="text-2xl sm:text-3xl font-extrabold mb-2">
-              Нужна <span className="text-gradient">сертификация?</span>
+              Нужна <span className="text-gradient">поверка?</span>
             </h3>
             <p className="text-white/60">
               Оставьте заявку и получите бесплатную консультацию
@@ -34,7 +34,7 @@ export default function Footer({ onOpenModal }: FooterProps) {
       </div>
 
       {/* Main footer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 py-12">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company */}
           <div>
@@ -44,7 +44,7 @@ export default function Footer({ onOpenModal }: FooterProps) {
               </span>
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
-              Аккредитованный центр сертификации с 2014 года. Полный спектр
+              Профессиональный центр метрологии с 2014 года. Полный спектр
               метрологических услуг для бизнеса и производства.
             </p>
           </div>
@@ -78,12 +78,9 @@ export default function Footer({ onOpenModal }: FooterProps) {
             <h4 className="font-bold text-lg mb-4">Услуги</h4>
             <ul className="space-y-2">
               {[
-                "Калибровка",
-                "Поверка",
-                "Сертификация",
-                "Декларирование",
-                "Испытания",
-                "Консультации",
+                "Калибровка СИ",
+                "Поверка СИ",
+                "Аттестация оборудования",
               ].map((s) => (
                 <li key={s}>
                   <a
@@ -188,7 +185,7 @@ export default function Footer({ onOpenModal }: FooterProps) {
 
       {/* Bottom bar */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-white/40 text-sm">
             &copy; {currentYear} ЦСМ. Все права защищены.
           </p>

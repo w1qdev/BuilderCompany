@@ -51,14 +51,14 @@ export default function Hero({ onOpenModal }: HeroProps) {
         style={isMobile ? undefined : { y: bottomCircleY }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-20 text-center">
+      <div className="relative z-10 max-w-8xl mx-auto px-4 sm:px-6 py-20 text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
           <span className="inline-block gradient-primary text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-            Аккредитованный центр аттестации
+            Центр стандартизации и метрологии
           </span>
         </motion.div>
 

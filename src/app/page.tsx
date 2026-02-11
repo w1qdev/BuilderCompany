@@ -34,7 +34,7 @@ export default function Home() {
         <Hero onOpenModal={openModal} />
         <Services />
         <Process />
-        <Science />
+        <Science onOpenModal={openModal} />
         <Delivery />
         <Payment />
         {/* <EquipmentShowcase /> */}

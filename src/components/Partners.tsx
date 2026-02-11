@@ -9,7 +9,7 @@ interface Partners {
 
 const partners: Partners[] = [
   { name: "Росстандарт", initials: "РС" },
-  { name: "Росаккредитация", initials: "РА" },
+  { name: "ВНИИОФИ", initials: "ВО" },
   { name: "ВНИИМ", initials: "ВМ" },
   { name: "ВНИИМС", initials: "ВС" },
   { name: "Fluke", initials: "FL" },
@@ -21,7 +21,7 @@ const partners: Partners[] = [
 export default function Partners() {
   return (
     <section id="partners" className="py-20 sm:py-28 dark:bg-dark">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}

@@ -31,7 +31,11 @@
       "Bash(npm outdated:*)",
       "Bash(ncu -u:*)",
       "Bash(git checkout:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(git commit:*)",
+      "Bash(ping:*)",
+      "Bash(sqlite3:*)",
+      "Bash(python -m json.tool:*)"
     ]
   }
 }

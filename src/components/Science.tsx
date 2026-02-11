@@ -1,18 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
-
-// Temporarily disabled 3D atom due to React compatibility issues
-// TODO: Re-enable after React Three Fiber updates for React 19
-// const Atom3D = dynamic(() => import("./Atom3D"), {
-//   ssr: false,
-//   loading: () => (
-//     <div className="w-full h-[400px] md:h-[500px] flex items-center justify-center">
-//       <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-//     </div>
-//   ),
-// });
 
 interface Features {
   icon: string;
@@ -24,21 +12,28 @@ const features: Features[] = [
   {
     icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
     title: "Высокая точность",
+    description: "Погрешность измерений не превышает 0,01%. Используем сертифицированное эталонное оборудование ведущих мировых производителей.",
   },
   {
     icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z",
     title: "Эталонное оборудование",
+    description: "Наша метрологическая лаборатория оснащена современными средствами измерений, аттестованными в соответствии с ГОСТ.",
   },
   {
     icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01",
     title: "Научный подход",
+    description: "Применяем научно обоснованные методики поверки и калибровки. Все процедуры выполняются строго по утвержденным методикам.",
   },
 ];
 
-export default function Science() {
+interface ScienceProps {
+  onOpenModal: () => void;
+}
+
+export default function Science({ onOpenModal }: ScienceProps) {
   return (
     <section className="py-20 sm:py-28 bg-gradient-to-b from-dark via-dark-light to-dark overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Text content */}
           <motion.div
@@ -84,76 +79,84 @@ export default function Science() {
                       />
                     </svg>
                   </div>
-                  <div className="flex flex-col w-full h-12 justify-center">
+                  <div className="flex flex-col justify-center">
                     <h3 className="text-white font-semibold mb-1">
                       {feature.title}
                     </h3>
+                    {feature.description && (
+                      <p className="text-white/60 text-sm leading-relaxed">
+                        {feature.description}
+                      </p>
+                    )}
                   </div>
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
-          {/* 3D Atom */}
+          {/* Right content - More text and CTA */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             className="relative"
           >
-            {/* Glow effect */}
-            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-2xl font-bold text-white">
+                  Профессиональная метрологическая лаборатория
+                </h3>
+                <p className="text-white/70 leading-relaxed">
+                  Наша метрологическая лаборатория оснащена современным
+                  оборудованием для проведения всех видов метрологических работ.
+                  Мы выполняем поверку и калибровку средств измерений
+                  в соответствии с требованиями ГОСТ.
+                </p>
+                <p className="text-white/70 leading-relaxed">
+                  Работаем с предприятиями всех форм собственности. Оформляем
+                  полный пакет документов по результатам проведенных работ
+                  с подробными протоколами измерений.
+                </p>
+              </div>
 
-            {/* Scientific equipment image */}
-            <div className="relative w-full h-[400px] md:h-[500px] overflow-hidden rounded-2xl">
-              <Image
-                src="https://images.unsplash.com/photo-1581093458791-9f3c3550f0e6?w=1200&q=80"
-                alt="Metrology laboratory with precision instruments"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority={false}
-              />
-              {/* Gradient overlay for better text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-dark/60 via-transparent to-transparent" />
+              <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 space-y-3">
+                <h4 className="text-white font-semibold flex items-center gap-2">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Что входит в услугу:
+                </h4>
+                <ul className="space-y-2 text-white/70 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Проведение измерений по аттестованным методикам</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Оформление свидетельств и протоколов</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Внесение результатов в федеральный реестр</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>Консультации по метрологическому обеспечению</span>
+                  </li>
+                </ul>
+              </div>
 
-              {/* Optional: Add floating badge */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.5 }}
-                className="absolute top-4 right-4 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20"
+              <button
+                onClick={onOpenModal}
+                className="w-full gradient-primary text-white px-6 py-4 rounded-2xl font-semibold hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
               >
-                <span className="text-white text-sm font-semibold">Аккредитация</span>
-              </motion.div>
+                Получить консультацию
+              </button>
             </div>
 
-            {/* Interactive hint */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 1 }}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2"
-            >
-              <svg
-                className="w-4 h-4 text-white/60 animate-pulse"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
-                />
-              </svg>
-              <span className="text-white/60 text-xs">
-                Перетащите для вращения
-              </span>
-            </motion.div>
+            {/* Decorative elements */}
+            <div className="absolute -top-4 -right-4 w-24 h-24 gradient-primary rounded-2xl opacity-20 blur-2xl" />
+            <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-primary-light/20 rounded-full blur-3xl" />
           </motion.div>
         </div>
       </div>

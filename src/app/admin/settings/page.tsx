@@ -279,7 +279,7 @@ export default function AdminSettingsPage() {
                 <label className="text-xs text-neutral mb-1.5 block font-medium">Телефон</label>
                 <Input
                   type="text"
-                  placeholder="8 (800) 123-45-67"
+                  placeholder="+7 (966) 730-30-03"
                   value={settings.companyPhone}
                   onChange={(e) => setSettings((prev) => ({ ...prev, companyPhone: e.target.value }))}
                 />
@@ -288,7 +288,7 @@ export default function AdminSettingsPage() {
                 <label className="text-xs text-neutral mb-1.5 block font-medium">Email</label>
                 <Input
                   type="email"
-                  placeholder="info@company.com"
+                  placeholder="zakaz@csm-center.ru"
                   value={settings.companyEmail}
                   onChange={(e) => setSettings((prev) => ({ ...prev, companyEmail: e.target.value }))}
                 />
@@ -389,7 +389,7 @@ export default function AdminSettingsPage() {
     <div className="min-h-screen bg-warm-bg">
       {/* Header */}
       <div className="gradient-dark text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <a href="/admin" className="flex items-center gap-2">
               <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">

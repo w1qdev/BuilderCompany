@@ -66,6 +66,9 @@ const config: Config = {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
+      maxWidth: {
+        '8xl': '1380px',
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

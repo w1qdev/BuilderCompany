@@ -551,7 +551,7 @@ export default function AdminPage() {
       <div className="min-h-screen bg-warm-bg">
         {/* Header */}
         <div className="gradient-dark text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="max-w-8xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
                 <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
@@ -597,7 +597,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {statsCards.map((card) => (

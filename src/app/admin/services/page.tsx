@@ -174,7 +174,7 @@ export default function AdminServicesPage() {
     <div className="min-h-screen bg-warm-bg">
       <Toaster position="top-center" />
       <div className="gradient-dark text-white py-4 px-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="max-w-8xl mx-auto flex justify-between items-center">
           <div>
             <a href="/admin" className="text-white/60 hover:text-white text-sm">← Назад к админке</a>
             <h1 className="text-xl font-bold mt-1">Управление услугами</h1>
@@ -188,7 +188,7 @@ export default function AdminServicesPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-8xl mx-auto px-6 py-8">
         {showForm && (
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 mb-6 shadow-lg">
             <h2 className="text-xl font-bold mb-4">

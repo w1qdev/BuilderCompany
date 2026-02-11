@@ -124,7 +124,7 @@ export default function AccuracyPage() {
     <div className="min-h-screen bg-warm-bg dark:bg-dark">
       {/* Header */}
       <div className="gradient-dark text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

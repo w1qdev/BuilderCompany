@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = 'force-dynamic';
 
 const DEFAULTS: Record<string, string> = {
-  companyPhone: "8 (800) 123-45-67",
-  companyEmail: "info@csm-center.ru",
+  companyPhone: "+7 (966) 730-30-03",
+  companyEmail: "zakaz@csm-center.ru",
   companyAddress: "г. Москва, ул. Метрологическая, д. 10, офис 205",
 };
 

@@ -27,13 +27,19 @@ const advantages = [
     icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
     title: "Полный пакет документов",
     description:
-      "Оформляем свидетельства о поверке, сертификаты калибровки, протоколы испытаний.",
+      "Оформляем свидетельства о поверке, сертификаты калибровки, протоколы аттестации.",
   },
   {
     icon: "M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z",
     title: "Выезд к клиенту",
     description:
       "Проводим поверку и калибровку на территории заказчика по всей России.",
+  },
+  {
+    icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+    title: "Прозрачное ценообразование",
+    description:
+      "Фиксированные цены без скрытых доплат. Предварительный расчет стоимости до начала работ.",
   },
 ];
 
@@ -61,7 +67,7 @@ export default function About() {
       className="py-20 sm:py-28 bg-warm-light dark:bg-dark"
       ref={sectionRef}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6">
         {/* About text block */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-20 overflow-hidden">
           <motion.div
@@ -90,19 +96,22 @@ export default function About() {
           >
             <div className="bg-gradient-to-br from-dark to-dark-light rounded-3xl p-8 sm:p-10">
               <div className="grid grid-cols-2 gap-6">
-                {[{ target: 10, suffix: "+", label: "Лет на рынке" }].map(
-                  (stat, i) => (
-                    <div key={i} className="text-center">
-                      <div className="text-3xl sm:text-4xl font-extrabold text-primary mb-1">
-                        <AnimatedCounter
-                          target={stat.target}
-                          suffix={stat.suffix}
-                        />
-                      </div>
-                      <div className="text-white/60 text-sm">{stat.label}</div>
+                {[
+                  { target: 10, suffix: "+", label: "Лет на рынке" },
+                  { target: 5000, suffix: "+", label: "Поверок выдано" },
+                  { target: 500, suffix: "+", label: "Довольных клиентов" },
+                  { target: 100, suffix: "%", label: "Качество работы" },
+                ].map((stat, i) => (
+                  <div key={i} className="text-center">
+                    <div className="text-3xl sm:text-4xl font-extrabold text-primary mb-1">
+                      <AnimatedCounter
+                        target={stat.target}
+                        suffix={stat.suffix}
+                      />
                     </div>
-                  ),
-                )}
+                    <div className="text-white/60 text-sm">{stat.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
             <motion.div

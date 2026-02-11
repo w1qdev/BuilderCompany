@@ -41,7 +41,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
     >
       {/* Top bar */}
       <div className="border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between text-sm text-white/70">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between text-sm text-white/70">
           <div className="flex items-center gap-4 sm:gap-6">
             <a
               href={telHref}
@@ -102,7 +102,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
       </div>
 
       {/* Main nav */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 w-[20%]">
           <span className="text-white font-bold text-xl">
             ЦСМ - Центр Стандартизации и Метрологии
@@ -171,7 +171,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
             exit={{ height: 0, opacity: 0 }}
             className="lg:hidden overflow-hidden bg-dark-light"
           >
-            <nav className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-3">
+            <nav className="max-w-8xl mx-auto px-4 py-4 flex flex-col gap-3">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
