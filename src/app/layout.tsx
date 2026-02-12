@@ -68,6 +68,13 @@ const jsonLd = {
   url: SITE_URL,
   telephone: "+7 (966) 730-30-03",
   email: "zakaz@csm-center.ru",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "ул. Маневровая, 9",
+    addressLocality: "Екатеринбург",
+    addressRegion: "Свердловская область",
+    addressCountry: "RU",
+  },
   priceRange: "₽₽",
   serviceArea: {
     "@type": "Country",

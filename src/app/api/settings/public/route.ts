@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 const DEFAULTS: Record<string, string> = {
   companyPhone: "+7 (966) 730-30-03",
   companyEmail: "zakaz@csm-center.ru",
-  companyAddress: "г. Москва, ул. Метрологическая, д. 10, офис 205",
+  companyAddress: "г. Екатеринбург, ул. Маневровая, 9",
 };
 
 export async function GET() {

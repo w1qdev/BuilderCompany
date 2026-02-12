@@ -42,8 +42,9 @@ export async function GET(
   const filter = req.nextUrl.searchParams.get("filter"); // поверка | аттестация | калибровка
   let filteredItems = request.items || [];
   if (filter && filteredItems.length > 0) {
+    const filterLower = filter.toLowerCase();
     filteredItems = filteredItems.filter((item) =>
-      item.poverk?.toLowerCase().includes(filter.toLowerCase())
+      item.service.toLowerCase().includes(filterLower)
     );
   }
 

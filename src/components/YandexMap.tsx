@@ -16,9 +16,9 @@ interface YandexMapProps {
 }
 
 export default function YandexMap({
-  center = [55.751244, 37.618423], // Москва по умолчанию
+  center = [56.838011, 60.597474], // Екатеринбург
   zoom = 16,
-  address = "г. Москва, ул. Метрологическая, д. 10",
+  address = "г. Екатеринбург, ул. Маневровая, 9",
 }: YandexMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

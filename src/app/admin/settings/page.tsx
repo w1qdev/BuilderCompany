@@ -338,7 +338,7 @@ export default function AdminSettingsPage() {
                 <label className="text-xs text-neutral mb-1.5 block font-medium">Адрес</label>
                 <Input
                   type="text"
-                  placeholder="г. Москва, ул. Примерная, д. 1"
+                  placeholder="г. Екатеринбург, ул. Маневровая, 9"
                   value={settings.companyAddress}
                   onChange={(e) => setSettings((prev) => ({ ...prev, companyAddress: e.target.value }))}
                 />

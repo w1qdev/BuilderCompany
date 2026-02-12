@@ -298,7 +298,6 @@ export default function Services() {
                 <button
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
-                  disabled={loading}
                   className={`relative px-5 py-3 text-sm font-medium transition-all whitespace-nowrap ${
                     activeTab === tab.id
                       ? "text-primary"
