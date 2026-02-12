@@ -4,6 +4,7 @@ import { useSiteSettings } from "@/lib/SiteSettingsContext";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
 const navLinks = [
@@ -102,9 +103,10 @@ export default function Header({ onOpenModal }: HeaderProps) {
 
       {/* Main nav */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <span className="text-white font-bold text-xl whitespace-nowrap">
-            ЦСМ - Центр Стандартизации и Метрологии
+        <Link href="/" className="flex items-center gap-2 shrink-0 text-white">
+          <Logo size="md" />
+          <span className="font-semibold text-sm whitespace-nowrap hidden xl:inline">
+            Центр Стандартизации и Метрологии
           </span>
         </Link>
 

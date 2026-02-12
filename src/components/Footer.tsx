@@ -1,6 +1,7 @@
 "use client";
 
 import { useSiteSettings } from "@/lib/SiteSettingsContext";
+import Logo from "./Logo";
 
 interface FooterProps {
   onOpenModal: () => void;
@@ -39,8 +40,9 @@ export default function Footer({ onOpenModal }: FooterProps) {
           {/* Company */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="font-bold text-xl">
-                ЦСМ «Центр Стандартизации и Метрологии»
+              <Logo size="lg" />
+              <span className="font-semibold text-sm text-white/80">
+                Центр Стандартизации и Метрологии
               </span>
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
