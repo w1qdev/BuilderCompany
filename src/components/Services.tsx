@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, Search, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Loader2, Search, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Service {
   id: number;
@@ -37,7 +37,8 @@ const tabs: Tab[] = [
 const tabContent: Record<string, TabContent> = {
   "1": {
     title: "Аттестация испытательного оборудования",
-    description: "Аттестация испытательного оборудования — это комплексная процедура оценки технического состояния и подтверждения соответствия оборудования установленным требованиям. Мы проводим полный цикл аттестационных испытаний с применением современных эталонных средств измерений и в строгом соответствии с требованиями ГОСТ Р 8.568-2017.",
+    description:
+      "Аттестация испытательного оборудования — это комплексная процедура оценки технического состояния и подтверждения соответствия оборудования установленным требованиям. Мы проводим полный цикл аттестационных испытаний с применением современных эталонных средств измерений и в строгом соответствии с требованиями ГОСТ Р 8.568-2017.",
     features: [
       "Аттестация прессов, разрывных машин и стендов",
       "Оценка температурного, климатического и механического оборудования",
@@ -54,7 +55,8 @@ const tabContent: Record<string, TabContent> = {
   },
   "2": {
     title: "Поверка измерителей электрических величин",
-    description: "Поверка измерителей электрических величин — обязательная метрологическая процедура для средств измерений напряжения, тока, сопротивления, мощности и других электрических параметров. Наша лаборатория оснащена высокоточными калибраторами и эталонами класса точности 0,01-0,05, что позволяет проводить поверку приборов любой сложности.",
+    description:
+      "Поверка измерителей электрических величин — обязательная метрологическая процедура для средств измерений напряжения, тока, сопротивления, мощности и других электрических параметров. Наша лаборатория оснащена высокоточными калибраторами и эталонами класса точности 0,01-0,05, что позволяет проводить поверку приборов любой сложности.",
     features: [
       "Поверка мультиметров, осциллографов и анализаторов качества электроэнергии",
       "Поверка измерителей сопротивления изоляции (мегаомметров)",
@@ -71,7 +73,8 @@ const tabContent: Record<string, TabContent> = {
   },
   "3": {
     title: "Поверка систем испытательных",
-    description: "Поверка испытательных систем включает метрологическую оценку сложных измерительно-вычислительных комплексов, применяемых для контроля качества продукции. Мы проводим поверку систем любой конфигурации — от простых измерительных установок до автоматизированных испытательных комплексов с компьютерным управлением.",
+    description:
+      "Поверка испытательных систем включает метрологическую оценку сложных измерительно-вычислительных комплексов, применяемых для контроля качества продукции. Мы проводим поверку систем любой конфигурации — от простых измерительных установок до автоматизированных испытательных комплексов с компьютерным управлением.",
     features: [
       "Поверка систем для механических испытаний (прочность, деформация, усилие)",
       "Метрологическая оценка систем контроля параметров окружающей среды",
@@ -88,7 +91,8 @@ const tabContent: Record<string, TabContent> = {
   },
   "4": {
     title: "Поверка средств измерений",
-    description: "Поверка средств измерений — процедура определения и подтверждения соответствия СИ установленным метрологическим требованиям. Мы проводим поверку всех типов средств измерений в соответствии с утвержденными методиками поверки. Наша лаборатория располагает современным эталонным оборудованием для поверки механических, тепловых, оптических и других видов СИ.",
+    description:
+      "Поверка средств измерений — процедура определения и подтверждения соответствия СИ установленным метрологическим требованиям. Мы проводим поверку всех типов средств измерений в соответствии с утвержденными методиками поверки. Наша лаборатория располагает современным эталонным оборудованием для поверки механических, тепловых, оптических и других видов СИ.",
     features: [
       "Поверка манометров, термометров, гигрометров",
       "Поверка весов, динамометров, силоизмерительных машин",
@@ -105,7 +109,8 @@ const tabContent: Record<string, TabContent> = {
   },
   "5": {
     title: "Калибровка средств измерений",
-    description: "Калибровка средств измерений — добровольная процедура, направленная на определение и документирование действительных метрологических характеристик СИ. В отличие от поверки, калибровка не требует обязательного внесения в реестр, но обеспечивает прослеживаемость измерений к национальным эталонам. Мы выполняем калибровку в соответствии с требованиями ISO/IEC 17025.",
+    description:
+      "Калибровка средств измерений — добровольная процедура, направленная на определение и документирование действительных метрологических характеристик СИ. В отличие от поверки, калибровка не требует обязательного внесения в реестр, но обеспечивает прослеживаемость измерений к национальным эталонам.",
     features: [
       "Калибровка лабораторных весов и аналитических приборов",
       "Калибровка технологических датчиков и преобразователей",
@@ -133,6 +138,35 @@ export default function Services() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
   const [showFilters] = useState(false);
+
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 2);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 2);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const el = tabsRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [checkScroll]);
+
+  const scrollTabs = (direction: "left" | "right") => {
+    const el = tabsRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction === "left" ? -200 : 200, behavior: "smooth" });
+  };
 
   const [services, setServices] = useState<Service[]>([]);
   const [total, setTotal] = useState(0);
@@ -245,23 +279,53 @@ export default function Services() {
         </motion.div>
 
         {/* Tabs */}
-        <div className="flex justify-center mb-8 overflow-x-auto">
-          <div className="inline-flex bg-white dark:bg-dark-light rounded-2xl p-1.5 shadow-lg flex-wrap gap-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                disabled={loading}
-                className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? "gradient-primary text-white shadow-md"
-                    : "text-neutral dark:text-white/60 hover:text-dark dark:hover:text-white"
-                } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                {tab.label}
-              </button>
-            ))}
+        <div className="relative mb-8 flex items-center gap-1">
+          {canScrollLeft && (
+            <button
+              onClick={() => scrollTabs("left")}
+              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-dark-light shadow text-neutral dark:text-white/60 hover:text-dark dark:hover:text-white transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+
+          <div
+            ref={tabsRef}
+            className="overflow-x-auto scrollbar-hide flex-1"
+          >
+            <div className="flex gap-1 min-w-max border-b border-gray-200 dark:border-white/10">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  disabled={loading}
+                  className={`relative px-5 py-3 text-sm font-medium transition-all whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? "text-primary"
+                      : "text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/80"
+                  } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {tab.label}
+                  {activeTab === tab.id && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {canScrollRight && (
+            <button
+              onClick={() => scrollTabs("right")}
+              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-dark-light shadow text-neutral dark:text-white/60 hover:text-dark dark:hover:text-white transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Tab Content Description */}
@@ -286,8 +350,18 @@ export default function Services() {
                 {/* Features */}
                 <div>
                   <h4 className="flex items-center gap-2 text-sm font-bold text-dark dark:text-white mb-4 uppercase tracking-wider">
-                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    <svg
+                      className="w-5 h-5 text-primary"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
                     </svg>
                     Что мы выполняем
                   </h4>
@@ -295,8 +369,18 @@ export default function Services() {
                     {tabContent[activeTab].features.map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-3">
                         <span className="mt-1 flex-shrink-0 w-5 h-5 gradient-primary rounded-full flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                         </span>
                         <span className="text-sm text-neutral dark:text-white/70 leading-relaxed">
@@ -310,8 +394,18 @@ export default function Services() {
                 {/* Benefits */}
                 <div>
                   <h4 className="flex items-center gap-2 text-sm font-bold text-dark dark:text-white mb-4 uppercase tracking-wider">
-                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-5 h-5 text-primary"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                     Преимущества для вас
                   </h4>
@@ -319,8 +413,16 @@ export default function Services() {
                     {tabContent[activeTab].benefits.map((benefit, idx) => (
                       <li key={idx} className="flex items-start gap-3">
                         <span className="mt-1 flex-shrink-0 w-5 h-5 bg-green-500/20 dark:bg-green-500/30 rounded-full flex items-center justify-center">
-                          <svg className="w-3 h-3 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <svg
+                            className="w-3 h-3 text-green-600 dark:text-green-400"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         </span>
                         <span className="text-sm text-neutral dark:text-white/70 leading-relaxed">
@@ -335,15 +437,26 @@ export default function Services() {
               {/* CTA */}
               <div className="mt-8 pt-6 border-t border-gray-200 dark:border-white/10">
                 <p className="text-center text-sm text-neutral dark:text-white/60 mb-4">
-                  Нужна консультация по услугам этой категории? Свяжитесь с нашими специалистами
+                  Нужна консультация по услугам этой категории? Свяжитесь с
+                  нашими специалистами
                 </p>
                 <div className="flex justify-center">
                   <a
                     href="#calculator"
                     className="inline-flex items-center gap-2 gradient-primary text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-105"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
                     </svg>
                     Получить консультацию
                   </a>
