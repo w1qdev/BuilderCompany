@@ -9,13 +9,14 @@ interface Settings {
   emailNotifyAdmin: boolean;
   emailNotifyCustomer: boolean;
   telegramNotify: boolean;
+  maxNotify: boolean;
   notifyEmail: string;
   companyPhone: string;
   companyEmail: string;
   companyAddress: string;
 }
 
-type TabId = "email" | "confirmation" | "telegram" | "contacts" | "security";
+type TabId = "email" | "confirmation" | "telegram" | "max" | "contacts" | "security";
 
 const tabs = [
   {
@@ -46,6 +47,15 @@ const tabs = [
     ),
   },
   {
+    id: "max" as const,
+    label: "MAX",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+      </svg>
+    ),
+  },
+  {
     id: "contacts" as const,
     label: "Контакты",
     icon: (
@@ -72,6 +82,7 @@ export default function AdminSettingsPage() {
     emailNotifyAdmin: true,
     emailNotifyCustomer: true,
     telegramNotify: true,
+    maxNotify: false,
     notifyEmail: "",
     companyPhone: "",
     companyEmail: "",
@@ -123,7 +134,7 @@ export default function AdminSettingsPage() {
     [password]
   );
 
-  const toggleSetting = (key: "emailNotifyAdmin" | "emailNotifyCustomer" | "telegramNotify") => {
+  const toggleSetting = (key: "emailNotifyAdmin" | "emailNotifyCustomer" | "telegramNotify" | "maxNotify") => {
     const updated = { ...settings, [key]: !settings[key] };
     setSettings(updated);
     saveSettings(updated);
@@ -264,6 +275,35 @@ export default function AdminSettingsPage() {
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.telegramNotify ? "translate-x-5" : "translate-x-0"}`} />
                 </button>
               </div>
+            </div>
+          </div>
+        );
+
+      case "max":
+        return (
+          <div className="max-w-lg">
+            <h2 className="text-xl font-bold text-dark mb-1">MAX уведомления</h2>
+            <p className="text-sm text-neutral mb-8">
+              Отправка уведомлений о новых заявках в мессенджер MAX.
+            </p>
+            <div className="bg-warm-bg rounded-2xl p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-sm font-semibold text-dark">Уведомления в MAX</div>
+                  <div className="text-xs text-neutral mt-0.5">Отправлять сообщение в чат бота MAX</div>
+                </div>
+                <button
+                  onClick={() => toggleSetting("maxNotify")}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.maxNotify ? "bg-primary" : "bg-gray-300"}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.maxNotify ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+            </div>
+            <div className="mt-6 p-4 bg-amber-50 rounded-xl">
+              <p className="text-xs text-amber-700">
+                Для работы уведомлений задайте переменные окружения <code className="bg-amber-100 px-1 rounded">MAX_BOT_TOKEN</code> и <code className="bg-amber-100 px-1 rounded">MAX_CHAT_ID</code> на сервере.
+              </p>
             </div>
           </div>
         );

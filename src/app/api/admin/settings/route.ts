@@ -4,7 +4,7 @@ import { verifyAdminPassword } from "@/lib/adminAuth";
 
 export const dynamic = 'force-dynamic';
 
-const BOOL_KEYS = ["emailNotifyAdmin", "emailNotifyCustomer", "telegramNotify"];
+const BOOL_KEYS = ["emailNotifyAdmin", "emailNotifyCustomer", "telegramNotify", "maxNotify"];
 const STRING_KEYS = ["notifyEmail", "companyPhone", "companyEmail", "companyAddress"];
 
 export async function GET(req: NextRequest) {

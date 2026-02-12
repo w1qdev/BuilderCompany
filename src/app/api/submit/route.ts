@@ -2,6 +2,7 @@ import { sendConfirmationEmail, sendEmailNotification } from "@/lib/email";
 import { JWT_SECRET } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { getIO } from "@/lib/socket";
+import { sendMaxNotification } from "@/lib/max";
 import { sendTelegramNotification } from "@/lib/telegram";
 
 export const dynamic = 'force-dynamic';
@@ -138,6 +139,7 @@ export async function POST(req: NextRequest) {
             "emailNotifyCustomer",
             "notifyEmail",
             "telegramNotify",
+            "maxNotify",
           ],
         },
       },
@@ -167,6 +169,18 @@ export async function POST(req: NextRequest) {
     }
     if (isEnabled("emailNotifyCustomer")) {
       notifications.push(sendConfirmationEmail({ name, email, items: serviceItems }));
+    }
+    if (isEnabled("maxNotify")) {
+      notifications.push(
+        sendMaxNotification({
+          name,
+          phone,
+          email,
+          company,
+          message,
+          items: serviceItems,
+        }),
+      );
     }
     Promise.allSettled(notifications).catch(console.error);
 
