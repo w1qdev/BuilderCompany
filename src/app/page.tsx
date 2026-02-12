@@ -10,7 +10,6 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import Modal from "@/components/Modal";
-import Partners from "@/components/Partners";
 import Payment from "@/components/Payment";
 import Portfolio from "@/components/Portfolio";
 import Process from "@/components/Process";
@@ -44,7 +43,6 @@ export default function Home() {
         <Portfolio />
         <Testimonials />
         <FAQ />
-        <Partners />
       </main>
       <Footer onOpenModal={openModal} />
       <Modal isOpen={modalOpen} onClose={closeModal} />

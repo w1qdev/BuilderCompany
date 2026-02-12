@@ -15,7 +15,6 @@ const sections = [
       { href: "/#services", label: "Услуги" },
       { href: "/#calculator", label: "Калькулятор стоимости" },
       { href: "/#about", label: "О компании" },
-      { href: "/#partners", label: "Партнёры" },
       { href: "/#contacts", label: "Контакты (на главной)" },
     ],
   },

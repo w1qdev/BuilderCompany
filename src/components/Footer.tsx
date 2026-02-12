@@ -58,7 +58,6 @@ export default function Footer({ onOpenModal }: FooterProps) {
                 { href: "#calculator", label: "Калькулятор" },
                 { href: "/portfolio", label: "Портфолио" },
                 { href: "#about", label: "О компании" },
-                { href: "#partners", label: "Партнёры" },
                 { href: "/contacts", label: "Контакты" },
               ].map((link) => (
                 <li key={link.href}>
