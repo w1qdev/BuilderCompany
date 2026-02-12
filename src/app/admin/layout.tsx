@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdminThemeForcer } from "./theme-forcer";
 
 export const metadata: Metadata = {
   title: "Админ-панель",
@@ -13,5 +14,10 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <AdminThemeForcer />
+      {children}
+    </>
+  );
 }
