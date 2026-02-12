@@ -45,6 +45,7 @@ interface AdminRequest {
   phone: string;
   email: string;
   company: string | null;
+  inn: string | null;
   service: string;
   object: string | null;
   fabricNumber: string | null;
@@ -896,6 +897,7 @@ export default function AdminPage() {
                             <div>{r.name}</div>
                             <div>{r.phone}</div>
                             <div>{r.email}</div>
+                            {r.inn && <div>ИНН {r.inn}</div>}
                           </div>
                         </div>
                         {r.items && r.items.length > 0 ? (
@@ -1231,6 +1233,7 @@ export default function AdminPage() {
                                   <div className="text-sm text-dark">
                                     {r.name} &middot; {r.phone} &middot;{" "}
                                     {r.email}
+                                    {r.inn && <> &middot; ИНН {r.inn}</>}
                                   </div>
                                 </div>
                                 {r.items && r.items.length > 0 ? (

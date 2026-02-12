@@ -69,6 +69,7 @@ type FormFields = {
   phone: string;
   email: string;
   company: string;
+  inn: string;
   message: string;
 };
 
@@ -102,6 +103,7 @@ export default function ContactForm({
     phone: initialValues?.phone || "",
     email: initialValues?.email || "",
     company: "",
+    inn: "",
     message: "",
   });
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([
@@ -232,6 +234,7 @@ export default function ContactForm({
         phone: "",
         email: "",
         company: "",
+        inn: "",
         message: "",
       });
       setServiceItems([createServiceItem()]);
@@ -282,33 +285,33 @@ export default function ContactForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid sm:grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="contact-name">Ваше имя</Label>
+          <Label htmlFor="contact-name">Ваше имя <span className="text-red-500">*</span></Label>
           <Input
             id="contact-name"
             type="text"
-            placeholder="Ваше имя *"
+            placeholder="Иванов Иван"
             required
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="contact-phone">Телефон</Label>
+          <Label htmlFor="contact-phone">Телефон <span className="text-red-500">*</span></Label>
           <Input
             id="contact-phone"
             type="tel"
-            placeholder="Телефон *"
+            placeholder="+7 (___) ___-__-__"
             required
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="contact-email">Email</Label>
+          <Label htmlFor="contact-email">Email <span className="text-red-500">*</span></Label>
           <Input
             id="contact-email"
             type="email"
-            placeholder="Email *"
+            placeholder="email@example.com"
             required
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -316,15 +319,28 @@ export default function ContactForm({
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="contact-company">Наименование организации</Label>
-        <Input
-          id="contact-company"
-          type="text"
-          placeholder="ООО «Название компании»"
-          value={form.company}
-          onChange={(e) => setForm({ ...form, company: e.target.value })}
-        />
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="contact-company">Наименование организации</Label>
+          <Input
+            id="contact-company"
+            type="text"
+            placeholder="ООО «Название компании»"
+            value={form.company}
+            onChange={(e) => setForm({ ...form, company: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="contact-inn">ИНН</Label>
+          <Input
+            id="contact-inn"
+            type="text"
+            placeholder="1234567890"
+            maxLength={12}
+            value={form.inn}
+            onChange={(e) => setForm({ ...form, inn: e.target.value.replace(/\D/g, "") })}
+          />
+        </div>
       </div>
 
       {/* Service Items */}
@@ -364,7 +380,7 @@ export default function ContactForm({
 
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Услуга</Label>
+                <Label>Услуга <span className="text-red-500">*</span></Label>
                 <Select
                   value={item.service}
                   onValueChange={(value) => updateItem(item.id, { service: value })}
@@ -427,7 +443,7 @@ export default function ContactForm({
 
               {item.service === "Поверка СИ" && (
                 <div className="space-y-1.5">
-                  <Label>Номер реестра (обязательно)</Label>
+                  <Label>Номер реестра <span className="text-red-500">*</span></Label>
                   <Input
                     type="text"
                     placeholder="12345-12"

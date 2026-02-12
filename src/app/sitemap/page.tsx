@@ -16,7 +16,7 @@ const sections = [
     title: "Основные страницы",
     links: [
       { href: "/", label: "Главная" },
-      { href: "/portfolio", label: "Портфолио" },
+      { href: "/#portfolio", label: "Портфолио" },
       { href: "/contacts", label: "Контакты" },
     ],
   },

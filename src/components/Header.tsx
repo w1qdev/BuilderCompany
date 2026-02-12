@@ -11,7 +11,7 @@ const navLinks = [
   { href: "#services", label: "Услуги" },
   { href: "#payment", label: "Оплата" },
   { href: "#calculator", label: "Калькулятор" },
-  { href: "/portfolio", label: "Портфолио" },
+  { href: "#portfolio", label: "Портфолио" },
   { href: "#about", label: "О компании" },
   { href: "/contacts", label: "Контакты" },
   // { href: "/dashboard", label: "Личный кабинет" },

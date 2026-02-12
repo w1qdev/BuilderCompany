@@ -36,6 +36,7 @@ export async function GET(
 
   // Determine organization name: prefer request company, then user company, fallback to name
   const organizationName = request.company || request.user?.company || request.user?.name || request.name;
+  const innValue = request.inn || "";
 
   // Filter items by service type if filter parameter is provided
   const filter = req.nextUrl.searchParams.get("filter"); // поверка | аттестация | калибровка
@@ -100,18 +101,25 @@ export async function GET(
   // Set header row height
   headerRow.height = 60;
 
+  // Helper: resolve the "calibration/attestation/verification" column
+  const resolveServiceType = (service: string, poverk: string | null) => {
+    if (service === "Поверка СИ" && poverk) return `Поверка ${poverk.toLowerCase()}`;
+    if (service === "Поверка СИ") return "Поверка";
+    return service; // "Калибровка", "Аттестация", "Другое", etc.
+  };
+
   // Add data rows from items
   if (filteredItems.length > 0) {
     filteredItems.forEach((item, index) => {
       const dataRow = worksheet.addRow([
         index + 1,
-        organizationName, // фирма-владелец (берём из компании пользователя или имени заявки)
-        item.poverk || "", // тип поверки
+        organizationName,
+        resolveServiceType(item.service, item.poverk),
         item.object || "", // название оборудования
         item.fabricNumber || "", // заводской номер
         item.registry || "", // реестр
         request.clientPrice || "", // согласованная стоимость
-        organizationName, // на какую фирму выставлять счёт
+        innValue ? `${organizationName}, ИНН ${innValue}` : organizationName, // на какую фирму выставлять счёт
         request.message || "" // комментарии
       ]);
 
@@ -131,12 +139,12 @@ export async function GET(
     const dataRow = worksheet.addRow([
       1,
       organizationName,
-      request.poverk || "",
+      resolveServiceType(request.service, request.poverk),
       request.object || "",
       request.fabricNumber || "",
       request.registry || "",
       request.clientPrice || "",
-      organizationName,
+      innValue ? `${organizationName}, ИНН ${innValue}` : organizationName,
       request.message || ""
     ]);
 

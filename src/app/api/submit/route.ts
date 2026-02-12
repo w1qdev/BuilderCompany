@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   let uploadedFilePath: string | null = null;
   try {
     const body = await req.json();
-    const { name, phone, email, company, message, fileName, filePath, items, needContract } = body;
+    const { name, phone, email, company, inn, message, fileName, filePath, items, needContract } = body;
     if (filePath) {
       uploadedFilePath = path.join(
         process.cwd(),
@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
         phone,
         email,
         company: company || null,
+        inn: inn || null,
         service: serviceJoined,
         object: firstItem.object || null,
         fabricNumber: firstItem.fabricNumber || null,
@@ -157,6 +158,8 @@ export async function POST(req: NextRequest) {
           name,
           phone,
           email,
+          company,
+          inn,
           message,
           items: serviceItems,
         }),
@@ -164,11 +167,23 @@ export async function POST(req: NextRequest) {
     }
     if (isEnabled("emailNotifyAdmin")) {
       notifications.push(
-        sendEmailNotification({ name, phone, email, message, items: serviceItems }),
+        sendEmailNotification({
+          name,
+          phone,
+          email,
+          company,
+          inn,
+          message,
+          needContract,
+          fileName,
+          filePath,
+          requestId: request.id,
+          items: serviceItems,
+        }),
       );
     }
     if (isEnabled("emailNotifyCustomer")) {
-      notifications.push(sendConfirmationEmail({ name, email, items: serviceItems }));
+      notifications.push(sendConfirmationEmail({ name, email, requestId: request.id, items: serviceItems }));
     }
     if (isEnabled("maxNotify")) {
       notifications.push(
@@ -177,6 +192,7 @@ export async function POST(req: NextRequest) {
           phone,
           email,
           company,
+          inn,
           message,
           items: serviceItems,
         }),

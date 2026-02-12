@@ -13,6 +13,7 @@ interface SendMaxNotification {
   phone: string;
   email: string;
   company?: string;
+  inn?: string;
   message?: string;
   items: NotificationItem[];
 }
@@ -46,6 +47,7 @@ export async function sendMaxNotification(data: SendMaxNotification) {
     `**Телефон:** ${data.phone}`,
     `**Email:** ${data.email}`,
     data.company ? `**Организация:** ${data.company}` : "",
+    data.inn ? `**ИНН:** ${data.inn}` : "",
     "",
     `**Позиций:** ${data.items.length}`,
     itemsText,

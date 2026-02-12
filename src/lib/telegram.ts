@@ -14,6 +14,8 @@ interface SendTelegramNotification {
   name: string;
   phone: string;
   email: string;
+  company?: string;
+  inn?: string;
   message?: string;
   items: NotificationItem[];
 }
@@ -42,6 +44,8 @@ export async function sendTelegramNotification(data: SendTelegramNotification) {
     "📋 *Новая заявка с сайта*",
     "",
     `👤 *Имя:* ${escapeTelegram(data.name)}`,
+    data.company ? `🏢 *Организация:* ${escapeTelegram(data.company)}` : "",
+    data.inn ? `📄 *ИНН:* ${escapeTelegram(data.inn)}` : "",
     `📞 *Телефон:* ${escapeTelegram(data.phone)}`,
     `📧 *Email:* ${escapeTelegram(data.email)}`,
     "",

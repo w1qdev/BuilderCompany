@@ -29,6 +29,7 @@ model Request {
   phone         String
   email         String
   company       String?
+  inn           String?
   service       String
   object        String?
   fabricNumber  String?
