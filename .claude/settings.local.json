@@ -36,7 +36,8 @@
       "Bash(ping:*)",
       "Bash(sqlite3:*)",
       "Bash(python -m json.tool:*)",
-      "WebFetch(domain:dev.max.ru)"
+      "WebFetch(domain:dev.max.ru)",
+      "WebFetch(domain:images.unsplash.com)"
     ]
   }
 }

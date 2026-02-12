@@ -1,9 +1,22 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { useEffect, useState } from "react";
 import AnimatedCounter from "./AnimatedCounter";
 import RotatingText from "./RotatingText";
+
+const heroImages = [
+  "https://images.unsplash.com/photo-1581093588401-fbb62a02f120?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=1920&auto=format&fit=crop",
+];
 
 interface HeroProps {
   onOpenModal: () => void;
@@ -12,6 +25,7 @@ interface HeroProps {
 export default function Hero({ onOpenModal }: HeroProps) {
   const { scrollY } = useScroll();
   const [isMobile, setIsMobile] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -20,36 +34,38 @@ export default function Hero({ onOpenModal }: HeroProps) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Parallax transforms (disabled on mobile via isMobile check below)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Parallax transform (disabled on mobile)
   const patternY = useTransform(scrollY, [0, 500], [0, 150]);
-  const topCircleY = useTransform(scrollY, [0, 500], [0, -100]);
-  const bottomCircleY = useTransform(scrollY, [0, 500], [0, -60]);
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-      {/* Background with overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-dark via-dark-light to-dark" />
-      <motion.div
-        className="absolute inset-0 opacity-20"
-        style={isMobile ? undefined : { y: patternY }}
-      >
-        <div
-          className="absolute inset-0 w-full h-full bg-center bg-cover"
-          style={{
-            backgroundImage: `url(https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)`,
-          }}
-        />
-      </motion.div>
+      {/* Background slideshow */}
+      <AnimatePresence mode="sync">
+        <motion.div
+          key={currentSlide}
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.55 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.5, ease: "easeInOut" }}
+          style={isMobile ? undefined : { y: patternY }}
+        >
+          <div
+            className="absolute inset-0 w-full h-full bg-center bg-cover"
+            style={{ backgroundImage: `url(${heroImages[currentSlide]})` }}
+          />
+        </motion.div>
+      </AnimatePresence>
 
-      {/* Decorative circles with parallax */}
-      <motion.div
-        className="absolute top-20 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"
-        style={isMobile ? undefined : { y: topCircleY }}
-      />
-      <motion.div
-        className="absolute bottom-20 left-10 w-96 h-96 bg-primary-light/10 rounded-full blur-3xl"
-        style={isMobile ? undefined : { y: bottomCircleY }}
-      />
+      {/* Dark gradient overlay for text contrast */}
+      <div className="absolute inset-0 bg-gradient-to-b from-dark/60 via-dark/50 to-dark/70" />
 
       <div className="relative z-10 max-w-8xl mx-auto px-4 sm:px-6 py-20 text-center">
         <motion.div
@@ -117,6 +133,21 @@ export default function Hero({ onOpenModal }: HeroProps) {
             </div>
           ))}
         </motion.div>
+
+        {/* Slide indicators */}
+        <div className="flex justify-center gap-2 mt-8">
+          {heroImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                index === currentSlide
+                  ? "bg-primary w-8"
+                  : "bg-white/30 w-1.5 hover:bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
