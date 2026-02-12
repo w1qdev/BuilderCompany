@@ -1,5 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+
+export const metadata: Metadata = {
+  title: "Карта сайта",
+  description: "Полная карта сайта Центра Стандартизации и Метрологии. Навигация по всем страницам и разделам.",
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 const sections = [
   {

@@ -11,7 +11,7 @@ export interface SiteSettings {
 const DEFAULTS: SiteSettings = {
   phone: "+7 (966) 730-30-03",
   email: "zakaz@csm-center.ru",
-  address: "г. Москва, ул. Метрологическая, д. 10, офис 205",
+  address: "г. Екатеринбург, ул. Маневровая, 9",
 };
 
 const SiteSettingsContext = createContext<SiteSettings>(DEFAULTS);

@@ -1,7 +1,7 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import ContactForm from "./ContactForm";
 
 interface ModalProps {
@@ -15,7 +15,12 @@ interface ModalProps {
   };
 }
 
-export default function Modal({ isOpen, onClose, onSuccess, initialValues }: ModalProps) {
+export default function Modal({
+  isOpen,
+  onClose,
+  onSuccess,
+  initialValues,
+}: ModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -53,25 +58,55 @@ export default function Modal({ isOpen, onClose, onSuccess, initialValues }: Mod
               onClick={onClose}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors z-10"
             >
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-4 h-4 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
 
             <div className="p-6 sm:p-8">
               <div className="text-center mb-6">
                 <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  <svg
+                    className="w-7 h-7 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-extrabold text-dark dark:text-white">Оставить заявку</h3>
+                <h3 className="text-2xl font-extrabold text-dark dark:text-white">
+                  Оставить заявку
+                </h3>
                 <p className="text-neutral dark:text-white/60 text-sm mt-1">
-                  Заполните форму и мы свяжемся с вами в течение 15 минут
+                  Если в расчёте стоимости поверки Вы не нашли интересующий тип
+                  приборов или модель, это не означает что мы не сможем поверить
+                  её. Вам необходимо воспользоваться функцией Заказать поверку и
+                  в произвольной форме в комментариях указать какие
+                  метрологические услуги требуются либо в произвольной форме
+                  отправить запрос на элетронную почту zakaz@csm-center.ru
                 </p>
               </div>
 
-              <ContactForm onSuccess={onSuccess || onClose} initialValues={initialValues} />
+              <ContactForm
+                onSuccess={onSuccess || onClose}
+                initialValues={initialValues}
+              />
             </div>
           </motion.div>
         </div>

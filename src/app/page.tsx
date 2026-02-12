@@ -5,7 +5,6 @@ import BackToTop from "@/components/BackToTop";
 import Calculator from "@/components/Calculator";
 import Certificates from "@/components/Certificates";
 import Delivery from "@/components/Delivery";
-import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
@@ -42,7 +41,6 @@ export default function Home() {
         <Certificates />
         <Portfolio />
         <Testimonials />
-        <FAQ />
       </main>
       <Footer onOpenModal={openModal} />
       <Modal isOpen={modalOpen} onClose={closeModal} />

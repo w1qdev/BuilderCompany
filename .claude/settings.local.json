@@ -35,7 +35,8 @@
       "Bash(git commit:*)",
       "Bash(ping:*)",
       "Bash(sqlite3:*)",
-      "Bash(python -m json.tool:*)"
+      "Bash(python -m json.tool:*)",
+      "WebFetch(domain:dev.max.ru)"
     ]
   }
 }

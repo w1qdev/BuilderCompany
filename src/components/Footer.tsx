@@ -9,7 +9,7 @@ interface FooterProps {
 
 export default function Footer({ onOpenModal }: FooterProps) {
   const currentYear = new Date().getFullYear();
-  const { phone, email, address } = useSiteSettings();
+  const { phone, email, address: _address } = useSiteSettings();
   const telHref = `tel:+7${phone.replace(/\D/g, "").slice(1)}`;
 
   return (
@@ -78,20 +78,18 @@ export default function Footer({ onOpenModal }: FooterProps) {
           <div>
             <h4 className="font-bold text-lg mb-4">Услуги</h4>
             <ul className="space-y-2">
-              {[
-                "Калибровка СИ",
-                "Поверка СИ",
-                "Аттестация оборудования",
-              ].map((s) => (
-                <li key={s}>
-                  <a
-                    href="#services"
-                    className="text-white/60 hover:text-primary transition-colors text-sm"
-                  >
-                    {s}
-                  </a>
-                </li>
-              ))}
+              {["Калибровка СИ", "Поверка СИ", "Аттестация оборудования"].map(
+                (s) => (
+                  <li key={s}>
+                    <a
+                      href="#services"
+                      className="text-white/60 hover:text-primary transition-colors text-sm"
+                    >
+                      {s}
+                    </a>
+                  </li>
+                ),
+              )}
             </ul>
           </div>
 
@@ -119,7 +117,9 @@ export default function Footer({ onOpenModal }: FooterProps) {
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   />
                 </svg>
-                <span className="text-white/60 text-sm">{address}</span>
+                <span className="text-white/60 text-sm">
+                  г. Екатеринбург, ул. Маневровая, 9
+                </span>
               </li>
               <li>
                 <a

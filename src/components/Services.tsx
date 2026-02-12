@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Loader2, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Service {
@@ -137,7 +137,7 @@ export default function Services() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
-  const [showFilters] = useState(false);
+  const [_showFilters] = useState(false);
 
   const tabsRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -165,14 +165,17 @@ export default function Services() {
   const scrollTabs = (direction: "left" | "right") => {
     const el = tabsRef.current;
     if (!el) return;
-    el.scrollBy({ left: direction === "left" ? -200 : 200, behavior: "smooth" });
+    el.scrollBy({
+      left: direction === "left" ? -200 : 200,
+      behavior: "smooth",
+    });
   };
 
   const [services, setServices] = useState<Service[]>([]);
   const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  const [_totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
@@ -224,28 +227,28 @@ export default function Services() {
     setPriceFilter("all");
   };
 
-  const handlePageChange = (page: number) => {
+  const _handlePageChange = (page: number) => {
     setCurrentPage(page);
     document.getElementById("services")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSearchChange = (value: string) => {
+  const _handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
   };
 
-  const handlePriceFilterChange = (filter: PriceFilter) => {
+  const _handlePriceFilterChange = (filter: PriceFilter) => {
     setPriceFilter(filter);
     setCurrentPage(1);
   };
 
-  const clearFilters = () => {
+  const _clearFilters = () => {
     setSearchQuery("");
     setPriceFilter("all");
     setCurrentPage(1);
   };
 
-  const openModal = (service: Service) => {
+  const _openModal = (service: Service) => {
     setSelectedService(service);
   };
 
@@ -253,7 +256,7 @@ export default function Services() {
     setSelectedService(null);
   };
 
-  const hasActiveFilters = searchQuery.trim() !== "" || priceFilter !== "all";
+  const _hasActiveFilters = searchQuery.trim() !== "" || priceFilter !== "all";
 
   const formatPrice = (price: number) => `от ${price.toLocaleString()} руб`;
 
@@ -289,10 +292,7 @@ export default function Services() {
             </button>
           )}
 
-          <div
-            ref={tabsRef}
-            className="overflow-x-auto scrollbar-hide flex-1"
-          >
+          <div ref={tabsRef} className="overflow-x-auto scrollbar-hide flex-1">
             <div className="flex gap-1 min-w-max border-b border-gray-200 dark:border-white/10">
               {tabs.map((tab) => (
                 <button
@@ -310,7 +310,11 @@ export default function Services() {
                     <motion.div
                       layoutId="activeTab"
                       className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30,
+                      }}
                     />
                   )}
                 </button>
@@ -335,7 +339,7 @@ export default function Services() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.1 }}
             className="mb-10"
           >
             <div className="bg-gradient-to-br from-white to-warm-bg dark:from-dark-light dark:to-dark rounded-3xl p-8 sm:p-10 shadow-xl border border-gray-100 dark:border-white/5">
@@ -434,304 +438,29 @@ export default function Services() {
                 </div>
               </div>
 
-              {/* CTA */}
-              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-white/10">
-                <p className="text-center text-sm text-neutral dark:text-white/60 mb-4">
-                  Нужна консультация по услугам этой категории? Свяжитесь с
-                  нашими специалистами
-                </p>
-                <div className="flex justify-center">
-                  <a
-                    href="#calculator"
-                    className="inline-flex items-center gap-2 gradient-primary text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-105"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
-                    </svg>
-                    Получить консультацию
-                  </a>
-                </div>
-              </div>
+              <p className="text-base text-neutral dark:text-white/70 leading-relaxed mt-6">
+                Проверка и калибровка средств измерений – важный этап в
+                обеспечении точности и надежности результатов измерений. Это
+                процесс, который позволяет проверить и настроить средства
+                измерений на соответствие установленным стандартам и
+                требованиям. Поверка и калибровка являются двумя разными
+                процедурами, но тесно взаимосвязанными и в некоторых случаях
+                могут проводиться одновременно.
+                <br />
+                Поверка – это процесс проверки средства измерения на
+                соответствие его показаний установленным стандартам, результаты
+                вносятся во всеобщую базу АРШИН. Проводится сравнение показаний
+                прибора с эталонными значениями. Если результат поверки
+                укладывается в заданные пределы погрешности, то средство
+                измерения считается исправным и готовым к использованию. В
+                случае превышения допустимых пределов погрешности, прибор
+                подлежит настройке и регулировке. Поверка проводится
+                периодически с установленным интервалом, чтобы гарантировать
+                точность измерений в течение всего срока службы прибора.
+              </p>
             </div>
           </motion.div>
         </AnimatePresence>
-
-        {/* Search and Filters */}
-        <div className="mb-8 space-y-4">
-          {/* Search Bar */}
-          <div className="flex gap-3">
-            <div className="relative flex-1 max-w-xl mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral dark:text-white/60" />
-              <input
-                type="text"
-                placeholder="Поиск по названию или описанию..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                disabled={loading}
-                className="w-full pl-12 pr-4 py-3 rounded-xl bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => handleSearchChange("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral hover:text-dark dark:hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Filters Panel */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="bg-white dark:bg-dark-light rounded-2xl p-6 shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-dark dark:text-white uppercase tracking-wider">
-                      Фильтрация по цене
-                    </h3>
-                    {hasActiveFilters && (
-                      <button
-                        onClick={clearFilters}
-                        className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-                      >
-                        Сбросить всё
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: "all", label: "Все цены" },
-                      { value: "cheap", label: "До 5 000 ₽" },
-                      { value: "medium", label: "5 000 - 20 000 ₽" },
-                      { value: "expensive", label: "От 20 000 ₽" },
-                    ].map((filter) => (
-                      <button
-                        key={filter.value}
-                        onClick={() =>
-                          handlePriceFilterChange(filter.value as PriceFilter)
-                        }
-                        disabled={loading}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                          priceFilter === filter.value
-                            ? "bg-amber-500 text-white shadow-md"
-                            : "bg-warm-bg dark:bg-dark text-neutral dark:text-white/60 hover:text-dark dark:hover:text-white"
-                        } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-                      >
-                        {filter.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Active Filters Display */}
-          {hasActiveFilters && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-neutral dark:text-white/60">
-                Активные фильтры:
-              </span>
-              {searchQuery && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg text-sm font-medium">
-                  Поиск: &ldquo;{searchQuery}&rdquo;
-                  <button
-                    onClick={() => handleSearchChange("")}
-                    className="hover:scale-110 transition-transform"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </span>
-              )}
-              {priceFilter !== "all" && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-sm font-medium">
-                  {priceFilter === "cheap" && "До 5 000 ₽"}
-                  {priceFilter === "medium" && "5 000 - 20 000 ₽"}
-                  {priceFilter === "expensive" && "От 20 000 ₽"}
-                  <button
-                    onClick={() => handlePriceFilterChange("all")}
-                    className="hover:scale-110 transition-transform"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-10 h-10 text-primary animate-spin" />
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && !loading && (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <X className="w-8 h-8 text-red-500" />
-            </div>
-            <h3 className="text-xl font-bold text-dark dark:text-white mb-2">
-              Ошибка загрузки
-            </h3>
-            <p className="text-neutral dark:text-white/60 mb-4">{error}</p>
-            <button
-              onClick={fetchServices}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all"
-            >
-              Попробовать снова
-            </button>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && !error && services.length === 0 && (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 bg-warm-bg dark:bg-dark-light rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-neutral dark:text-white/60" />
-            </div>
-            <h3 className="text-xl font-bold text-dark dark:text-white mb-2">
-              Ничего не найдено
-            </h3>
-            <p className="text-neutral dark:text-white/60 mb-4">
-              Попробуйте изменить параметры поиска или фильтры
-            </p>
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all"
-              >
-                Сбросить фильтры
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Service Cards */}
-        {!loading && !error && services.length > 0 && (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${activeTab}-${currentPage}-${searchQuery}-${priceFilter}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-            >
-              {services.map((service) => (
-                <div
-                  key={service.id}
-                  onClick={() => openModal(service)}
-                  className="group bg-white dark:bg-dark-light rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                >
-                  {/* Image */}
-                  <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
-                    {service.image ? (
-                      <img
-                        src={service.image}
-                        alt={service.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-neutral dark:text-white/60">
-                        <span className="text-sm">Нет изображения</span>
-                      </div>
-                    )}
-                    <div className="absolute top-3 right-3 bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
-                      {formatPrice(service.price)}
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold text-dark dark:text-white mb-2 line-clamp-2">
-                      {service.title}
-                    </h3>
-                    <p className="text-sm text-neutral dark:text-white/60 leading-relaxed mb-4 line-clamp-3">
-                      {service.description}
-                    </p>
-                    <button className="w-full gradient-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all">
-                      Заказать
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
-        )}
-
-        {/* Pagination */}
-        {!loading && totalPages > 1 && services.length > 0 && (
-          <div className="flex items-center justify-center gap-2 mt-10">
-            <button
-              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-neutral dark:text-white/60 hover:text-dark dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              Назад
-            </button>
-
-            {/* Page numbers */}
-            <div className="flex gap-2">
-              {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-                let pageNum: number;
-                if (totalPages <= 7) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 4) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 3) {
-                  pageNum = totalPages - 6 + i;
-                } else {
-                  pageNum = currentPage - 3 + i;
-                }
-
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${
-                      currentPage === pageNum
-                        ? "bg-orange-500 text-white shadow-md"
-                        : "bg-white dark:bg-dark-light text-neutral dark:text-white/60 hover:text-dark dark:hover:text-white"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={() =>
-                handlePageChange(Math.min(totalPages, currentPage + 1))
-              }
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-neutral dark:text-white/60 hover:text-dark dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              Вперёд
-            </button>
-          </div>
-        )}
 
         {/* Stats */}
         {!loading && services.length > 0 && (
