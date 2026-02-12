@@ -52,10 +52,11 @@ COPY --from=builder /app/node_modules/engine.io-parser ./node_modules/engine.io-
 COPY --from=builder /app/node_modules/ws ./node_modules/ws
 COPY --from=builder /app/node_modules/@socket.io ./node_modules/@socket.io
 
-# Prisma: copy generated client + CLI (pinned to project version, not npx latest)
+# Prisma: copy generated client, install CLI with all its deps
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/package.json ./package.json
+RUN npm install --no-save prisma && npm cache clean --force
 
 # Create directories for uploads and database
 RUN mkdir -p /app/uploads /app/data && \
@@ -71,4 +72,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "./node_modules/prisma/build/index.js migrate deploy && node server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
