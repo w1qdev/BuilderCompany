@@ -43,6 +43,7 @@ interface AdminRequest {
   name: string;
   phone: string;
   email: string;
+  company: string | null;
   service: string;
   object: string | null;
   fabricNumber: string | null;
@@ -871,7 +872,7 @@ export default function AdminPage() {
                           {formatDate(r.createdAt)}
                         </TableCell>
                         <TableCell className="font-medium text-dark">
-                          {r.name}
+                          {r.company || r.name}
                         </TableCell>
                         <TableCell className="text-neutral">
                           {r.service}

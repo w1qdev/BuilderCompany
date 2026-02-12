@@ -34,8 +34,8 @@ export async function GET(
     return NextResponse.json({ error: "Request not found" }, { status: 404 });
   }
 
-  // Determine organization name: prefer user's company, fallback to request name
-  const organizationName = request.user?.company || request.user?.name || request.name;
+  // Determine organization name: prefer request company, then user company, fallback to name
+  const organizationName = request.company || request.user?.company || request.user?.name || request.name;
 
   // Filter items by service type if filter parameter is provided
   const filter = req.nextUrl.searchParams.get("filter"); // поверка | аттестация | калибровка

@@ -28,6 +28,7 @@ model Request {
   name          String
   phone         String
   email         String
+  company       String?
   service       String
   object        String?
   fabricNumber  String?

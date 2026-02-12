@@ -68,6 +68,7 @@ type FormFields = {
   name: string;
   phone: string;
   email: string;
+  company: string;
   message: string;
 };
 
@@ -100,6 +101,7 @@ export default function ContactForm({
     name: initialValues?.name || "",
     phone: initialValues?.phone || "",
     email: initialValues?.email || "",
+    company: "",
     message: "",
   });
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([
@@ -229,6 +231,7 @@ export default function ContactForm({
         name: "",
         phone: "",
         email: "",
+        company: "",
         message: "",
       });
       setServiceItems([createServiceItem()]);
@@ -311,6 +314,17 @@ export default function ContactForm({
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-company">Наименование организации</Label>
+        <Input
+          id="contact-company"
+          type="text"
+          placeholder="ООО «Название компании»"
+          value={form.company}
+          onChange={(e) => setForm({ ...form, company: e.target.value })}
+        />
       </div>
 
       {/* Service Items */}

@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   let uploadedFilePath: string | null = null;
   try {
     const body = await req.json();
-    const { name, phone, email, message, fileName, filePath, items, needContract } = body;
+    const { name, phone, email, company, message, fileName, filePath, items, needContract } = body;
     if (filePath) {
       uploadedFilePath = path.join(
         process.cwd(),
@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
         name,
         phone,
         email,
+        company: company || null,
         service: serviceJoined,
         object: firstItem.object || null,
         fabricNumber: firstItem.fabricNumber || null,
