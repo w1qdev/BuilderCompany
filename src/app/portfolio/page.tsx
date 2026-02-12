@@ -14,18 +14,7 @@ const projects = [
     duration: "3 месяца",
     year: "2025",
     image:
-      "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&q=80", // Industrial facility
-  },
-  {
-    title: "Фармстандарт",
-    category: "Аттестация",
-    description:
-      "Аттестация испытательного оборудования и средств измерений для фармацевтического производства.",
-    area: "Фармпроизводство",
-    duration: "4 месяца",
-    year: "2024",
-    image:
-      "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80", // Pharmaceutical laboratory
+      "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&q=80",
   },
   {
     title: "ТГК-1",
@@ -36,7 +25,7 @@ const projects = [
     duration: "6 месяцев",
     year: "2024",
     image:
-      "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=800&q=80", // Energy/electricity meters
+      "https://images.unsplash.com/photo-1413882353314-73389f63b6fd?w=800&q=80",
   },
   {
     title: "Северсталь",
@@ -47,7 +36,7 @@ const projects = [
     duration: "2 месяца",
     year: "2024",
     image:
-      "https://images.unsplash.com/photo-1565071559227-20ab25b7685e?w=800&q=80", // Steel manufacturing
+      "https://images.unsplash.com/photo-1567789884554-0b844b597180?w=800&q=80",
   },
   {
     title: "РЖД",
@@ -58,7 +47,7 @@ const projects = [
     duration: "5 месяцев",
     year: "2023",
     image:
-      "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=800&q=80", // Railway/trains
+      "https://images.unsplash.com/photo-1532105956626-9569c03602f6?w=800&q=80",
   },
   {
     title: "Биокад",
@@ -69,7 +58,7 @@ const projects = [
     duration: "1 месяц",
     year: "2023",
     image:
-      "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&q=80", // Laboratory equipment
+      "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=800&q=80",
   },
 ];
 
@@ -115,18 +104,16 @@ export default function PortfolioPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white dark:bg-dark-light rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+              className="group bg-white dark:bg-dark-light rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
             >
               {/* Project image */}
               <div className="relative h-48 overflow-hidden">
-                {/* <Image
+                <img
                   src={project.image}
-                  alt={`${project.title} - ${project.category}`}
-                  fill
-                  className="object-cover transition-transform duration-300 hover:scale-110"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                /> */}
-                {/* Gradient overlay */}
+                  alt={`${project.title} — ${project.category}`}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  loading="lazy"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-dark/60 via-transparent to-transparent" />
               </div>
 
