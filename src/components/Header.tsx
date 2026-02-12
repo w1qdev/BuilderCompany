@@ -14,7 +14,7 @@ const navLinks = [
   { href: "#about", label: "О компании" },
   { href: "#partners", label: "Партнёры" },
   { href: "/contacts", label: "Контакты" },
-  { href: "/dashboard", label: "Личный кабинет" },
+  // { href: "/dashboard", label: "Личный кабинет" },
 ];
 
 interface HeaderProps {
@@ -103,19 +103,19 @@ export default function Header({ onOpenModal }: HeaderProps) {
 
       {/* Main nav */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 w-[20%]">
-          <span className="text-white font-bold text-xl">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <span className="text-white font-bold text-xl whitespace-nowrap">
             ЦСМ - Центр Стандартизации и Метрологии
           </span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center lg:gap-4 xl:gap-6">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="text-white/80 hover:text-primary transition-colors text-sm font-medium"
+              className="text-white/80 hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
             >
               {link.label}
             </a>
