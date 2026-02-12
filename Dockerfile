@@ -8,8 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm ci --only=production && \
+# Install ALL dependencies (needed for build stage)
+RUN npm ci && \
     npm cache clean --force
 
 # Generate Prisma Client
@@ -23,9 +23,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+COPY .env.production .env
+
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+
 
 RUN npm run build
 
@@ -46,7 +50,14 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/server.js ./server.js
-COPY --from=deps /app/node_modules ./node_modules
+
+# Install only production dependencies for runtime
+COPY package*.json ./
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Generate Prisma Client for runtime
+RUN npx prisma generate
 
 # Create directories for uploads and database
 RUN mkdir -p /app/uploads /app/data && \
