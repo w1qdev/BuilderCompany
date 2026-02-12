@@ -42,6 +42,8 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/server.js ./server.js
+
+# Socket.IO (not traced by standalone since server.js uses require())
 COPY --from=builder /app/node_modules/socket.io ./node_modules/socket.io
 COPY --from=builder /app/node_modules/socket.io-adapter ./node_modules/socket.io-adapter
 COPY --from=builder /app/node_modules/socket.io-parser ./node_modules/socket.io-parser
@@ -50,10 +52,10 @@ COPY --from=builder /app/node_modules/engine.io-parser ./node_modules/engine.io-
 COPY --from=builder /app/node_modules/ws ./node_modules/ws
 COPY --from=builder /app/node_modules/@socket.io ./node_modules/@socket.io
 
-# Copy package.json for prisma generate
-COPY package.json ./
-
-RUN npx prisma generate
+# Prisma: copy generated client + CLI (pinned to project version, not npx latest)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Create directories for uploads and database
 RUN mkdir -p /app/uploads /app/data && \
@@ -69,4 +71,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "./node_modules/prisma/build/index.js migrate deploy && node server.js"]

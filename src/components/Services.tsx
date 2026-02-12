@@ -1,18 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-interface Service {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  image: string | null;
-  category: string;
-  isActive: boolean;
-}
 
 interface Tab {
   id: string;
@@ -127,17 +117,8 @@ const tabContent: Record<string, TabContent> = {
   },
 };
 
-const ITEMS_PER_PAGE = 12;
-
-type PriceFilter = "all" | "cheap" | "medium" | "expensive";
-
 export default function Services() {
   const [activeTab, setActiveTab] = useState(tabs[0].id);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
-  const [_showFilters] = useState(false);
 
   const tabsRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -170,95 +151,6 @@ export default function Services() {
       behavior: "smooth",
     });
   };
-
-  const [services, setServices] = useState<Service[]>([]);
-  const [total, setTotal] = useState(0);
-  const [_totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [_error, setError] = useState<string | null>(null);
-
-  const fetchServices = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({
-        page: String(currentPage),
-        limit: String(ITEMS_PER_PAGE),
-        category: activeTab,
-      });
-
-      if (searchQuery.trim()) {
-        params.set("search", searchQuery.trim());
-      }
-
-      if (priceFilter !== "all") {
-        params.set("priceFilter", priceFilter);
-      }
-
-      const res = await fetch(`/api/services?${params}`);
-
-      if (!res.ok) {
-        throw new Error("Ошибка загрузки услуг");
-      }
-
-      const data = await res.json();
-      setServices(data.services);
-      setTotal(data.total);
-      setTotalPages(data.pages);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Произошла ошибка");
-      setServices([]);
-      setTotal(0);
-      setTotalPages(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, currentPage, searchQuery, priceFilter]);
-
-  useEffect(() => {
-    fetchServices();
-  }, [fetchServices]);
-
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
-    setCurrentPage(1);
-    setSearchQuery("");
-    setPriceFilter("all");
-  };
-
-  const _handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    document.getElementById("services")?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const _handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  };
-
-  const _handlePriceFilterChange = (filter: PriceFilter) => {
-    setPriceFilter(filter);
-    setCurrentPage(1);
-  };
-
-  const _clearFilters = () => {
-    setSearchQuery("");
-    setPriceFilter("all");
-    setCurrentPage(1);
-  };
-
-  const _openModal = (service: Service) => {
-    setSelectedService(service);
-  };
-
-  const closeModal = () => {
-    setSelectedService(null);
-  };
-
-  const _hasActiveFilters = searchQuery.trim() !== "" || priceFilter !== "all";
-
-  const formatPrice = (price: number) => `от ${price.toLocaleString()} руб`;
 
   return (
     <section id="services" className="py-20 sm:py-28 dark:bg-dark">
@@ -297,12 +189,12 @@ export default function Services() {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`relative px-5 py-3 text-sm font-medium transition-all whitespace-nowrap ${
                     activeTab === tab.id
                       ? "text-primary"
                       : "text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/80"
-                  } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                  }`}
                 >
                   {tab.label}
                   {activeTab === tab.id && (
@@ -331,7 +223,7 @@ export default function Services() {
           )}
         </div>
 
-        {/* Tab Content Description */}
+        {/* Tab Content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -339,7 +231,6 @@ export default function Services() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.1 }}
-            className="mb-10"
           >
             <div className="bg-gradient-to-br from-white to-warm-bg dark:from-dark-light dark:to-dark rounded-3xl p-8 sm:p-10 shadow-xl border border-gray-100 dark:border-white/5">
               <h3 className="text-2xl sm:text-3xl font-extrabold text-dark dark:text-white mb-4">
@@ -460,114 +351,7 @@ export default function Services() {
             </div>
           </motion.div>
         </AnimatePresence>
-
-        {/* Stats */}
-        {!loading && services.length > 0 && (
-          <div className="text-center mt-6 text-sm text-neutral dark:text-white/60">
-            Показано {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
-            {Math.min(currentPage * ITEMS_PER_PAGE, total)} из {total} услуг
-          </div>
-        )}
       </div>
-
-      {/* Modal */}
-      <AnimatePresence>
-        {selectedService && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={closeModal}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            />
-
-            {/* Modal Content */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
-              <div className="bg-white dark:bg-dark-light rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                {/* Modal Header */}
-                <div className="relative">
-                  {selectedService.image ? (
-                    <img
-                      src={selectedService.image}
-                      alt={selectedService.title}
-                      className="w-full h-64 object-cover rounded-t-3xl"
-                    />
-                  ) : (
-                    <div className="w-full h-64 bg-gradient-to-br from-primary/20 to-primary/5 rounded-t-3xl flex items-center justify-center">
-                      <span className="text-neutral dark:text-white/60">
-                        Нет изображения
-                      </span>
-                    </div>
-                  )}
-                  <button
-                    onClick={closeModal}
-                    className="absolute top-4 right-4 w-10 h-10 bg-white dark:bg-dark rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-                  >
-                    <X className="w-5 h-5 text-dark dark:text-white" />
-                  </button>
-                  <div className="absolute bottom-4 left-4 bg-amber-500 text-white px-4 py-2 rounded-full text-lg font-bold shadow-lg">
-                    {formatPrice(selectedService.price)}
-                  </div>
-                </div>
-
-                {/* Modal Body */}
-                <div className="p-8">
-                  <h3 className="text-2xl font-extrabold text-dark dark:text-white mb-4">
-                    {selectedService.title}
-                  </h3>
-                  <p className="text-neutral dark:text-white/60 leading-relaxed mb-6">
-                    {selectedService.description}
-                  </p>
-
-                  <div className="bg-warm-bg dark:bg-dark rounded-2xl p-6 mb-6">
-                    <h4 className="text-sm font-semibold text-dark dark:text-white mb-3 uppercase tracking-wider">
-                      Что входит в услугу:
-                    </h4>
-                    <ul className="space-y-2 text-sm text-neutral dark:text-white/60">
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-0.5">✓</span>
-                        <span>Полная проверка оборудования</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-0.5">✓</span>
-                        <span>Выдача официального сертификата</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-0.5">✓</span>
-                        <span>Консультация специалиста</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-0.5">✓</span>
-                        <span>Гарантия на выполненные работы</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      closeModal();
-                      const event = new CustomEvent("openContactModal", {
-                        detail: { service: selectedService.title },
-                      });
-                      window.dispatchEvent(event);
-                    }}
-                    className="w-full gradient-primary text-white py-4 rounded-xl text-base font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all"
-                  >
-                    Заказать услугу
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </section>
   );
 }
