@@ -1,38 +1,29 @@
-# Multi-stage build for production
+# Multi-stage build for production (optimized for 1 CPU / 1 GB RAM)
 
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install ALL dependencies (needed for build stage)
 RUN npm ci && \
     npm cache clean --force
 
-# Generate Prisma Client
 RUN npx prisma generate
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
 COPY .env.production .env
 
-# Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV NODE_OPTIONS="--max-old-space-size=512"
 
-RUN npm install --save-dev @types/nodemailer
-
-RUN npm run build
+RUN NODE_ENV=production npm run build
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner
@@ -40,29 +31,36 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS="--max-old-space-size=384"
 
-# Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy necessary files
+# Copy standalone build (includes node_modules it needs)
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/server.js ./server.js
+COPY --from=builder /app/node_modules/socket.io ./node_modules/socket.io
+COPY --from=builder /app/node_modules/socket.io-adapter ./node_modules/socket.io-adapter
+COPY --from=builder /app/node_modules/socket.io-parser ./node_modules/socket.io-parser
+COPY --from=builder /app/node_modules/engine.io ./node_modules/engine.io
+COPY --from=builder /app/node_modules/engine.io-parser ./node_modules/engine.io-parser
+COPY --from=builder /app/node_modules/ws ./node_modules/ws
+COPY --from=builder /app/node_modules/@socket.io ./node_modules/@socket.io
 
-# Install only production dependencies for runtime
-COPY package*.json ./
-RUN npm ci --only=production && \
-    npm cache clean --force
+# Copy package.json for prisma generate
+COPY package.json ./
 
-# Generate Prisma Client for runtime
 RUN npx prisma generate
 
 # Create directories for uploads and database
 RUN mkdir -p /app/uploads /app/data && \
     chown -R nextjs:nodejs /app
+
+# Install wget for lightweight healthcheck
+RUN apk add --no-cache wget
 
 USER nextjs
 
@@ -71,5 +69,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Run migrations and start the server
 CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
