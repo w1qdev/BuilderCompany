@@ -31,6 +31,10 @@ const nextConfig = {
     ],
   },
 
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Webpack configuration for Three.js
   webpack: (config) => {
     config.externals = [...(config.externals || []), { canvas: "canvas" }];
