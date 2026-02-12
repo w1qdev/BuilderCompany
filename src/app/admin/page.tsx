@@ -2,7 +2,6 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 import {
   Select,
   SelectContent,
@@ -25,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import Link from "next/link";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { io as ioClient, Socket } from "socket.io-client";
 import { toast, Toaster } from "sonner";
@@ -68,7 +68,10 @@ interface Stats {
   done: number;
 }
 
-const statusLabels: Record<string, { label: string; variant: "new" | "in_progress" | "done" }> = {
+const statusLabels: Record<
+  string,
+  { label: string; variant: "new" | "in_progress" | "done" }
+> = {
   new: { label: "Новая", variant: "new" },
   in_progress: { label: "В работе", variant: "in_progress" },
   done: { label: "Завершена", variant: "done" },
@@ -226,7 +229,7 @@ export default function AdminPage() {
 
     socket.on("request-update", (updated: AdminRequest) => {
       setRequests((prev) =>
-        prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r))
+        prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)),
       );
       fetchStats();
     });
@@ -257,7 +260,11 @@ export default function AdminPage() {
     sessionStorage.removeItem("admin-password");
   };
 
-  const cycleStatus = async (e: React.MouseEvent, id: number, currentStatus: string) => {
+  const cycleStatus = async (
+    e: React.MouseEvent,
+    id: number,
+    currentStatus: string,
+  ) => {
     e.stopPropagation();
     const currentIdx = statusCycle.indexOf(currentStatus);
     const nextStatus = statusCycle[(currentIdx + 1) % statusCycle.length];
@@ -273,7 +280,7 @@ export default function AdminPage() {
       });
       if (res.ok) {
         setRequests((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, status: nextStatus } : r))
+          prev.map((r) => (r.id === id ? { ...r, status: nextStatus } : r)),
         );
         fetchStats();
       }
@@ -300,11 +307,18 @@ export default function AdminPage() {
     }
   };
 
-  const handleExportToExcel = async (id: number) => {
-    try {
-      toast.loading("Формирование Excel файла...", { id: `export-${id}` });
+  const [exportMenuId, setExportMenuId] = useState<number | null>(null);
 
-      const res = await fetch(`/api/admin/export/${id}`, {
+  const handleExportToExcel = async (id: number, filter?: string) => {
+    setExportMenuId(null);
+    const filterLabel = filter || "все";
+    try {
+      toast.loading("Формирование Excel файла...", { id: `export-${id}-${filterLabel}` });
+
+      const url = filter
+        ? `/api/admin/export/${id}?filter=${encodeURIComponent(filter)}`
+        : `/api/admin/export/${id}`;
+      const res = await fetch(url, {
         method: "GET",
         headers: { "x-admin-password": password },
       });
@@ -325,16 +339,16 @@ export default function AdminPage() {
 
       // Download file
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = blobUrl;
       a.download = filename;
       a.click();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(blobUrl);
 
-      toast.success("Excel файл скачан", { id: `export-${id}` });
+      toast.success("Excel файл скачан", { id: `export-${id}-${filterLabel}` });
     } catch {
-      toast.error("Не удалось экспортировать", { id: `export-${id}` });
+      toast.error("Не удалось экспортировать", { id: `export-${id}-${filterLabel}` });
     }
   };
 
@@ -369,7 +383,9 @@ export default function AdminPage() {
     if (!editing) return;
 
     try {
-      const executorPrice = editing.executorPrice ? parseFloat(editing.executorPrice) : null;
+      const executorPrice = editing.executorPrice
+        ? parseFloat(editing.executorPrice)
+        : null;
       const markup = editing.markup ? parseFloat(editing.markup) : null;
       const adminNotes = editing.adminNotes || null;
 
@@ -389,7 +405,7 @@ export default function AdminPage() {
       if (res.ok) {
         const updated = await res.json();
         setRequests((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, ...updated } : r))
+          prev.map((r) => (r.id === id ? { ...r, ...updated } : r)),
         );
         // Clear editing state after successful save
         setEditingPricing((prev) => {
@@ -426,13 +442,29 @@ export default function AdminPage() {
   };
 
   const exportCSV = async () => {
-    const params = new URLSearchParams({ status: filter, sortBy, sortOrder, export: "true" });
+    const params = new URLSearchParams({
+      status: filter,
+      sortBy,
+      sortOrder,
+      export: "true",
+    });
     if (search) params.set("search", search);
-    const res = await fetch(`/api/admin?${params}`, { headers: { "x-admin-password": password } });
+    const res = await fetch(`/api/admin?${params}`, {
+      headers: { "x-admin-password": password },
+    });
     if (!res.ok) return;
     const data = await res.json();
     const allRequests: AdminRequest[] = data.requests;
-    const headers = ["ID", "Дата", "Имя", "Телефон", "Email", "Услуга", "Сообщение", "Статус"];
+    const headers = [
+      "ID",
+      "Дата",
+      "Имя",
+      "Телефон",
+      "Email",
+      "Услуга",
+      "Сообщение",
+      "Статус",
+    ];
     const rows = allRequests.map((r) => [
       r.id,
       formatDate(r.createdAt),
@@ -447,12 +479,14 @@ export default function AdminPage() {
     const csvContent = [
       headers.join(";"),
       ...rows.map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";")
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";"),
       ),
     ].join("\n");
 
     const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -484,11 +518,10 @@ export default function AdminPage() {
   };
 
   const SortArrow = ({ field }: { field: SortField }) => {
-    if (sortBy !== field) return <span className="text-gray-300 ml-1">&#8597;</span>;
+    if (sortBy !== field)
+      return <span className="text-gray-300 ml-1">&#8597;</span>;
     return (
-      <span className="ml-1">
-        {sortOrder === "asc" ? "\u2191" : "\u2193"}
-      </span>
+      <span className="ml-1">{sortOrder === "asc" ? "\u2191" : "\u2193"}</span>
     );
   };
 
@@ -503,15 +536,30 @@ export default function AdminPage() {
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-warm-bg flex items-center justify-center p-4">
-        <form onSubmit={handleLogin} className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
+        <form
+          onSubmit={handleLogin}
+          className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm"
+        >
           <div className="text-center mb-6">
             <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <svg
+                className="w-7 h-7 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
               </svg>
             </div>
             <h1 className="text-2xl font-extrabold text-dark">Админ-панель</h1>
-            <p className="text-neutral text-sm mt-1">Введите пароль для входа</p>
+            <p className="text-neutral text-sm mt-1">
+              Введите пароль для входа
+            </p>
           </div>
 
           {error && (
@@ -539,15 +587,43 @@ export default function AdminPage() {
   }
 
   const statsCards = [
-    { key: "all", label: "Всего", value: stats?.total ?? 0, icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2", bg: "bg-gray-50", iconBg: "bg-gray-200 text-gray-600" },
-    { key: "new", label: "Новые", value: stats?.new ?? 0, icon: "M12 6v6m0 0v6m0-6h6m-6 0H6", bg: "bg-blue-50", iconBg: "bg-blue-200 text-blue-600" },
-    { key: "in_progress", label: "В работе", value: stats?.in_progress ?? 0, icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", bg: "bg-yellow-50", iconBg: "bg-yellow-200 text-yellow-600" },
-    { key: "done", label: "Завершены", value: stats?.done ?? 0, icon: "M5 13l4 4L19 7", bg: "bg-green-50", iconBg: "bg-green-200 text-green-600" },
+    {
+      key: "all",
+      label: "Всего",
+      value: stats?.total ?? 0,
+      icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
+      bg: "bg-gray-50",
+      iconBg: "bg-gray-200 text-gray-600",
+    },
+    {
+      key: "new",
+      label: "Новые",
+      value: stats?.new ?? 0,
+      icon: "M12 6v6m0 0v6m0-6h6m-6 0H6",
+      bg: "bg-blue-50",
+      iconBg: "bg-blue-200 text-blue-600",
+    },
+    {
+      key: "in_progress",
+      label: "В работе",
+      value: stats?.in_progress ?? 0,
+      icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+      bg: "bg-yellow-50",
+      iconBg: "bg-yellow-200 text-yellow-600",
+    },
+    {
+      key: "done",
+      label: "Завершены",
+      value: stats?.done ?? 0,
+      icon: "M5 13l4 4L19 7",
+      bg: "bg-green-50",
+      iconBg: "bg-green-200 text-green-600",
+    },
   ];
 
   return (
     <TooltipProvider>
-      <Toaster position="top-center" />
+      <Toaster position="top-center" className="rounded-sm" />
       <div className="min-h-screen bg-warm-bg">
         {/* Header */}
         <div className="gradient-dark text-white">
@@ -555,8 +631,18 @@ export default function AdminPage() {
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
                 <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
                   </svg>
                 </div>
                 <span className="font-bold">ЦСМ</span>
@@ -569,8 +655,18 @@ export default function AdminPage() {
                 className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
                 title="Управление услугами"
               >
-                <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                <svg
+                  className="w-5 h-5 text-white/70"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
                 </svg>
               </a>
               <a
@@ -578,13 +674,27 @@ export default function AdminPage() {
                 className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
                 title="Настройки"
               >
-                <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                <svg
+                  className="w-5 h-5 text-white/70"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                  />
                 </svg>
               </a>
               <div className="flex items-center gap-1.5">
-                <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`} />
-                <span className="text-xs text-white/50">{connected ? "Онлайн" : "Оффлайн"}</span>
+                <div
+                  className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`}
+                />
+                <span className="text-xs text-white/50">
+                  {connected ? "Онлайн" : "Оффлайн"}
+                </span>
               </div>
               <span className="text-sm text-white/60">Заявок: {total}</span>
               <button
@@ -612,13 +722,27 @@ export default function AdminPage() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.iconBg}`}>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={card.icon} />
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.iconBg}`}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d={card.icon}
+                      />
                     </svg>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-dark">{card.value}</div>
+                    <div className="text-2xl font-bold text-dark">
+                      {card.value}
+                    </div>
                     <div className="text-xs text-neutral">{card.label}</div>
                   </div>
                 </div>
@@ -635,7 +759,12 @@ export default function AdminPage() {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
               <Input
                 type="text"
@@ -655,8 +784,18 @@ export default function AdminPage() {
               onClick={exportCSV}
               className="px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-all border border-gray-200 flex items-center gap-1.5"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               Экспорт CSV
             </button>
@@ -691,7 +830,9 @@ export default function AdminPage() {
           {loading ? (
             <div className="text-center py-20 text-neutral">Загрузка...</div>
           ) : requests.length === 0 ? (
-            <div className="text-center py-20 text-neutral">Заявок пока нет</div>
+            <div className="text-center py-20 text-neutral">
+              Заявок пока нет
+            </div>
           ) : (
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <Table>
@@ -708,21 +849,33 @@ export default function AdminPage() {
                         <SortArrow field={col.field} />
                       </TableHead>
                     ))}
-                    <TableHead className="font-semibold text-dark">Телефон</TableHead>
-                    <TableHead className="font-semibold text-dark">Email</TableHead>
+                    <TableHead className="font-semibold text-dark">
+                      Телефон
+                    </TableHead>
+                    <TableHead className="font-semibold text-dark">
+                      Email
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {requests.map((r) => (
                     <Fragment key={r.id}>
                       <TableRow
-                        onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                        onClick={() =>
+                          setExpandedId(expandedId === r.id ? null : r.id)
+                        }
                         className="border-t border-gray-100 hover:bg-warm-bg/50 cursor-pointer"
                       >
                         <TableCell className="text-neutral">{r.id}</TableCell>
-                        <TableCell className="text-neutral whitespace-nowrap">{formatDate(r.createdAt)}</TableCell>
-                        <TableCell className="font-medium text-dark">{r.name}</TableCell>
-                        <TableCell className="text-neutral">{r.service}</TableCell>
+                        <TableCell className="text-neutral whitespace-nowrap">
+                          {formatDate(r.createdAt)}
+                        </TableCell>
+                        <TableCell className="font-medium text-dark">
+                          {r.name}
+                        </TableCell>
+                        <TableCell className="text-neutral">
+                          {r.service}
+                        </TableCell>
                         <TableCell>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -730,7 +883,11 @@ export default function AdminPage() {
                                 onClick={(e) => cycleStatus(e, r.id, r.status)}
                                 className="transition-all hover:scale-105"
                               >
-                                <Badge variant={statusLabels[r.status]?.variant || "default"}>
+                                <Badge
+                                  variant={
+                                    statusLabels[r.status]?.variant || "default"
+                                  }
+                                >
                                   {statusLabels[r.status]?.label || r.status}
                                 </Badge>
                               </button>
@@ -740,40 +897,97 @@ export default function AdminPage() {
                             </TooltipContent>
                           </Tooltip>
                         </TableCell>
-                        <TableCell className="text-neutral">{r.phone}</TableCell>
-                        <TableCell className="text-neutral">{r.email}</TableCell>
+                        <TableCell className="text-neutral">
+                          {r.phone}
+                        </TableCell>
+                        <TableCell className="text-neutral">
+                          {r.email}
+                        </TableCell>
                       </TableRow>
                       {expandedId === r.id && (
-                        <TableRow key={`${r.id}-detail`} className="border-t border-gray-100">
+                        <TableRow
+                          key={`${r.id}-detail`}
+                          className="border-t border-gray-100"
+                        >
                           <TableCell colSpan={7} className="bg-warm-bg/30">
                             <div className="grid sm:grid-cols-2 gap-4">
                               <div>
-                                <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Сообщение</div>
+                                <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                  Сообщение
+                                </div>
                                 <div className="text-sm text-dark bg-white rounded-xl p-3">
-                                  {r.message || <span className="text-neutral italic">Нет сообщения</span>}
+                                  {r.message || (
+                                    <span className="text-neutral italic">
+                                      Нет сообщения
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <div className="space-y-2">
                                 <div>
-                                  <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Дата создания</div>
-                                  <div className="text-sm text-dark">{formatDateFull(r.createdAt)}</div>
+                                  <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                    Дата создания
+                                  </div>
+                                  <div className="text-sm text-dark">
+                                    {formatDateFull(r.createdAt)}
+                                  </div>
                                 </div>
                                 <div>
-                                  <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Контакты</div>
-                                  <div className="text-sm text-dark">{r.name} &middot; {r.phone} &middot; {r.email}</div>
+                                  <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                    Контакты
+                                  </div>
+                                  <div className="text-sm text-dark">
+                                    {r.name} &middot; {r.phone} &middot;{" "}
+                                    {r.email}
+                                  </div>
                                 </div>
                                 {r.items && r.items.length > 0 ? (
                                   <div>
-                                    <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">Позиции ({r.items.length})</div>
+                                    <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">
+                                      Позиции ({r.items.length})
+                                    </div>
                                     <div className="space-y-2">
                                       {r.items.map((item, idx) => (
-                                        <div key={item.id} className="bg-white rounded-lg p-3 border border-gray-100">
-                                          <div className="text-xs font-semibold text-primary mb-1">Позиция {idx + 1}: {item.service}</div>
+                                        <div
+                                          key={item.id}
+                                          className="bg-white rounded-lg p-3 border border-gray-100"
+                                        >
+                                          <div className="text-xs font-semibold text-primary mb-1">
+                                            Позиция {idx + 1}: {item.service}
+                                          </div>
                                           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                                            {item.poverk && <div><span className="text-neutral">Поверка:</span> {item.poverk}</div>}
-                                            {item.object && <div><span className="text-neutral">СИ:</span> {item.object}</div>}
-                                            {item.fabricNumber && <div><span className="text-neutral">Зав. №:</span> {item.fabricNumber}</div>}
-                                            {item.registry && <div><span className="text-neutral">Реестр:</span> {item.registry}</div>}
+                                            {item.poverk && (
+                                              <div>
+                                                <span className="text-neutral">
+                                                  Поверка:
+                                                </span>{" "}
+                                                {item.poverk}
+                                              </div>
+                                            )}
+                                            {item.object && (
+                                              <div>
+                                                <span className="text-neutral">
+                                                  СИ:
+                                                </span>{" "}
+                                                {item.object}
+                                              </div>
+                                            )}
+                                            {item.fabricNumber && (
+                                              <div>
+                                                <span className="text-neutral">
+                                                  Зав. №:
+                                                </span>{" "}
+                                                {item.fabricNumber}
+                                              </div>
+                                            )}
+                                            {item.registry && (
+                                              <div>
+                                                <span className="text-neutral">
+                                                  Реестр:
+                                                </span>{" "}
+                                                {item.registry}
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
                                       ))}
@@ -782,63 +996,119 @@ export default function AdminPage() {
                                 ) : (
                                   <>
                                     <div>
-                                      <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Услуга</div>
-                                      <div className="text-sm text-dark">{r.service}</div>
+                                      <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                        Услуга
+                                      </div>
+                                      <div className="text-sm text-dark">
+                                        {r.service}
+                                      </div>
                                     </div>
                                     {r.object && (
                                       <div>
-                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Наименование СИ</div>
-                                        <div className="text-sm text-dark">{r.object}</div>
+                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                          Наименование СИ
+                                        </div>
+                                        <div className="text-sm text-dark">
+                                          {r.object}
+                                        </div>
                                       </div>
                                     )}
                                     {r.fabricNumber && (
                                       <div>
-                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Заводской номер</div>
-                                        <div className="text-sm text-dark">{r.fabricNumber}</div>
+                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                          Заводской номер
+                                        </div>
+                                        <div className="text-sm text-dark">
+                                          {r.fabricNumber}
+                                        </div>
                                       </div>
                                     )}
                                     {r.registry && (
                                       <div>
-                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Номер реестра</div>
-                                        <div className="text-sm text-dark">{r.registry}</div>
+                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                          Номер реестра
+                                        </div>
+                                        <div className="text-sm text-dark">
+                                          {r.registry}
+                                        </div>
                                       </div>
                                     )}
                                     {r.poverk && (
                                       <div>
-                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Тип поверки</div>
-                                        <div className="text-sm text-dark">{r.poverk}</div>
+                                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                          Тип поверки
+                                        </div>
+                                        <div className="text-sm text-dark">
+                                          {r.poverk}
+                                        </div>
                                       </div>
                                     )}
                                   </>
                                 )}
                                 {r.fileName && r.filePath && (
                                   <div>
-                                    <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Прикрепленный файл</div>
+                                    <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                      Прикрепленный файл
+                                    </div>
                                     <button
                                       onClick={() => openFile(r.filePath!)}
                                       className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors"
                                     >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                        />
                                       </svg>
                                       {r.fileName}
                                     </button>
                                   </div>
                                 )}
                                 <div>
-                                  <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Договор оказания услуг</div>
-                                  <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${r.needContract ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                  <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                                    Договор оказания услуг
+                                  </div>
+                                  <div
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${r.needContract ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}
+                                  >
                                     {r.needContract ? (
                                       <>
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <svg
+                                          className="w-4 h-4"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                          />
                                         </svg>
                                         Требуется
                                       </>
                                     ) : (
                                       <>
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <svg
+                                          className="w-4 h-4"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                          />
                                         </svg>
                                         Не требуется
                                       </>
@@ -850,7 +1120,9 @@ export default function AdminPage() {
 
                             {/* Admin Notes and Pricing Section */}
                             <div className="mt-6 pt-6 border-t border-gray-200">
-                              <div className="text-sm font-semibold text-dark mb-4 uppercase tracking-wide">Заметки и ценообразование</div>
+                              <div className="text-sm font-semibold text-dark mb-4 uppercase tracking-wide">
+                                Заметки и ценообразование
+                              </div>
                               <div className="grid lg:grid-cols-2 gap-6">
                                 {/* Left column: Admin Notes */}
                                 <div>
@@ -860,7 +1132,8 @@ export default function AdminPage() {
                                   <Textarea
                                     placeholder="Внутренние заметки (видны только в админке)..."
                                     value={
-                                      editingPricing[r.id]?.adminNotes !== undefined
+                                      editingPricing[r.id]?.adminNotes !==
+                                      undefined
                                         ? editingPricing[r.id].adminNotes
                                         : r.adminNotes || ""
                                     }
@@ -869,8 +1142,12 @@ export default function AdminPage() {
                                         ...prev,
                                         [r.id]: {
                                           adminNotes: e.target.value,
-                                          executorPrice: prev[r.id]?.executorPrice ?? (r.executorPrice?.toString() || ""),
-                                          markup: prev[r.id]?.markup ?? (r.markup?.toString() || ""),
+                                          executorPrice:
+                                            prev[r.id]?.executorPrice ??
+                                            (r.executorPrice?.toString() || ""),
+                                          markup:
+                                            prev[r.id]?.markup ??
+                                            (r.markup?.toString() || ""),
                                         },
                                       }));
                                     }}
@@ -890,7 +1167,8 @@ export default function AdminPage() {
                                       step="0.01"
                                       placeholder="10000"
                                       value={
-                                        editingPricing[r.id]?.executorPrice !== undefined
+                                        editingPricing[r.id]?.executorPrice !==
+                                        undefined
                                           ? editingPricing[r.id].executorPrice
                                           : r.executorPrice?.toString() || ""
                                       }
@@ -898,9 +1176,13 @@ export default function AdminPage() {
                                         setEditingPricing((prev) => ({
                                           ...prev,
                                           [r.id]: {
-                                            adminNotes: prev[r.id]?.adminNotes ?? (r.adminNotes || ""),
+                                            adminNotes:
+                                              prev[r.id]?.adminNotes ??
+                                              (r.adminNotes || ""),
                                             executorPrice: e.target.value,
-                                            markup: prev[r.id]?.markup ?? (r.markup?.toString() || ""),
+                                            markup:
+                                              prev[r.id]?.markup ??
+                                              (r.markup?.toString() || ""),
                                           },
                                         }));
                                       }}
@@ -913,7 +1195,8 @@ export default function AdminPage() {
                                     </label>
                                     <Select
                                       value={
-                                        editingPricing[r.id]?.markup !== undefined
+                                        editingPricing[r.id]?.markup !==
+                                        undefined
                                           ? editingPricing[r.id].markup
                                           : r.markup?.toString() || ""
                                       }
@@ -921,8 +1204,13 @@ export default function AdminPage() {
                                         setEditingPricing((prev) => ({
                                           ...prev,
                                           [r.id]: {
-                                            adminNotes: prev[r.id]?.adminNotes ?? (r.adminNotes || ""),
-                                            executorPrice: prev[r.id]?.executorPrice ?? (r.executorPrice?.toString() || ""),
+                                            adminNotes:
+                                              prev[r.id]?.adminNotes ??
+                                              (r.adminNotes || ""),
+                                            executorPrice:
+                                              prev[r.id]?.executorPrice ??
+                                              (r.executorPrice?.toString() ||
+                                                ""),
                                             markup: value,
                                           },
                                         }));
@@ -944,15 +1232,28 @@ export default function AdminPage() {
 
                                   {/* Display calculated client price */}
                                   {(() => {
-                                    const execPrice = editingPricing[r.id]?.executorPrice !== undefined
-                                      ? parseFloat(editingPricing[r.id].executorPrice)
-                                      : r.executorPrice;
-                                    const markupVal = editingPricing[r.id]?.markup !== undefined
-                                      ? parseFloat(editingPricing[r.id].markup)
-                                      : r.markup;
+                                    const execPrice =
+                                      editingPricing[r.id]?.executorPrice !==
+                                      undefined
+                                        ? parseFloat(
+                                            editingPricing[r.id].executorPrice,
+                                          )
+                                        : r.executorPrice;
+                                    const markupVal =
+                                      editingPricing[r.id]?.markup !== undefined
+                                        ? parseFloat(
+                                            editingPricing[r.id].markup,
+                                          )
+                                        : r.markup;
 
-                                    if (execPrice && markupVal && !isNaN(execPrice) && !isNaN(markupVal)) {
-                                      const clientPrice = execPrice * (1 + markupVal / 100);
+                                    if (
+                                      execPrice &&
+                                      markupVal &&
+                                      !isNaN(execPrice) &&
+                                      !isNaN(markupVal)
+                                    ) {
+                                      const clientPrice =
+                                        execPrice * (1 + markupVal / 100);
                                       return (
                                         <div className="pt-2">
                                           <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">
@@ -983,22 +1284,71 @@ export default function AdminPage() {
                             </div>
 
                             <div className="mt-4 flex items-center gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleExportToExcel(r.id);
-                                }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-600 hover:bg-green-50 transition-colors"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Экспорт в Excel
-                              </button>
+                              <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExportMenuId(exportMenuId === r.id ? null : r.id);
+                                  }}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-600 hover:bg-green-50 transition-colors"
+                                >
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                  </svg>
+                                  Экспорт в Excel
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </button>
+                                {exportMenuId === r.id && (
+                                  <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute left-0 top-full mt-1 bg-white dark:bg-dark-light rounded-lg shadow-xl border border-gray-200 dark:border-white/10 py-1 z-20 min-w-[200px]"
+                                  >
+                                    <button
+                                      onClick={() => handleExportToExcel(r.id)}
+                                      className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-dark dark:text-white"
+                                    >
+                                      Все позиции
+                                    </button>
+                                    <div className="border-t border-gray-100 dark:border-white/10 my-1" />
+                                    <button
+                                      onClick={() => handleExportToExcel(r.id, "поверка")}
+                                      className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-dark dark:text-white"
+                                    >
+                                      Только поверки
+                                    </button>
+                                    <button
+                                      onClick={() => handleExportToExcel(r.id, "аттестация")}
+                                      className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-dark dark:text-white"
+                                    >
+                                      Только аттестации
+                                    </button>
+                                    <button
+                                      onClick={() => handleExportToExcel(r.id, "калибровка")}
+                                      className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-dark dark:text-white"
+                                    >
+                                      Только калибровки
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
 
                               {deleteConfirmId === r.id ? (
                                 <>
-                                  <span className="text-sm text-red-600">Удалить заявку?</span>
+                                  <span className="text-sm text-red-600">
+                                    Удалить заявку?
+                                  </span>
                                   <button
                                     onClick={() => handleDelete(r.id)}
                                     className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors"
@@ -1017,8 +1367,18 @@ export default function AdminPage() {
                                   onClick={() => setDeleteConfirmId(r.id)}
                                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
                                 >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
                                   </svg>
                                   Удалить
                                 </button>

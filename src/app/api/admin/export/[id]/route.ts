@@ -37,9 +37,21 @@ export async function GET(
   // Determine organization name: prefer user's company, fallback to request name
   const organizationName = request.user?.company || request.user?.name || request.name;
 
+  // Filter items by service type if filter parameter is provided
+  const filter = req.nextUrl.searchParams.get("filter"); // поверка | аттестация | калибровка
+  let filteredItems = request.items || [];
+  if (filter && filteredItems.length > 0) {
+    filteredItems = filteredItems.filter((item) =>
+      item.poverk?.toLowerCase().includes(filter.toLowerCase())
+    );
+  }
+
   // Create workbook
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Заявка на оформление поверки");
+  const sheetName = filter
+    ? `Заявка — ${filter.charAt(0).toUpperCase() + filter.slice(1)}`
+    : "Заявка на оформление поверки";
+  const worksheet = workbook.addWorksheet(sheetName);
 
   // Set column widths
   worksheet.columns = [
@@ -89,8 +101,8 @@ export async function GET(
   headerRow.height = 60;
 
   // Add data rows from items
-  if (request.items && request.items.length > 0) {
-    request.items.forEach((item, index) => {
+  if (filteredItems.length > 0) {
+    filteredItems.forEach((item, index) => {
       const dataRow = worksheet.addRow([
         index + 1,
         organizationName, // фирма-владелец (берём из компании пользователя или имени заявки)
@@ -145,7 +157,8 @@ export async function GET(
   // Create filename with request ID and date
   const date = new Date(request.createdAt);
   const dateStr = date.toISOString().split('T')[0];
-  const filename = `Заявка_${request.id}_${dateStr}.xlsx`;
+  const filterSuffix = filter ? `_${filter}` : "";
+  const filename = `Заявка_${request.id}_${dateStr}${filterSuffix}.xlsx`;
 
   // Return Excel file
   return new NextResponse(buffer, {
