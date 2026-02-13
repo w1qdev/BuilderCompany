@@ -48,6 +48,10 @@ model Request {
   clientPrice   Float?
   needContract  Boolean  @default(false)
   items         RequestItem[]
+
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model RequestItem {

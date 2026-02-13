@@ -34,14 +34,16 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     // Check localStorage or system preference
     const savedTheme = localStorage.getItem("theme") as Theme | null;
     if (savedTheme) {
       setTheme(savedTheme);
+      document.documentElement.classList.toggle("dark", savedTheme === "dark");
     } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
       setTheme(ThemeTypes.DARK);
+      document.documentElement.classList.add("dark");
     }
+    setMounted(true);
   }, []);
 
   useEffect(() => {

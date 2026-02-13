@@ -70,7 +70,7 @@ export default function Calculator({ onOpenModal }: CalculatorProps) {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
+          viewport={{ once: true, amount: 0.3 }}
           className="text-center mb-16"
         >
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">
@@ -86,32 +86,31 @@ export default function Calculator({ onOpenModal }: CalculatorProps) {
         </motion.div>
 
         {/* Step 1: Service Selection */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ delay: 0.1 }}
-          className="mb-12"
-        >
-          <div className="flex items-center gap-3 mb-6">
+        <div className="mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            className="flex items-center gap-3 mb-6"
+          >
             <div className="w-10 h-10 gradient-primary rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
               1
             </div>
             <h3 className="text-2xl font-bold text-dark dark:text-white">
               Выберите услугу
             </h3>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-3 gap-4">
             {serviceTypes.map((s, index) => (
               <motion.button
                 key={s.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 + index * 0.1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ delay: index * 0.15 }}
                 onClick={() => setService(s.id)}
-                className={`group relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 ${
+                className={`group relative overflow-hidden rounded-2xl p-6 text-left transition-[box-shadow,transform,ring-color] duration-300 ${
                   service === s.id
                     ? "bg-white dark:bg-dark-light shadow-2xl ring-2 ring-primary scale-105"
                     : "bg-white dark:bg-dark-light shadow-md hover:shadow-xl hover:scale-102"
@@ -176,35 +175,34 @@ export default function Calculator({ onOpenModal }: CalculatorProps) {
               </motion.button>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Step 2: Urgency Selection */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ delay: 0.2 }}
-          className="mb-12"
-        >
-          <div className="flex items-center gap-3 mb-6">
+        <div className="mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            className="flex items-center gap-3 mb-6"
+          >
             <div className="w-10 h-10 gradient-primary rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
               2
             </div>
             <h3 className="text-2xl font-bold text-dark dark:text-white">
               Выберите сроки выполнения
             </h3>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-2 gap-4">
             {urgencyOptions.map((u, index) => (
               <motion.button
                 key={u.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 + index * 0.1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ delay: index * 0.15 }}
                 onClick={() => setUrgency(u.id)}
-                className={`group relative overflow-hidden rounded-2xl p-8 text-left transition-all duration-300 ${
+                className={`group relative overflow-hidden rounded-2xl p-8 text-left transition-[box-shadow,transform,ring-color] duration-300 ${
                   urgency === u.id
                     ? "bg-gradient-to-br from-dark to-dark-light text-white shadow-2xl scale-105 ring-2 ring-primary"
                     : "bg-white dark:bg-dark-light shadow-md hover:shadow-xl hover:scale-102"
@@ -285,14 +283,13 @@ export default function Calculator({ onOpenModal }: CalculatorProps) {
               </motion.button>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Step 3: Summary & CTA */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ delay: 0.3 }}
+          viewport={{ once: true, amount: 0.3 }}
         >
           <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-dark-light shadow-lg border border-gray-200 dark:border-white/10">
             {/* Header */}

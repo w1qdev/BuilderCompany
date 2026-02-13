@@ -153,24 +153,15 @@ export default function About() {
           </h3>
         </motion.div>
 
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.1 } },
-          }}
-          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {advantages.map((adv) => (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {advantages.map((adv, index) => (
             <motion.div
               key={adv.title}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-              }}
-              className="group bg-white dark:bg-dark-light rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ delay: index * 0.1 }}
+              className="group bg-white dark:bg-dark-light rounded-2xl p-6 shadow-md hover:shadow-xl transition-shadow duration-300"
             >
               <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <svg
@@ -195,7 +186,7 @@ export default function About() {
               </p>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

@@ -24,7 +24,7 @@ interface HeaderProps {
 export default function Header({ onOpenModal }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { phone, email: _email } = useSiteSettings();
+  const { phone, email } = useSiteSettings();
   const telHref = `tel:+7${phone.replace(/\D/g, "").slice(1)}`;
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
               {phone}
             </a>
             <a
-              href={`mailto:zakaz@csm-center.ru`}
+              href={`mailto:${email}`}
               className="hover:text-primary transition-colors hidden sm:flex items-center gap-1"
             >
               <svg
@@ -79,7 +79,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
                   d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
               </svg>
-              zakaz@csm-center.ru
+              {email}
             </a>
           </div>
           <div className="hidden md:flex items-center gap-1">
