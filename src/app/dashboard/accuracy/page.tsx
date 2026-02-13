@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import Logo from "@/components/Logo";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 const accuracyData = [
   {
@@ -48,7 +46,8 @@ const accuracyData = [
   },
   {
     title: "Термопреобразователи сопротивления (ГОСТ 6651-2009)",
-    description: "Классы допуска для платиновых, медных и никелевых термопреобразователей",
+    description:
+      "Классы допуска для платиновых, медных и никелевых термопреобразователей",
     tables: [
       {
         name: "Платиновые термопреобразователи (Pt100)",
@@ -122,23 +121,11 @@ export default function AccuracyPage() {
   const [activeSection, setActiveSection] = useState(0);
 
   return (
-    <div className="min-h-screen bg-warm-bg dark:bg-dark">
-      {/* Header */}
-      <div className="gradient-dark text-white">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Logo size="sm" />
-          </Link>
-          <span className="text-white/40 text-sm">/ Классы точности</span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+    <div className="max-w-6xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
           <h1 className="text-2xl sm:text-3xl font-bold text-dark dark:text-white mb-2">
             Классы точности
           </h1>
@@ -225,14 +212,7 @@ export default function AccuracyPage() {
             </div>
           </motion.div>
 
-          {/* Back link */}
-          <div className="mt-8 text-center">
-            <Link href="/dashboard" className="text-primary hover:underline text-sm font-medium">
-              ← Вернуться в личный кабинет
-            </Link>
-          </div>
-        </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

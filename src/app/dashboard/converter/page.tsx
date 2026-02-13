@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Logo from "@/components/Logo";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
-type Category = "length" | "mass" | "pressure" | "temperature" | "force" | "energy";
+type Category =
+  | "length"
+  | "mass"
+  | "pressure"
+  | "temperature"
+  | "force"
+  | "energy";
 
 interface Unit {
   name: string;
@@ -19,70 +23,240 @@ const unitCategories: Record<Category, { name: string; units: Unit[] }> = {
     name: "Длина",
     units: [
       { name: "Метр", symbol: "м", toBase: (v) => v, fromBase: (v) => v },
-      { name: "Километр", symbol: "км", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
-      { name: "Сантиметр", symbol: "см", toBase: (v) => v / 100, fromBase: (v) => v * 100 },
-      { name: "Миллиметр", symbol: "мм", toBase: (v) => v / 1000, fromBase: (v) => v * 1000 },
-      { name: "Микрометр", symbol: "мкм", toBase: (v) => v / 1e6, fromBase: (v) => v * 1e6 },
-      { name: "Нанометр", symbol: "нм", toBase: (v) => v / 1e9, fromBase: (v) => v * 1e9 },
-      { name: "Дюйм", symbol: "in", toBase: (v) => v * 0.0254, fromBase: (v) => v / 0.0254 },
-      { name: "Фут", symbol: "ft", toBase: (v) => v * 0.3048, fromBase: (v) => v / 0.3048 },
+      {
+        name: "Километр",
+        symbol: "км",
+        toBase: (v) => v * 1000,
+        fromBase: (v) => v / 1000,
+      },
+      {
+        name: "Сантиметр",
+        symbol: "см",
+        toBase: (v) => v / 100,
+        fromBase: (v) => v * 100,
+      },
+      {
+        name: "Миллиметр",
+        symbol: "мм",
+        toBase: (v) => v / 1000,
+        fromBase: (v) => v * 1000,
+      },
+      {
+        name: "Микрометр",
+        symbol: "мкм",
+        toBase: (v) => v / 1e6,
+        fromBase: (v) => v * 1e6,
+      },
+      {
+        name: "Нанометр",
+        symbol: "нм",
+        toBase: (v) => v / 1e9,
+        fromBase: (v) => v * 1e9,
+      },
+      {
+        name: "Дюйм",
+        symbol: "in",
+        toBase: (v) => v * 0.0254,
+        fromBase: (v) => v / 0.0254,
+      },
+      {
+        name: "Фут",
+        symbol: "ft",
+        toBase: (v) => v * 0.3048,
+        fromBase: (v) => v / 0.3048,
+      },
     ],
   },
   mass: {
     name: "Масса",
     units: [
       { name: "Килограмм", symbol: "кг", toBase: (v) => v, fromBase: (v) => v },
-      { name: "Грамм", symbol: "г", toBase: (v) => v / 1000, fromBase: (v) => v * 1000 },
-      { name: "Миллиграмм", symbol: "мг", toBase: (v) => v / 1e6, fromBase: (v) => v * 1e6 },
-      { name: "Тонна", symbol: "т", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
-      { name: "Фунт", symbol: "lb", toBase: (v) => v * 0.453592, fromBase: (v) => v / 0.453592 },
-      { name: "Унция", symbol: "oz", toBase: (v) => v * 0.0283495, fromBase: (v) => v / 0.0283495 },
+      {
+        name: "Грамм",
+        symbol: "г",
+        toBase: (v) => v / 1000,
+        fromBase: (v) => v * 1000,
+      },
+      {
+        name: "Миллиграмм",
+        symbol: "мг",
+        toBase: (v) => v / 1e6,
+        fromBase: (v) => v * 1e6,
+      },
+      {
+        name: "Тонна",
+        symbol: "т",
+        toBase: (v) => v * 1000,
+        fromBase: (v) => v / 1000,
+      },
+      {
+        name: "Фунт",
+        symbol: "lb",
+        toBase: (v) => v * 0.453592,
+        fromBase: (v) => v / 0.453592,
+      },
+      {
+        name: "Унция",
+        symbol: "oz",
+        toBase: (v) => v * 0.0283495,
+        fromBase: (v) => v / 0.0283495,
+      },
     ],
   },
   pressure: {
     name: "Давление",
     units: [
       { name: "Паскаль", symbol: "Па", toBase: (v) => v, fromBase: (v) => v },
-      { name: "Килопаскаль", symbol: "кПа", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
-      { name: "Мегапаскаль", symbol: "МПа", toBase: (v) => v * 1e6, fromBase: (v) => v / 1e6 },
-      { name: "Бар", symbol: "бар", toBase: (v) => v * 1e5, fromBase: (v) => v / 1e5 },
-      { name: "Миллибар", symbol: "мбар", toBase: (v) => v * 100, fromBase: (v) => v / 100 },
-      { name: "Атмосфера", symbol: "атм", toBase: (v) => v * 101325, fromBase: (v) => v / 101325 },
-      { name: "мм рт. ст.", symbol: "мм рт.ст.", toBase: (v) => v * 133.322, fromBase: (v) => v / 133.322 },
-      { name: "кгс/см²", symbol: "кгс/см²", toBase: (v) => v * 98066.5, fromBase: (v) => v / 98066.5 },
-      { name: "PSI", symbol: "psi", toBase: (v) => v * 6894.76, fromBase: (v) => v / 6894.76 },
+      {
+        name: "Килопаскаль",
+        symbol: "кПа",
+        toBase: (v) => v * 1000,
+        fromBase: (v) => v / 1000,
+      },
+      {
+        name: "Мегапаскаль",
+        symbol: "МПа",
+        toBase: (v) => v * 1e6,
+        fromBase: (v) => v / 1e6,
+      },
+      {
+        name: "Бар",
+        symbol: "бар",
+        toBase: (v) => v * 1e5,
+        fromBase: (v) => v / 1e5,
+      },
+      {
+        name: "Миллибар",
+        symbol: "мбар",
+        toBase: (v) => v * 100,
+        fromBase: (v) => v / 100,
+      },
+      {
+        name: "Атмосфера",
+        symbol: "атм",
+        toBase: (v) => v * 101325,
+        fromBase: (v) => v / 101325,
+      },
+      {
+        name: "мм рт. ст.",
+        symbol: "мм рт.ст.",
+        toBase: (v) => v * 133.322,
+        fromBase: (v) => v / 133.322,
+      },
+      {
+        name: "кгс/см²",
+        symbol: "кгс/см²",
+        toBase: (v) => v * 98066.5,
+        fromBase: (v) => v / 98066.5,
+      },
+      {
+        name: "PSI",
+        symbol: "psi",
+        toBase: (v) => v * 6894.76,
+        fromBase: (v) => v / 6894.76,
+      },
     ],
   },
   temperature: {
     name: "Температура",
     units: [
       { name: "Цельсий", symbol: "°C", toBase: (v) => v, fromBase: (v) => v },
-      { name: "Кельвин", symbol: "K", toBase: (v) => v - 273.15, fromBase: (v) => v + 273.15 },
-      { name: "Фаренгейт", symbol: "°F", toBase: (v) => (v - 32) * 5 / 9, fromBase: (v) => v * 9 / 5 + 32 },
+      {
+        name: "Кельвин",
+        symbol: "K",
+        toBase: (v) => v - 273.15,
+        fromBase: (v) => v + 273.15,
+      },
+      {
+        name: "Фаренгейт",
+        symbol: "°F",
+        toBase: (v) => ((v - 32) * 5) / 9,
+        fromBase: (v) => (v * 9) / 5 + 32,
+      },
     ],
   },
   force: {
     name: "Сила",
     units: [
       { name: "Ньютон", symbol: "Н", toBase: (v) => v, fromBase: (v) => v },
-      { name: "Килоньютон", symbol: "кН", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
-      { name: "Меганьютон", symbol: "МН", toBase: (v) => v * 1e6, fromBase: (v) => v / 1e6 },
-      { name: "Дин", symbol: "дин", toBase: (v) => v / 1e5, fromBase: (v) => v * 1e5 },
-      { name: "Килограмм-сила", symbol: "кгс", toBase: (v) => v * 9.80665, fromBase: (v) => v / 9.80665 },
-      { name: "Фунт-сила", symbol: "lbf", toBase: (v) => v * 4.44822, fromBase: (v) => v / 4.44822 },
+      {
+        name: "Килоньютон",
+        symbol: "кН",
+        toBase: (v) => v * 1000,
+        fromBase: (v) => v / 1000,
+      },
+      {
+        name: "Меганьютон",
+        symbol: "МН",
+        toBase: (v) => v * 1e6,
+        fromBase: (v) => v / 1e6,
+      },
+      {
+        name: "Дин",
+        symbol: "дин",
+        toBase: (v) => v / 1e5,
+        fromBase: (v) => v * 1e5,
+      },
+      {
+        name: "Килограмм-сила",
+        symbol: "кгс",
+        toBase: (v) => v * 9.80665,
+        fromBase: (v) => v / 9.80665,
+      },
+      {
+        name: "Фунт-сила",
+        symbol: "lbf",
+        toBase: (v) => v * 4.44822,
+        fromBase: (v) => v / 4.44822,
+      },
     ],
   },
   energy: {
     name: "Энергия",
     units: [
       { name: "Джоуль", symbol: "Дж", toBase: (v) => v, fromBase: (v) => v },
-      { name: "Килоджоуль", symbol: "кДж", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
-      { name: "Мегаджоуль", symbol: "МДж", toBase: (v) => v * 1e6, fromBase: (v) => v / 1e6 },
-      { name: "Калория", symbol: "кал", toBase: (v) => v * 4.184, fromBase: (v) => v / 4.184 },
-      { name: "Килокалория", symbol: "ккал", toBase: (v) => v * 4184, fromBase: (v) => v / 4184 },
-      { name: "Ватт-час", symbol: "Вт·ч", toBase: (v) => v * 3600, fromBase: (v) => v / 3600 },
-      { name: "Киловатт-час", symbol: "кВт·ч", toBase: (v) => v * 3.6e6, fromBase: (v) => v / 3.6e6 },
-      { name: "Электронвольт", symbol: "эВ", toBase: (v) => v * 1.602e-19, fromBase: (v) => v / 1.602e-19 },
+      {
+        name: "Килоджоуль",
+        symbol: "кДж",
+        toBase: (v) => v * 1000,
+        fromBase: (v) => v / 1000,
+      },
+      {
+        name: "Мегаджоуль",
+        symbol: "МДж",
+        toBase: (v) => v * 1e6,
+        fromBase: (v) => v / 1e6,
+      },
+      {
+        name: "Калория",
+        symbol: "кал",
+        toBase: (v) => v * 4.184,
+        fromBase: (v) => v / 4.184,
+      },
+      {
+        name: "Килокалория",
+        symbol: "ккал",
+        toBase: (v) => v * 4184,
+        fromBase: (v) => v / 4184,
+      },
+      {
+        name: "Ватт-час",
+        symbol: "Вт·ч",
+        toBase: (v) => v * 3600,
+        fromBase: (v) => v / 3600,
+      },
+      {
+        name: "Киловатт-час",
+        symbol: "кВт·ч",
+        toBase: (v) => v * 3.6e6,
+        fromBase: (v) => v / 3.6e6,
+      },
+      {
+        name: "Электронвольт",
+        symbol: "эВ",
+        toBase: (v) => v * 1.602e-19,
+        fromBase: (v) => v / 1.602e-19,
+      },
     ],
   },
 };
@@ -137,23 +311,11 @@ export default function ConverterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-bg dark:bg-dark">
-      {/* Header */}
-      <div className="gradient-dark text-white">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Logo size="sm" />
-          </Link>
-          <span className="text-white/40 text-sm">/ Конвертер единиц</span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+    <div className="max-w-3xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
           <h1 className="text-2xl sm:text-3xl font-bold text-dark dark:text-white mb-2">
             Конвертер единиц измерения
           </h1>
@@ -220,8 +382,18 @@ export default function ConverterPage() {
                   onClick={swapUnits}
                   className="p-2 rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
                 >
-                  <svg className="w-5 h-5 text-dark dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  <svg
+                    className="w-5 h-5 text-dark dark:text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                    />
                   </svg>
                 </button>
               </div>
@@ -264,24 +436,23 @@ export default function ConverterPage() {
                 <div className="mt-4 p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
                   <p className="text-center text-dark dark:text-white">
                     <span className="font-semibold">{fromValue}</span>{" "}
-                    <span className="text-neutral dark:text-white/70">{currentUnits[fromUnit].symbol}</span>
+                    <span className="text-neutral dark:text-white/70">
+                      {currentUnits[fromUnit].symbol}
+                    </span>
                     {" = "}
-                    <span className="font-semibold text-primary">{toValue}</span>{" "}
-                    <span className="text-neutral dark:text-white/70">{currentUnits[toUnit].symbol}</span>
+                    <span className="font-semibold text-primary">
+                      {toValue}
+                    </span>{" "}
+                    <span className="text-neutral dark:text-white/70">
+                      {currentUnits[toUnit].symbol}
+                    </span>
                   </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Back link */}
-          <div className="mt-8 text-center">
-            <Link href="/dashboard" className="text-primary hover:underline text-sm font-medium">
-              ← Вернуться в личный кабинет
-            </Link>
-          </div>
-        </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

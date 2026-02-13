@@ -122,7 +122,9 @@ export default function EquipmentList({
       });
 
       if (res.ok) {
-        toast.success(editingId ? "Оборудование обновлено" : "Оборудование добавлено");
+        toast.success(
+          editingId ? "Оборудование обновлено" : "Оборудование добавлено",
+        );
         setShowForm(false);
         setEditingId(null);
         setForm(emptyForm);
@@ -145,8 +147,12 @@ export default function EquipmentList({
       type: eq.type || "",
       serialNumber: eq.serialNumber || "",
       registryNumber: eq.registryNumber || "",
-      verificationDate: eq.verificationDate ? eq.verificationDate.split("T")[0] : "",
-      nextVerification: eq.nextVerification ? eq.nextVerification.split("T")[0] : "",
+      verificationDate: eq.verificationDate
+        ? eq.verificationDate.split("T")[0]
+        : "",
+      nextVerification: eq.nextVerification
+        ? eq.nextVerification.split("T")[0]
+        : "",
       interval: eq.interval,
       category: eq.category,
       company: eq.company || "",
@@ -181,7 +187,10 @@ export default function EquipmentList({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/equipment/import", { method: "POST", body: formData });
+      const res = await fetch("/api/equipment/import", {
+        method: "POST",
+        body: formData,
+      });
       const data = await res.json();
       if (res.ok) {
         toast.success(`Импортировано ${data.imported} записей`);
@@ -262,32 +271,77 @@ export default function EquipmentList({
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-dark dark:text-white">{title}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-dark dark:text-white">
+          {title}
+        </h1>
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => { setShowForm(true); setEditingId(null); setForm(emptyForm); }}
+            onClick={() => {
+              setShowForm(true);
+              setEditingId(null);
+              setForm(emptyForm);
+            }}
             className="inline-flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             Добавить
           </button>
-          <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 cursor-pointer hover:bg-gray-50 transition-colors ${importing ? "opacity-50 pointer-events-none" : ""}`}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          <label
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 cursor-pointer hover:bg-gray-50 transition-colors ${importing ? "opacity-50 pointer-events-none" : ""}`}
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
             </svg>
-            {importing ? "Импорт..." : "Импорт"}
-            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+            {importing ? "Импорт..." : "Импорт "}
+            (.xlsx)
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleImport}
+            />
           </label>
           <button
             onClick={handleExport}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
-            Экспорт
+            Экспорт (.xlsx)
           </button>
         </div>
       </div>
@@ -295,8 +349,18 @@ export default function EquipmentList({
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1 sm:max-w-xs">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
           <input
             type="text"
@@ -324,7 +388,9 @@ export default function EquipmentList({
           >
             <option value="">Все категории</option>
             {categoryOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
           </select>
         )}
@@ -353,75 +419,188 @@ export default function EquipmentList({
 
       {/* Form modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowForm(false)}
+        >
+          <div
+            className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-bold text-dark dark:text-white mb-4">
-              {editingId ? "Редактировать оборудование" : "Добавить оборудование"}
+              {editingId
+                ? "Редактировать оборудование"
+                : "Добавить оборудование"}
             </h2>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-neutral mb-1">Наименование *</label>
-                <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Манометр МП-100" />
+                <label className="block text-xs font-medium text-neutral mb-1">
+                  Наименование *
+                </label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Манометр МП-100"
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-neutral mb-1">Тип/Модель</label>
-                  <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} />
+                  <label className="block text-xs font-medium text-neutral mb-1">
+                    Тип/Модель
+                  </label>
+                  <input
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                    value={form.type}
+                    onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral mb-1">Категория</label>
-                  <select className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                  <label className="block text-xs font-medium text-neutral mb-1">
+                    Категория
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                    value={form.category}
+                    onChange={(e) =>
+                      setForm({ ...form, category: e.target.value })
+                    }
+                  >
                     {categoryOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-neutral mb-1">Заводской номер</label>
-                  <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.serialNumber} onChange={(e) => setForm({ ...form, serialNumber: e.target.value })} />
+                  <label className="block text-xs font-medium text-neutral mb-1">
+                    Заводской номер
+                  </label>
+                  <input
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                    value={form.serialNumber}
+                    onChange={(e) =>
+                      setForm({ ...form, serialNumber: e.target.value })
+                    }
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral mb-1">Номер реестра</label>
-                  <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.registryNumber} onChange={(e) => setForm({ ...form, registryNumber: e.target.value })} />
+                  <label className="block text-xs font-medium text-neutral mb-1">
+                    Номер реестра
+                  </label>
+                  <input
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                    value={form.registryNumber}
+                    onChange={(e) =>
+                      setForm({ ...form, registryNumber: e.target.value })
+                    }
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-neutral mb-1">{dateLabel}</label>
-                  <input type="date" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.verificationDate} onChange={(e) => setForm({ ...form, verificationDate: e.target.value })} />
+                  <label className="block text-xs font-medium text-neutral mb-1">
+                    {dateLabel}
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                    value={form.verificationDate}
+                    onChange={(e) =>
+                      setForm({ ...form, verificationDate: e.target.value })
+                    }
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral mb-1">{nextDateLabel}</label>
-                  <input type="date" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.nextVerification} onChange={(e) => setForm({ ...form, nextVerification: e.target.value })} />
+                  <label className="block text-xs font-medium text-neutral mb-1">
+                    {nextDateLabel}
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                    value={form.nextVerification}
+                    onChange={(e) =>
+                      setForm({ ...form, nextVerification: e.target.value })
+                    }
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-neutral mb-1">Интервал (мес.)</label>
-                  <input type="number" min="1" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.interval} onChange={(e) => setForm({ ...form, interval: Number(e.target.value) || 12 })} />
+                  <label className="block text-xs font-medium text-neutral mb-1">
+                    Интервал (мес.)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                    value={form.interval}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        interval: Number(e.target.value) || 12,
+                      })
+                    }
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral mb-1">Организация</label>
-                  <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+                  <label className="block text-xs font-medium text-neutral mb-1">
+                    Организация
+                  </label>
+                  <input
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                    value={form.company}
+                    onChange={(e) =>
+                      setForm({ ...form, company: e.target.value })
+                    }
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral mb-1">Email для уведомлений</label>
-                <input type="email" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} />
+                <label className="block text-xs font-medium text-neutral mb-1">
+                  Email для уведомлений
+                </label>
+                <input
+                  type="email"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
+                  value={form.contactEmail}
+                  onChange={(e) =>
+                    setForm({ ...form, contactEmail: e.target.value })
+                  }
+                />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral mb-1">Примечания</label>
-                <textarea className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm resize-none" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <label className="block text-xs font-medium text-neutral mb-1">
+                  Примечания
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm resize-none"
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-neutral hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+              <button
+                onClick={() => setShowForm(false)}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-neutral hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+              >
                 Отмена
               </button>
-              <button onClick={handleSave} disabled={saving} className="px-6 py-2 rounded-xl text-sm font-semibold gradient-primary text-white hover:shadow-lg hover:shadow-primary/30 transition-shadow disabled:opacity-50">
-                {saving ? "Сохранение..." : editingId ? "Сохранить" : "Добавить"}
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-6 py-2 rounded-xl text-sm font-semibold gradient-primary text-white hover:shadow-lg hover:shadow-primary/30 transition-shadow disabled:opacity-50"
+              >
+                {saving
+                  ? "Сохранение..."
+                  : editingId
+                    ? "Сохранить"
+                    : "Добавить"}
               </button>
             </div>
           </div>
@@ -435,13 +614,31 @@ export default function EquipmentList({
         </div>
       ) : equipment.length === 0 ? (
         <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-8 text-center">
-          <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          <svg
+            className="w-16 h-16 mx-auto text-gray-300 dark:text-white/20 mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+            />
           </svg>
-          <h3 className="text-lg font-semibold text-dark dark:text-white mb-2">Нет оборудования</h3>
-          <p className="text-neutral dark:text-white/70 mb-4">Добавьте оборудование вручную или импортируйте из Excel</p>
+          <h3 className="text-lg font-semibold text-dark dark:text-white mb-2">
+            Нет оборудования
+          </h3>
+          <p className="text-neutral dark:text-white/70 mb-4">
+            Добавьте оборудование вручную или импортируйте из Excel
+          </p>
           <button
-            onClick={() => { setShowForm(true); setEditingId(null); setForm(emptyForm); }}
+            onClick={() => {
+              setShowForm(true);
+              setEditingId(null);
+              setForm(emptyForm);
+            }}
             className="inline-flex items-center gap-2 gradient-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold"
           >
             Добавить оборудование
@@ -452,7 +649,10 @@ export default function EquipmentList({
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
             {equipment.map((eq) => (
-              <div key={eq.id} className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-4">
+              <div
+                key={eq.id}
+                className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-4"
+              >
                 <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
@@ -463,22 +663,44 @@ export default function EquipmentList({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="font-medium text-dark dark:text-white truncate">{eq.name}</div>
-                        <div className="text-xs text-neutral dark:text-white/50">{eq.type || "\u2014"} {eq.serialNumber ? `/ ${eq.serialNumber}` : ""}</div>
+                        <div className="font-medium text-dark dark:text-white truncate">
+                          {eq.name}
+                        </div>
+                        <div className="text-xs text-neutral dark:text-white/50">
+                          {eq.type || "\u2014"}{" "}
+                          {eq.serialNumber ? `/ ${eq.serialNumber}` : ""}
+                        </div>
                       </div>
-                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[eq.status]?.color || "bg-gray-100 text-gray-600"}`}>
+                      <span
+                        className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[eq.status]?.color || "bg-gray-100 text-gray-600"}`}
+                      >
                         {statusConfig[eq.status]?.label || eq.status}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-neutral">
                       <span>{categoryLabels[eq.category] || eq.category}</span>
                       {eq.nextVerification && (
-                        <span>До: {new Date(eq.nextVerification).toLocaleDateString("ru-RU")}</span>
+                        <span>
+                          До:{" "}
+                          {new Date(eq.nextVerification).toLocaleDateString(
+                            "ru-RU",
+                          )}
+                        </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-3">
-                      <button onClick={() => handleEdit(eq)} className="text-xs text-primary hover:underline">Редактировать</button>
-                      <button onClick={() => handleDelete(eq.id)} className="text-xs text-red-500 hover:underline">Удалить</button>
+                      <button
+                        onClick={() => handleEdit(eq)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Редактировать
+                      </button>
+                      <button
+                        onClick={() => handleDelete(eq.id)}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        Удалить
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -493,30 +715,68 @@ export default function EquipmentList({
                 <thead>
                   <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
                     <th className="px-4 py-3 text-left">
-                      <input type="checkbox" checked={equipment.length > 0 && selected.size === equipment.length} onChange={toggleAll} className="rounded border-gray-300" />
+                      <input
+                        type="checkbox"
+                        checked={
+                          equipment.length > 0 &&
+                          selected.size === equipment.length
+                        }
+                        onChange={toggleAll}
+                        className="rounded border-gray-300"
+                      />
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">Наименование</th>
-                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">Тип</th>
-                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">Зав. №</th>
-                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">Реестр</th>
+                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
+                      Наименование
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
+                      Тип
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
+                      Зав. №
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
+                      Реестр
+                    </th>
                     {categoryOptions.length > 1 && (
-                      <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">Категория</th>
+                      <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
+                        Категория
+                      </th>
                     )}
-                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">След. дата</th>
-                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">Статус</th>
+                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
+                      След. дата
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
+                      Статус
+                    </th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {equipment.map((eq) => (
-                    <tr key={eq.id} className="border-b border-gray-100 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-white/[0.02]">
+                    <tr
+                      key={eq.id}
+                      className="border-b border-gray-100 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-white/[0.02]"
+                    >
                       <td className="px-4 py-3">
-                        <input type="checkbox" checked={selected.has(eq.id)} onChange={() => toggleSelect(eq.id)} className="rounded border-gray-300" />
+                        <input
+                          type="checkbox"
+                          checked={selected.has(eq.id)}
+                          onChange={() => toggleSelect(eq.id)}
+                          className="rounded border-gray-300"
+                        />
                       </td>
-                      <td className="px-4 py-3 font-medium text-dark dark:text-white">{eq.name}</td>
-                      <td className="px-4 py-3 text-neutral dark:text-white/60">{eq.type || "\u2014"}</td>
-                      <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">{eq.serialNumber || "\u2014"}</td>
-                      <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">{eq.registryNumber || "\u2014"}</td>
+                      <td className="px-4 py-3 font-medium text-dark dark:text-white">
+                        {eq.name}
+                      </td>
+                      <td className="px-4 py-3 text-neutral dark:text-white/60">
+                        {eq.type || "\u2014"}
+                      </td>
+                      <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">
+                        {eq.serialNumber || "\u2014"}
+                      </td>
+                      <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">
+                        {eq.registryNumber || "\u2014"}
+                      </td>
                       {categoryOptions.length > 1 && (
                         <td className="px-4 py-3">
                           <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-white/10 text-dark dark:text-white">
@@ -525,23 +785,57 @@ export default function EquipmentList({
                         </td>
                       )}
                       <td className="px-4 py-3 text-neutral dark:text-white/60 whitespace-nowrap">
-                        {eq.nextVerification ? new Date(eq.nextVerification).toLocaleDateString("ru-RU") : "\u2014"}
+                        {eq.nextVerification
+                          ? new Date(eq.nextVerification).toLocaleDateString(
+                              "ru-RU",
+                            )
+                          : "\u2014"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[eq.status]?.color || "bg-gray-100 text-gray-600"}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[eq.status]?.color || "bg-gray-100 text-gray-600"}`}
+                        >
                           {statusConfig[eq.status]?.label || eq.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <button onClick={() => handleEdit(eq)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-neutral transition-colors" title="Редактировать">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          <button
+                            onClick={() => handleEdit(eq)}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-neutral transition-colors"
+                            title="Редактировать"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
                             </svg>
                           </button>
-                          <button onClick={() => handleDelete(eq.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-red-400 transition-colors" title="Удалить">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <button
+                            onClick={() => handleDelete(eq.id)}
+                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-red-400 transition-colors"
+                            title="Удалить"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
                             </svg>
                           </button>
                         </div>

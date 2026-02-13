@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import Logo from "@/components/Logo";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 type CalculatorType = "absolute" | "relative" | "class" | "combined";
 
 export default function CalculatorPage() {
-  const [calculatorType, setCalculatorType] = useState<CalculatorType>("absolute");
+  const [calculatorType, setCalculatorType] =
+    useState<CalculatorType>("absolute");
 
   // Absolute error inputs
   const [measuredValue, setMeasuredValue] = useState("");
@@ -43,7 +42,9 @@ export default function CalculatorPage() {
   };
 
   const calculateCombinedError = () => {
-    const numericErrors = errors.map(e => parseFloat(e)).filter(e => !isNaN(e));
+    const numericErrors = errors
+      .map((e) => parseFloat(e))
+      .filter((e) => !isNaN(e));
     if (numericErrors.length < 2) return null;
     return Math.sqrt(numericErrors.reduce((sum, e) => sum + e * e, 0));
   };
@@ -67,23 +68,11 @@ export default function CalculatorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-bg dark:bg-dark">
-      {/* Header */}
-      <div className="gradient-dark text-white">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Logo size="sm" />
-          </Link>
-          <span className="text-white/40 text-sm">/ Калькулятор погрешностей</span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+    <div className="max-w-3xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
           <h1 className="text-2xl sm:text-3xl font-bold text-dark dark:text-white mb-2">
             Калькулятор погрешностей
           </h1>
@@ -116,10 +105,13 @@ export default function CalculatorPage() {
           {/* Calculator */}
           <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-6">
             {/* Absolute & Relative Error */}
-            {(calculatorType === "absolute" || calculatorType === "relative") && (
+            {(calculatorType === "absolute" ||
+              calculatorType === "relative") && (
               <div className="space-y-4">
                 <h2 className="text-lg font-bold text-dark dark:text-white mb-4">
-                  {calculatorType === "absolute" ? "Абсолютная погрешность" : "Относительная погрешность"}
+                  {calculatorType === "absolute"
+                    ? "Абсолютная погрешность"
+                    : "Относительная погрешность"}
                 </h2>
 
                 <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 mb-4">
@@ -184,7 +176,8 @@ export default function CalculatorPage() {
 
                 <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 mb-4">
                   <p className="text-sm text-neutral dark:text-white/70">
-                    Δ = (γ / 100) × X_max, где γ — класс точности в %, X_max — верхний предел измерения
+                    Δ = (γ / 100) × X_max, где γ — класс точности в %, X_max —
+                    верхний предел измерения
                   </p>
                 </div>
 
@@ -217,7 +210,9 @@ export default function CalculatorPage() {
 
                 {classValue && scaleMax && (
                   <div className="mt-6 p-4 gradient-primary rounded-xl text-white">
-                    <p className="text-sm opacity-80 mb-1">Допускаемая абсолютная погрешность:</p>
+                    <p className="text-sm opacity-80 mb-1">
+                      Допускаемая абсолютная погрешность:
+                    </p>
                     <p className="text-2xl font-bold">
                       Δ = ±{calculateClassError()?.toFixed(4)} ед.
                     </p>
@@ -259,8 +254,18 @@ export default function CalculatorPage() {
                           onClick={() => removeError(index)}
                           className="self-end p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                         </button>
                       )}
@@ -277,9 +282,11 @@ export default function CalculatorPage() {
                   </button>
                 )}
 
-                {errors.filter(e => e !== "").length >= 2 && (
+                {errors.filter((e) => e !== "").length >= 2 && (
                   <div className="mt-6 p-4 gradient-primary rounded-xl text-white">
-                    <p className="text-sm opacity-80 mb-1">Суммарная погрешность:</p>
+                    <p className="text-sm opacity-80 mb-1">
+                      Суммарная погрешность:
+                    </p>
                     <p className="text-2xl font-bold">
                       Δ_сум = {calculateCombinedError()?.toFixed(6)} ед.
                     </p>
@@ -289,14 +296,7 @@ export default function CalculatorPage() {
             )}
           </div>
 
-          {/* Back link */}
-          <div className="mt-8 text-center">
-            <Link href="/dashboard" className="text-primary hover:underline text-sm font-medium">
-              ← Вернуться в личный кабинет
-            </Link>
-          </div>
-        </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -47,6 +47,10 @@ export async function PATCH(
       else if (nextDate < twoWeeks) status = "pending";
     }
 
+    // Reset notified flag only when nextVerification date changes
+    const shouldResetNotified = nextVerification !== undefined &&
+      String(nextVerification) !== String(existing.nextVerification?.toISOString().split("T")[0] ?? "");
+
     const updated = await prisma.equipment.update({
       where: { id: equipmentId },
       data: {
@@ -62,7 +66,7 @@ export async function PATCH(
         ...(contactEmail !== undefined && { contactEmail: contactEmail?.trim() || null }),
         ...(notes !== undefined && { notes: notes?.trim() || null }),
         status,
-        notified: false,
+        ...(shouldResetNotified && { notified: false }),
       },
     });
 
