@@ -11,11 +11,11 @@ import AnimatedCounter from "./AnimatedCounter";
 import RotatingText from "./RotatingText";
 
 const heroImages = [
-  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1581093588401-fbb62a02f120?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=1920&auto=format&fit=crop",
+  "/images/hero/hero-1.webp",
+  "/images/hero/hero-2.webp",
+  "/images/hero/hero-3.webp",
+  "/images/hero/hero-4.webp",
+  "/images/hero/hero-5.webp",
 ];
 
 interface HeroProps {
@@ -45,7 +45,7 @@ export default function Hero({ onOpenModal }: HeroProps) {
   const patternY = useTransform(scrollY, [0, 500], [0, 150]);
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-dark">
       {/* Background slideshow */}
       <AnimatePresence mode="sync">
         <motion.div
