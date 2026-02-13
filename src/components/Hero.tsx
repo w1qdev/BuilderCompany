@@ -67,7 +67,7 @@ export default function Hero({ onOpenModal }: HeroProps) {
       {/* Dark gradient overlay for text contrast */}
       <div className="absolute inset-0 bg-gradient-to-b from-dark/60 via-dark/50 to-dark/70" />
 
-      <div className="relative z-10 max-w-8xl mx-auto px-4 sm:px-6 py-20 text-center">
+      <div className="relative z-10 max-w-8xl mx-auto px-4 sm:px-6 pt-32 pb-20 text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

@@ -11,8 +11,7 @@ const projects = [
     area: "250+ приборов",
     duration: "3 месяца",
     year: "2025",
-    image:
-      "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&q=80",
+    image: "/images/portfolio/portfolio-1.webp",
   },
   {
     title: "ТГК-1",
@@ -22,8 +21,7 @@ const projects = [
     area: "1000+ счётчиков",
     duration: "6 месяцев",
     year: "2024",
-    image:
-      "https://images.unsplash.com/photo-1413882353314-73389f63b6fd?w=800&q=80",
+    image: "/images/portfolio/portfolio-2.webp",
   },
   {
     title: "Северсталь",
@@ -33,8 +31,7 @@ const projects = [
     area: "500+ приборов",
     duration: "2 месяца",
     year: "2024",
-    image:
-      "https://images.unsplash.com/photo-1567789884554-0b844b597180?w=800&q=80",
+    image: "/images/portfolio/portfolio-3.webp",
   },
   {
     title: "РЖД",
@@ -44,8 +41,7 @@ const projects = [
     area: "Железная дорога",
     duration: "5 месяцев",
     year: "2023",
-    image:
-      "https://images.unsplash.com/photo-1532105956626-9569c03602f6?w=800&q=80",
+    image: "/images/portfolio/portfolio-4.webp",
   },
   {
     title: "Биокад",
@@ -55,8 +51,7 @@ const projects = [
     area: "150+ единиц",
     duration: "1 месяц",
     year: "2023",
-    image:
-      "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=800&q=80",
+    image: "/images/portfolio/portfolio-5.webp",
   },
 ];
 

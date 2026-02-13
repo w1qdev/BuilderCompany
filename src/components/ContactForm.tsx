@@ -82,6 +82,20 @@ type ServiceItem = {
   registry: string;
 };
 
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+
+  // Normalize leading digit: 8 → 7
+  const normalized = digits.startsWith("8") ? "7" + digits.slice(1) : digits;
+
+  if (normalized.length === 0) return "";
+  if (normalized.length <= 1) return `+${normalized}`;
+  if (normalized.length <= 4) return `+${normalized[0]} (${normalized.slice(1)}`;
+  if (normalized.length <= 7) return `+${normalized[0]} (${normalized.slice(1, 4)}) ${normalized.slice(4)}`;
+  if (normalized.length <= 9) return `+${normalized[0]} (${normalized.slice(1, 4)}) ${normalized.slice(4, 7)}-${normalized.slice(7)}`;
+  return `+${normalized[0]} (${normalized.slice(1, 4)}) ${normalized.slice(4, 7)}-${normalized.slice(7, 9)}-${normalized.slice(9, 11)}`;
+}
+
 function createServiceItem(initial?: Partial<ServiceItem>): ServiceItem {
   return {
     id: crypto.randomUUID(),
@@ -303,7 +317,7 @@ export default function ContactForm({
             placeholder="+7 (___) ___-__-__"
             required
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
           />
         </div>
         <div className="space-y-1.5">

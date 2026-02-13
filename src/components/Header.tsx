@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Logo from "./Logo";
+import ThemeToggle from "./ThemeToggle";
 
 const navLinks = [
   { href: "#services", label: "Услуги" },
@@ -123,6 +124,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
         </nav>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <button
             onClick={onOpenModal}
             className="hidden sm:block gradient-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
