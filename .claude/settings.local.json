@@ -37,7 +37,12 @@
       "Bash(sqlite3:*)",
       "Bash(python -m json.tool:*)",
       "WebFetch(domain:dev.max.ru)",
-      "WebFetch(domain:images.unsplash.com)"
+      "WebFetch(domain:images.unsplash.com)",
+      "Bash(ls:*)",
+      "Bash(for f in Dockerfile docker-compose.yml docker-compose.yaml deploy.sh nginx.conf .dockerignore)",
+      "Bash(do test -f \"H:/Coding/Project/$f\")",
+      "Bash(echo:*)",
+      "Bash(done)"
     ]
   }
 }

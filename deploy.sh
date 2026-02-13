@@ -1,13 +1,23 @@
 #!/bin/bash
 
 # Deployment script for VPS
-# Usage: ./deploy.sh [docker|pm2]
+# Usage: ./deploy.sh
+#
+# Workflow: git pull && ./deploy.sh
+# Builds new image while old container is still serving traffic,
+# then does a quick swap (~5-15 sec downtime).
 
 set -e
 
-DEPLOY_METHOD=${1:-docker}
+APP_CONTAINER="csm-app"
+COMPOSE="docker compose"
 
-echo "Starting deployment with method: $DEPLOY_METHOD"
+# Fallback to docker-compose (v1) if docker compose (v2) is not available
+if ! docker compose version &>/dev/null; then
+    COMPOSE="docker-compose"
+fi
+
+echo "=== Deploy started at $(date) ==="
 
 # Check if .env.production exists
 if [ ! -f .env.production ]; then
@@ -16,59 +26,45 @@ if [ ! -f .env.production ]; then
     exit 1
 fi
 
-if [ "$DEPLOY_METHOD" = "docker" ]; then
-    echo "Building and deploying with Docker..."
+# Step 1: Build new image while old container is still running
+echo "[1/4] Building new image (old container still serving traffic)..."
+$COMPOSE build
 
-    # Stop existing containers
-    docker-compose down
+# Step 2: Quick swap — recreate container with new image
+echo "[2/4] Swapping to new container..."
+$COMPOSE up -d --force-recreate --no-build
 
-    # Build new image (use cache for faster rebuilds)
-    docker-compose build
+# Step 3: Wait for the new container to become healthy
+echo "[3/4] Waiting for health check..."
+ATTEMPTS=0
+MAX_ATTEMPTS=30
+until [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; do
+    HEALTH=$(docker inspect --format='{{.State.Health.Status}}' "$APP_CONTAINER" 2>/dev/null || echo "unknown")
+    if [ "$HEALTH" = "healthy" ]; then
+        echo "Container is healthy!"
+        break
+    fi
+    # Also accept "starting" with a successful curl as healthy enough
+    if [ "$HEALTH" = "starting" ] && wget -q --spider http://localhost:3000 2>/dev/null; then
+        echo "Container is responding (health check still warming up)."
+        break
+    fi
+    ATTEMPTS=$((ATTEMPTS + 1))
+    echo "  Waiting... ($ATTEMPTS/$MAX_ATTEMPTS, status: $HEALTH)"
+    sleep 5
+done
 
-    # Remove dangling images to free disk space
-    docker image prune -f
-
-    # Start containers
-    docker-compose up -d
-
-    # Show logs
-    echo "Deployment complete! Showing logs..."
-    docker-compose logs -f --tail=50
-
-elif [ "$DEPLOY_METHOD" = "pm2" ]; then
-    echo "Deploying with PM2..."
-
-    # Install dependencies
-    echo "Installing dependencies..."
-    npm ci --only=production
-
-    # Generate Prisma Client
-    echo "Generating Prisma Client..."
-    npx prisma generate
-
-    # Run database migrations
-    echo "Running database migrations..."
-    npx prisma migrate deploy
-
-    # Build Next.js app
-    echo "Building Next.js application..."
-    npm run build
-
-    # Create logs directory
-    mkdir -p logs
-
-    # Restart PM2
-    echo "Restarting PM2 process..."
-    pm2 delete csm-app 2>/dev/null || true
-    pm2 start ecosystem.config.js
-    pm2 save
-
-    # Show status
-    echo "Deployment complete!"
-    pm2 status
-    pm2 logs csm-app --lines 20
-
-else
-    echo "Invalid deployment method. Use 'docker' or 'pm2'."
+if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+    echo "WARNING: Container did not become healthy in time."
+    echo "Showing recent logs:"
+    $COMPOSE logs --tail=30
     exit 1
 fi
+
+# Step 4: Cleanup old images
+echo "[4/4] Cleaning up old images..."
+docker image prune -f
+
+echo ""
+echo "=== Deploy completed at $(date) ==="
+$COMPOSE ps
