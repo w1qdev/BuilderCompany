@@ -1,0 +1,22 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="48" height="48" rx="10" fill="#1a1a2e"/>
+  <circle cx="24" cy="24" r="18" stroke="url(#fg)" stroke-width="2.5" fill="none"/>
+  <line x1="24" y1="24" x2="6.27" y2="24" stroke="url(#fg)" stroke-width="2" stroke-linecap="round" transform="rotate(0 24 24)" opacity="0.4"/>
+  <line x1="24" y1="24" x2="6.27" y2="24" stroke="url(#fg)" stroke-width="2" stroke-linecap="round" transform="rotate(90 24 24)" opacity="0.4"/>
+  <line x1="24" y1="24" x2="7.77" y2="24" stroke="url(#fg)" stroke-width="1.2" stroke-linecap="round" transform="rotate(30 24 24)" opacity="0.25"/>
+  <line x1="24" y1="24" x2="7.77" y2="24" stroke="url(#fg)" stroke-width="1.2" stroke-linecap="round" transform="rotate(60 24 24)" opacity="0.25"/>
+  <line x1="24" y1="24" x2="7.77" y2="24" stroke="url(#fg)" stroke-width="1.2" stroke-linecap="round" transform="rotate(120 24 24)" opacity="0.25"/>
+  <line x1="24" y1="24" x2="7.77" y2="24" stroke="url(#fg)" stroke-width="1.2" stroke-linecap="round" transform="rotate(150 24 24)" opacity="0.25"/>
+  <line x1="24" y1="24" x2="7.77" y2="24" stroke="url(#fg)" stroke-width="1.2" stroke-linecap="round" transform="rotate(210 24 24)" opacity="0.25"/>
+  <line x1="24" y1="24" x2="7.77" y2="24" stroke="url(#fg)" stroke-width="1.2" stroke-linecap="round" transform="rotate(240 24 24)" opacity="0.25"/>
+  <line x1="24" y1="24" x2="7.77" y2="24" stroke="url(#fg)" stroke-width="1.2" stroke-linecap="round" transform="rotate(300 24 24)" opacity="0.25"/>
+  <line x1="24" y1="24" x2="7.77" y2="24" stroke="url(#fg)" stroke-width="1.2" stroke-linecap="round" transform="rotate(330 24 24)" opacity="0.25"/>
+  <line x1="24" y1="24" x2="33" y2="15" stroke="url(#fg)" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="24" cy="24" r="2.5" fill="url(#fg)"/>
+  <defs>
+    <linearGradient id="fg" x1="0" y1="0" x2="48" y2="48">
+      <stop offset="0%" stop-color="#E87A2E"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </linearGradient>
+  </defs>
+</svg>

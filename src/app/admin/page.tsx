@@ -1,5 +1,6 @@
 "use client";
 
+import AdminAnalytics from "@/components/AdminAnalytics";
 import Logo from "@/components/Logo";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -737,6 +738,9 @@ export default function AdminPage() {
               </button>
             ))}
           </div>
+
+          {/* Analytics */}
+          <AdminAnalytics password={password} />
 
           {/* Search + Actions */}
           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 mb-6">

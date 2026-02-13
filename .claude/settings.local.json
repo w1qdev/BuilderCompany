@@ -44,7 +44,9 @@
       "Bash(echo:*)",
       "Bash(done)",
       "Bash(git status:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "WebSearch",
+      "WebFetch(domain:yandex.ru)"
     ]
   }
 }

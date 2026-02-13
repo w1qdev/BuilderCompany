@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   let uploadedFilePath: string | null = null;
   try {
     const body = await req.json();
-    const { name, phone, email, company, inn, message, fileName, filePath, items, needContract } = body;
+    const { name, phone, email, company, inn, message, fileName, filePath, items, needContract, addEquipment } = body;
     if (filePath) {
       uploadedFilePath = path.join(
         process.cwd(),
@@ -124,6 +124,32 @@ export async function POST(req: NextRequest) {
       },
       include: { items: true },
     });
+
+    // If user is logged in and checked "add equipment", save items as equipment
+    if (addEquipment && userId) {
+      const serviceCategoryMap: Record<string, string> = {
+        "Поверка СИ": "verification",
+        "Калибровка": "calibration",
+        "Аттестация": "attestation",
+      };
+      const equipmentData = serviceItems
+        .filter((item) => item.object?.trim())
+        .map((item) => ({
+          userId,
+          name: item.object!.trim(),
+          serialNumber: item.fabricNumber?.trim() || null,
+          registryNumber: item.registry?.trim() || null,
+          category: serviceCategoryMap[item.service] || "verification",
+          status: "active",
+          interval: 12,
+          company: company || null,
+          contactEmail: email || null,
+        }));
+
+      if (equipmentData.length > 0) {
+        await prisma.equipment.createMany({ data: equipmentData });
+      }
+    }
 
     // Emit realtime event to admin panel
     const io = getIO();

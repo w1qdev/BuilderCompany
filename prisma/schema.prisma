@@ -8,14 +8,15 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
+  id        Int         @id @default(autoincrement())
+  email     String      @unique
   password  String
   name      String
   phone     String?
   company   String?
-  createdAt DateTime  @default(now())
+  createdAt DateTime    @default(now())
   requests  Request[]
+  equipment Equipment[]
 }
 
 model Setting {
@@ -75,4 +76,41 @@ model Service {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Equipment {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  type              String?
+  serialNumber      String?
+  registryNumber    String?
+  verificationDate  DateTime?
+  nextVerification  DateTime?
+  interval          Int       @default(12)
+  category          String    @default("verification")
+  status            String    @default("active")
+  notified          Boolean   @default(false)
+  company           String?
+  contactEmail      String?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([nextVerification])
+  @@index([status])
+}
+
+model PageView {
+  id        Int      @id @default(autoincrement())
+  url       String
+  userAgent String?
+  ip        String?
+  userId    Int?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([url])
 }

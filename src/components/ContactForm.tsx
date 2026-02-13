@@ -137,6 +137,7 @@ export default function ContactForm({
   );
   const [errorMsg, setErrorMsg] = useState("");
   const [needContract, setNeedContract] = useState(false);
+  const [addEquipment, setAddEquipment] = useState(false);
 
   const updateItem = (id: string, updates: Partial<ServiceItem>) => {
     setServiceItems((prev) =>
@@ -234,6 +235,7 @@ export default function ContactForm({
           fileName,
           filePath,
           needContract,
+          addEquipment,
         }),
       });
 
@@ -255,6 +257,7 @@ export default function ContactForm({
       setFile(null);
       setUploadProgress(UploadProgressEnums.IDLE);
       setNeedContract(false);
+      setAddEquipment(false);
 
       setTimeout(() => {
         onSuccess?.();
@@ -585,19 +588,35 @@ export default function ContactForm({
         </div>
       )}
 
-      <div className="flex items-start gap-3 p-4 bg-warm-bg dark:bg-neutral-900 rounded-xl">
-        <Checkbox
-          id="needContract"
-          checked={needContract}
-          onCheckedChange={(checked) => setNeedContract(checked === true)}
-          className="mt-0.5"
-        />
-        <Label
-          htmlFor="needContract"
-          className="text-sm text-dark dark:text-white cursor-pointer select-none leading-relaxed"
-        >
-          Требуется оформление договора оказания услуг
-        </Label>
+      <div className="space-y-3">
+        <div className="flex items-start gap-3 p-4 bg-warm-bg dark:bg-neutral-900 rounded-xl">
+          <Checkbox
+            id="needContract"
+            checked={needContract}
+            onCheckedChange={(checked) => setNeedContract(checked === true)}
+            className="mt-0.5"
+          />
+          <Label
+            htmlFor="needContract"
+            className="text-sm text-dark dark:text-white cursor-pointer select-none leading-relaxed"
+          >
+            Требуется оформление договора оказания услуг
+          </Label>
+        </div>
+        <div className="flex items-start gap-3 p-4 bg-warm-bg dark:bg-neutral-900 rounded-xl">
+          <Checkbox
+            id="addEquipment"
+            checked={addEquipment}
+            onCheckedChange={(checked) => setAddEquipment(checked === true)}
+            className="mt-0.5"
+          />
+          <Label
+            htmlFor="addEquipment"
+            className="text-sm text-dark dark:text-white cursor-pointer select-none leading-relaxed"
+          >
+            Добавить оборудование в личный кабинет
+          </Label>
+        </div>
       </div>
 
       <button

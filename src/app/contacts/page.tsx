@@ -101,8 +101,6 @@ export default function ContactsPage() {
             {/* Yandex Map */}
             <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg overflow-hidden h-80">
               <YandexMap
-                center={[55.751244, 37.618423]}
-                zoom={16}
                 address={address}
               />
             </div>

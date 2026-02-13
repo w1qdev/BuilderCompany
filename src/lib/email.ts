@@ -317,6 +317,90 @@ export async function sendEmailNotification(data: AdminEmailData) {
   }
 }
 
+// ─── Verification reminder email ───
+
+export async function sendVerificationReminderEmail(data: {
+  userName: string;
+  email: string;
+  equipment: { name: string; type: string | null; serialNumber: string | null; registryNumber: string | null; nextVerification: Date; category: string }[];
+}) {
+  const result = createTransporter();
+  if (!result) return;
+  const { transporter, user } = result;
+
+  const categoryLabels: Record<string, string> = {
+    verification: "Поверка",
+    calibration: "Калибровка",
+    attestation: "Аттестация",
+  };
+
+  const itemsHtml = data.equipment
+    .map(
+      (eq, idx) => `
+    <tr>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; color: #666; font-size: 13px; text-align: center;">${idx + 1}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px; font-weight: 600;">${escapeHtml(eq.name)}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px;">${eq.type ? escapeHtml(eq.type) : '—'}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px;">${eq.serialNumber ? escapeHtml(eq.serialNumber) : '—'}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px;">${categoryLabels[eq.category] || eq.category}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px; font-weight: 600; color: #e8733a;">${new Date(eq.nextVerification).toLocaleDateString("ru-RU")}</td>
+    </tr>`,
+    )
+    .join("");
+
+  const html = `
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="utf-8"></head>
+<body style="margin: 0; padding: 0; background: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+  <div style="max-width: 640px; margin: 0 auto; padding: 24px 16px;">
+    <div style="background: linear-gradient(135deg, #e8733a 0%, #d4572a 100%); border-radius: 16px 16px 0 0; padding: 28px 32px; text-align: center;">
+      <h1 style="margin: 0 0 6px 0; font-size: 20px; color: #fff; font-weight: 700;">Напоминание о поверке</h1>
+      <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.7);">Центр Стандартизации и Метрологии</p>
+    </div>
+    <div style="background: #ffffff; padding: 24px 32px; border-left: 1px solid #eee; border-right: 1px solid #eee;">
+      <p style="font-size: 14px; color: #333; margin: 0 0 16px 0;">Уважаемый(-ая) <strong>${escapeHtml(data.userName)}</strong>,</p>
+      <p style="font-size: 14px; color: #555; margin: 0 0 20px 0;">Следующее оборудование требует поверки в ближайшие 14 дней:</p>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f9f9f9;">
+              <th style="padding: 10px 14px; font-size: 12px; color: #888; text-align: center; border-bottom: 2px solid #eee;">№</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #888; text-align: left; border-bottom: 2px solid #eee;">Наименование</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #888; text-align: left; border-bottom: 2px solid #eee;">Тип</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #888; text-align: left; border-bottom: 2px solid #eee;">Зав. №</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #888; text-align: left; border-bottom: 2px solid #eee;">Категория</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #888; text-align: left; border-bottom: 2px solid #eee;">Дата поверки</th>
+            </tr>
+          </thead>
+          <tbody>${itemsHtml}</tbody>
+        </table>
+      </div>
+      <div style="margin: 24px 0; text-align: center;">
+        <a href="https://csm-center.ru/dashboard/equipment" style="display: inline-block; background: linear-gradient(135deg, #e8733a, #d4572a); color: #fff; text-decoration: none; padding: 12px 32px; border-radius: 12px; font-size: 14px; font-weight: 600;">Оформить заявку</a>
+      </div>
+      <p style="font-size: 13px; color: #888; margin: 0;">Вы можете создать заявку на поверку прямо из личного кабинета.</p>
+    </div>
+    <div style="background: #f9f9fb; border-radius: 0 0 16px 16px; padding: 20px 32px; border: 1px solid #eee; border-top: none; text-align: center;">
+      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">ЦСМ — Центр Стандартизации и Метрологии</p>
+      <p style="margin: 0; font-size: 11px; color: #ddd;">+7 (966) 730-30-03 &middot; zakaz@csm-center.ru</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    await transporter.sendMail({
+      from: `"ЦСМ — Напоминания" <${user}>`,
+      to: data.email,
+      subject: `Напоминание: ${data.equipment.length} ед. оборудования требуют поверки`,
+      html,
+    });
+  } catch (error) {
+    console.error("Verification reminder email error:", error);
+  }
+}
+
 // ─── Customer confirmation email ───
 
 export async function sendConfirmationEmail(data: {

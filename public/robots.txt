@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /dashboard/*
+
+Sitemap: https://csm-center.ru/sitemap.xml
+
+Host: csm-center.ru

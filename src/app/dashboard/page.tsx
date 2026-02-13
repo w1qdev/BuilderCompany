@@ -1,30 +1,26 @@
 "use client";
 
-import Logo from "@/components/Logo";
-import Modal from "@/components/Modal";
-import { motion } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-interface User {
-  id: number;
-  email: string;
-  name: string;
-  phone: string | null;
-  company: string | null;
-  createdAt: string;
+interface DashboardStats {
+  totalEquipment: number;
+  upcomingVerifications: number;
+  activeRequests: number;
+  overdueItems: number;
 }
 
-interface Request {
+interface UpcomingItem {
   id: number;
   name: string;
-  phone: string;
-  email: string;
+  type: string | null;
+  nextVerification: string;
+  status: string;
+}
+
+interface RecentRequest {
+  id: number;
   service: string;
-  message: string | null;
-  fileName: string | null;
-  filePath: string | null;
   status: string;
   createdAt: string;
 }
@@ -35,337 +31,245 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   done: { label: "Выполнена", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
 };
 
-const referenceLinks = [
-  // {
-  //   title: "Справочник ГОСТов",
-  //   description: "Государственные стандарты в области метрологии",
-  //   href: "/dashboard/gosts",
-  //   icon: (
-  //     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-  //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-  //     </svg>
-  //   ),
-  // },
-  {
-    title: "Классы точности",
-    description: "Таблицы классов точности измерительных приборов",
-    href: "/dashboard/accuracy",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
-  },
-  {
-    title: "Калькулятор погрешностей",
-    description: "Расчёт погрешностей измерений",
-    href: "/dashboard/calculator",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-  {
-    title: "Конвертер единиц",
-    description: "Перевод единиц измерения",
-    href: "/dashboard/converter",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-      </svg>
-    ),
-  },
-];
+const equipmentStatusLabels: Record<string, { label: string; color: string }> = {
+  active: { label: "Активно", color: "bg-green-100 text-green-800" },
+  pending: { label: "Скоро поверка", color: "bg-yellow-100 text-yellow-800" },
+  expired: { label: "Просрочено", color: "bg-red-100 text-red-800" },
+};
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({ totalEquipment: 0, upcomingVerifications: 0, activeRequests: 0, overdueItems: 0 });
+  const [upcoming, setUpcoming] = useState<UpcomingItem[]>([]);
+  const [recentRequests, setRecentRequests] = useState<RecentRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"requests" | "reference">("requests");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboard = async () => {
       try {
-        const [userRes, requestsRes] = await Promise.all([
-          fetch("/api/auth/me"),
+        const [equipRes, reqRes] = await Promise.all([
+          fetch("/api/equipment?limit=100"),
           fetch("/api/user/requests"),
         ]);
 
-        if (!userRes.ok) {
-          router.push("/login");
-          return;
+        if (equipRes.ok) {
+          const equipData = await equipRes.json();
+          const equipment = equipData.equipment || [];
+          const now = new Date();
+          const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+          const overdue = equipment.filter((e: UpcomingItem) =>
+            e.nextVerification && new Date(e.nextVerification) < now
+          );
+          const upcomingItems = equipment
+            .filter((e: UpcomingItem) => {
+              if (!e.nextVerification) return false;
+              const d = new Date(e.nextVerification);
+              return d >= now && d <= in30Days;
+            })
+            .sort((a: UpcomingItem, b: UpcomingItem) =>
+              new Date(a.nextVerification).getTime() - new Date(b.nextVerification).getTime()
+            )
+            .slice(0, 5);
+
+          setStats((prev) => ({
+            ...prev,
+            totalEquipment: equipment.length,
+            upcomingVerifications: upcomingItems.length,
+            overdueItems: overdue.length,
+          }));
+          setUpcoming(upcomingItems);
         }
 
-        const userData = await userRes.json();
-        setUser(userData.user);
-
-        if (requestsRes.ok) {
-          const requestsData = await requestsRes.json();
-          setRequests(requestsData.requests);
-          setTotalPages(requestsData.pages || 1);
+        if (reqRes.ok) {
+          const reqData = await reqRes.json();
+          const requests = reqData.requests || [];
+          const active = requests.filter((r: RecentRequest) => r.status !== "done");
+          setStats((prev) => ({ ...prev, activeRequests: active.length }));
+          setRecentRequests(requests.slice(0, 5));
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
-        router.push("/login");
+        console.error("Dashboard fetch error:", error);
       } finally {
         setLoading(false);
       }
     };
+    fetchDashboard();
+  }, []);
 
-    fetchData();
-  }, [router]);
-
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/");
-  };
-
-  const refreshRequests = async () => {
-    const res = await fetch("/api/user/requests");
-    if (res.ok) {
-      const data = await res.json();
-      setRequests(data.requests);
-      setPage(1);
-      setTotalPages(data.pages || 1);
-    }
-  };
-
-  const loadMore = async () => {
-    const nextPage = page + 1;
-    const res = await fetch(`/api/user/requests?page=${nextPage}`);
-    if (res.ok) {
-      const data = await res.json();
-      setRequests((prev) => [...prev, ...data.requests]);
-      setPage(nextPage);
-      setTotalPages(data.pages || 1);
-    }
-  };
+  const statsCards = [
+    {
+      label: "Всего оборудования",
+      value: stats.totalEquipment,
+      icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z",
+      bg: "bg-blue-50 dark:bg-blue-900/20",
+      iconBg: "bg-blue-200 text-blue-600",
+      href: "/dashboard/equipment",
+    },
+    {
+      label: "Поверки (30 дней)",
+      value: stats.upcomingVerifications,
+      icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+      bg: "bg-yellow-50 dark:bg-yellow-900/20",
+      iconBg: "bg-yellow-200 text-yellow-600",
+      href: "/dashboard/schedule",
+    },
+    {
+      label: "Активные заявки",
+      value: stats.activeRequests,
+      icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+      bg: "bg-green-50 dark:bg-green-900/20",
+      iconBg: "bg-green-200 text-green-600",
+      href: "/dashboard/requests",
+    },
+    {
+      label: "Просрочено",
+      value: stats.overdueItems,
+      icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z",
+      bg: stats.overdueItems > 0 ? "bg-red-50 dark:bg-red-900/20" : "bg-gray-50 dark:bg-gray-900/20",
+      iconBg: stats.overdueItems > 0 ? "bg-red-200 text-red-600" : "bg-gray-200 text-gray-600",
+      href: "/dashboard/equipment",
+    },
+  ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-warm-bg dark:bg-dark flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-warm-bg dark:bg-dark">
-      {/* Header */}
-      <div className="gradient-dark text-white">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Logo size="sm" />
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statsCards.map((card) => (
+          <Link
+            key={card.label}
+            href={card.href}
+            className={`${card.bg} rounded-2xl p-4 transition-shadow hover:shadow-md`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.iconBg}`}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={card.icon} />
+                </svg>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-dark dark:text-white">{card.value}</div>
+                <div className="text-xs text-neutral dark:text-white/60">{card.label}</div>
+              </div>
+            </div>
           </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-white/70 hidden sm:block">{user?.email}</span>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-white/70 hover:text-white transition-colors"
-            >
-              Выйти
-            </button>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Content */}
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 py-8">
-        {/* Welcome */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-2xl sm:text-3xl font-bold text-dark dark:text-white mb-2">
-            Добро пожаловать, {user?.name}!
-          </h1>
-          <p className="text-neutral dark:text-white/70">
-            Управляйте своими заявками и получайте доступ к справочной информации
-          </p>
-        </motion.div>
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab("requests")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              activeTab === "requests"
-                ? "gradient-primary text-white shadow-lg shadow-primary/30"
-                : "bg-white dark:bg-dark-light text-dark dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-            }`}
-          >
-            Мои заявки
-          </button>
-          <button
-            onClick={() => setActiveTab("reference")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              activeTab === "reference"
-                ? "gradient-primary text-white shadow-lg shadow-primary/30"
-                : "bg-white dark:bg-dark-light text-dark dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-            }`}
-          >
-            Справочная информация
-          </button>
-        </div>
-
-        {/* Requests Tab */}
-        {activeTab === "requests" && (
-          <>
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => setModalOpen(true)}
-                className="inline-flex items-center gap-2 gradient-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Новая заявка
-              </button>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-4"
-            >
-              {requests.length === 0 ? (
-                <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-8 text-center">
-                  <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <h3 className="text-lg font-semibold text-dark dark:text-white mb-2">
-                    У вас пока нет заявок
-                  </h3>
-                  <p className="text-neutral dark:text-white/70">
-                    Нажимайте кнопку «Новая заявка», чтобы создать заявку
-                  </p>
-                </div>
-              ) : (
-              requests.map((request, index) => (
-                <motion.div
-                  key={request.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-6"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-                    <div>
-                      <h3 className="font-semibold text-dark dark:text-white">
-                        {request.service}
-                      </h3>
-                      <p className="text-sm text-neutral dark:text-white/70">
-                        Заявка #{request.id} от{" "}
-                        {new Date(request.createdAt).toLocaleDateString("ru-RU", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </p>
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Upcoming Verifications */}
+        <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-dark dark:text-white">Ближайшие поверки</h2>
+            <Link href="/dashboard/schedule" className="text-sm text-primary hover:underline">
+              Все
+            </Link>
+          </div>
+          {upcoming.length === 0 ? (
+            <p className="text-sm text-neutral dark:text-white/50 py-4 text-center">
+              Нет предстоящих поверок
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {upcoming.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 py-2 border-b border-gray-100 dark:border-white/5 last:border-0">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-dark dark:text-white truncate">{item.name}</div>
+                    <div className="text-xs text-neutral dark:text-white/50">{item.type || "—"}</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm text-dark dark:text-white">
+                      {new Date(item.nextVerification).toLocaleDateString("ru-RU")}
                     </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        statusLabels[request.status]?.color || statusLabels.new.color
-                      }`}
-                    >
-                      {statusLabels[request.status]?.label || "Новая"}
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${equipmentStatusLabels[item.status]?.color || "bg-gray-100 text-gray-600"}`}>
+                      {equipmentStatusLabels[item.status]?.label || item.status}
                     </span>
                   </div>
-                  {request.message && (
-                    <p className="text-sm text-neutral dark:text-white/70 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
-                      {request.message}
-                    </p>
-                  )}
-                  {request.fileName && request.filePath && (
-                    <a
-                      href={request.filePath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-primary hover:underline mt-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                      {request.fileName}
-                    </a>
-                  )}
-                </motion.div>
-              ))
-            )}
-              {page < totalPages && (
-                <div className="text-center pt-4">
-                  <button
-                    onClick={loadMore}
-                    className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-white dark:bg-dark-light text-dark dark:text-white shadow-lg hover:shadow-xl transition-all"
-                  >
-                    Загрузить ещё
-                  </button>
                 </div>
-              )}
-            </motion.div>
-          </>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* Reference Tab */}
-        {activeTab === "reference" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="grid sm:grid-cols-2 gap-4"
-          >
-            {referenceLinks.map((item, index) => (
-              <motion.div
-                key={item.href}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Link
-                  href={item.href}
-                  className="block bg-white dark:bg-dark-light rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all group"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
-                      {item.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-dark dark:text-white mb-1 group-hover:text-primary transition-colors">
-                        {item.title}
-                      </h3>
-                      <p className="text-sm text-neutral dark:text-white/70">
-                        {item.description}
-                      </p>
+        {/* Recent Requests */}
+        <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-dark dark:text-white">Последние заявки</h2>
+            <Link href="/dashboard/requests" className="text-sm text-primary hover:underline">
+              Все
+            </Link>
+          </div>
+          {recentRequests.length === 0 ? (
+            <p className="text-sm text-neutral dark:text-white/50 py-4 text-center">
+              Нет заявок
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {recentRequests.map((req) => (
+                <div key={req.id} className="flex items-center justify-between gap-3 py-2 border-b border-gray-100 dark:border-white/5 last:border-0">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-dark dark:text-white truncate">{req.service}</div>
+                    <div className="text-xs text-neutral dark:text-white/50">
+                      #{req.id} &middot; {new Date(req.createdAt).toLocaleDateString("ru-RU")}
                     </div>
                   </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-
-        {/* Back link */}
-        <div className="mt-8 text-center">
-          <Link href="/" className="text-primary hover:underline text-sm font-medium">
-            ← Вернуться на главную
-          </Link>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${statusLabels[req.status]?.color || statusLabels.new.color}`}>
+                    {statusLabels[req.status]?.label || "Новая"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      <Modal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSuccess={() => {
-          setModalOpen(false);
-          refreshRequests();
-        }}
-        initialValues={{ name: user?.name || "", phone: user?.phone || "", email: user?.email || "" }}
-      />
+      {/* Quick Actions */}
+      <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-6">
+        <h2 className="font-semibold text-dark dark:text-white mb-4">Быстрые действия</h2>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <Link
+            href="/dashboard/equipment"
+            className="flex items-center gap-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+          >
+            <div className="w-10 h-10 bg-blue-200 text-blue-600 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <span className="text-sm font-medium text-dark dark:text-white">Добавить оборудование</span>
+          </Link>
+          <Link
+            href="/dashboard/requests"
+            className="flex items-center gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+          >
+            <div className="w-10 h-10 bg-green-200 text-green-600 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <span className="text-sm font-medium text-dark dark:text-white">Создать заявку</span>
+          </Link>
+          <Link
+            href="/dashboard/equipment"
+            className="flex items-center gap-3 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+          >
+            <div className="w-10 h-10 bg-purple-200 text-purple-600 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            <span className="text-sm font-medium text-dark dark:text-white">Импорт из Excel</span>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

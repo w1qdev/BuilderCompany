@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import CookieConsent from "@/components/CookieConsent";
+import PageViewTracker from "@/components/PageViewTracker";
 import { SiteSettingsProvider } from "@/lib/SiteSettingsContext";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://csm-center.ru";
@@ -108,6 +109,8 @@ export default function RootLayout({
   return (
     <html lang="ru" suppressHydrationWarning>
       <head>
+        <meta name="yandex-verification" content="2089f58e8d621be4" />
+        <meta name="google-site-verification" content="" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme:dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})()`,
@@ -122,6 +125,7 @@ export default function RootLayout({
         <ThemeProvider>
           <SiteSettingsProvider>
             {children}
+            <PageViewTracker />
             <CookieConsent />
           </SiteSettingsProvider>
         </ThemeProvider>
