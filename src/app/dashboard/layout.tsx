@@ -3,7 +3,7 @@
 import Logo from "@/components/Logo";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface User {
   id: number;
@@ -127,6 +127,8 @@ export default function DashboardLayout({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const isToolActive = toolPaths.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
@@ -137,6 +139,16 @@ export default function DashboardLayout({
     if (isToolActive) setToolsOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -183,7 +195,7 @@ export default function DashboardLayout({
         onClick={() => setSidebarOpen(false)}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
           active
-            ? "gradient-primary text-white shadow-md shadow-primary/20"
+            ? "bg-primary text-white shadow-md shadow-primary/20"
             : "text-neutral dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/5"
         } ${nested ? "pl-5" : ""}`}
       >
@@ -287,11 +299,11 @@ export default function DashboardLayout({
 
         {/* Sidebar */}
         <aside
-          className={`fixed lg:sticky top-[52px] lg:top-[52px] left-0 z-30 h-[calc(100vh-52px)] w-64 bg-white dark:bg-dark-light border-r border-gray-200 dark:border-white/10 overflow-y-auto transition-transform lg:translate-x-0 ${
+          className={`fixed lg:sticky top-[52px] lg:top-[52px] left-0 z-30 h-[calc(100vh-52px)] w-64 bg-white dark:bg-dark-light border-r border-gray-200 dark:border-white/10 flex flex-col transition-transform lg:translate-x-0 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <nav className="p-4 space-y-1">
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
             {navItems.map((item, index) => {
               if ("type" in item && item.type === "divider") {
                 return (
@@ -362,6 +374,50 @@ export default function DashboardLayout({
               return renderNavLink(item as NavLink);
             })}
           </nav>
+
+          {/* Profile */}
+          <div ref={profileRef} className="relative border-t border-gray-200 dark:border-white/10 p-3">
+            {profileOpen && (
+              <div className="absolute bottom-full left-3 right-3 mb-1 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-xl shadow-lg py-1">
+                <Link
+                  href="/dashboard/profile"
+                  onClick={() => { setProfileOpen(false); setSidebarOpen(false); }}
+                  className="block px-4 py-2 text-sm text-neutral dark:text-white/70 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  Профиль
+                </Link>
+                <div className="border-t border-gray-100 dark:border-white/5 my-1" />
+                <button
+                  onClick={() => { setProfileOpen(false); handleLogout(); }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                >
+                  Выйти
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-sm font-medium text-dark dark:text-white truncate">{user.name}</div>
+                {user.company && (
+                  <div className="text-xs text-neutral dark:text-white/40 truncate">{user.company}</div>
+                )}
+              </div>
+              <svg
+                className={`w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+          </div>
         </aside>
 
         {/* Main content */}

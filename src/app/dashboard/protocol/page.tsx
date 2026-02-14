@@ -267,7 +267,7 @@ export default function ProtocolPage() {
           <button
             onClick={generateProtocol}
             disabled={generating}
-            className="px-6 py-2.5 gradient-primary text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow disabled:opacity-50"
+            className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
             Сгенерировать протокол
           </button>

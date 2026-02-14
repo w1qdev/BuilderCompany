@@ -48,11 +48,20 @@ model Request {
   markup        Float?
   clientPrice   Float?
   needContract  Boolean  @default(false)
+  files         RequestFile[]
   items         RequestItem[]
 
   @@index([status])
   @@index([userId])
   @@index([createdAt])
+}
+
+model RequestFile {
+  id        Int     @id @default(autoincrement())
+  requestId Int
+  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fileName  String
+  filePath  String
 }
 
 model RequestItem {
@@ -101,6 +110,18 @@ model Equipment {
   @@index([userId])
   @@index([nextVerification])
   @@index([status])
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
 }
 
 model PageView {

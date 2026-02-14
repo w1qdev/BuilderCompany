@@ -14,7 +14,7 @@ const navLinks = [
   { href: "#portfolio", label: "Портфолио" },
   { href: "#about", label: "О компании" },
   { href: "/contacts", label: "Контакты" },
-  // { href: "/dashboard", label: "Личный кабинет" },
+  { href: "/dashboard", label: "Личный кабинет" },
 ];
 
 interface HeaderProps {
@@ -112,15 +112,25 @@ export default function Header({ onOpenModal }: HeaderProps) {
 
         {/* Desktop nav */}
         <nav className="hidden lg:flex items-center lg:gap-4 xl:gap-6">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-white/80 hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
-            >
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            link.href.startsWith("/") ? (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-white/80 hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-white/80 hover:text-primary transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                {link.label}
+              </a>
+            )
+          )}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -173,16 +183,27 @@ export default function Header({ onOpenModal }: HeaderProps) {
             className="lg:hidden overflow-hidden bg-dark-light"
           >
             <nav className="max-w-8xl mx-auto px-4 py-4 flex flex-col gap-3">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="text-white/80 hover:text-primary transition-colors py-2 text-sm font-medium"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {navLinks.map((link) =>
+                link.href.startsWith("/") ? (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="text-white/80 hover:text-primary transition-colors py-2 text-sm font-medium"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="text-white/80 hover:text-primary transition-colors py-2 text-sm font-medium"
+                  >
+                    {link.label}
+                  </a>
+                )
+              )}
               <button
                 onClick={() => {
                   setMobileOpen(false);

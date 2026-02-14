@@ -98,10 +98,16 @@ export default function LoginPage() {
               />
             </div>
 
+            <div className="text-right">
+              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                Забыли пароль?
+              </Link>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full gradient-primary text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50"
+              className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               {loading ? "Вход..." : "Войти"}
             </button>

@@ -214,7 +214,7 @@ export default function AdminServicesPage() {
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <button type="submit" className="gradient-primary text-white px-6 py-2 rounded-xl font-semibold">
+            <button type="submit" className="bg-primary text-white px-6 py-2 rounded-xl font-semibold hover:bg-primary-dark transition-colors">
               {editingService ? "Сохранить" : "Создать"}
             </button>
             {editingService && (

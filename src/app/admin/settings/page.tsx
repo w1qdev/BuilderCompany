@@ -338,7 +338,7 @@ export default function AdminSettingsPage() {
                 className={`w-full mt-2 py-2.5 rounded-xl text-sm font-semibold transition-shadow ${
                   contactsSaved
                     ? "bg-green-100 text-green-600"
-                    : "gradient-primary text-white hover:shadow-lg hover:shadow-primary/30"
+                    : "bg-primary text-white hover:bg-primary-dark"
                 }`}
               >
                 {contactsSaved ? "Сохранено" : "Сохранить"}
@@ -389,7 +389,7 @@ export default function AdminSettingsPage() {
                     }
                     setPasswordConfirming(true);
                   }}
-                  className="w-full gradient-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow"
+                  className="w-full bg-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors"
                 >
                   Сменить пароль
                 </button>
@@ -423,7 +423,7 @@ export default function AdminSettingsPage() {
         <aside className="w-56 bg-warm-bg flex-shrink-0">
           <div className="p-6">
             <div className="flex items-center gap-2.5 mb-6">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
@@ -437,7 +437,7 @@ export default function AdminSettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${
                     activeTab === tab.id
-                      ? "gradient-primary text-white shadow-md"
+                      ? "bg-primary text-white shadow-md"
                       : "text-dark hover:bg-white/60"
                   }`}
                 >

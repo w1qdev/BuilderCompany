@@ -22,11 +22,17 @@ interface SubmitItem {
   registry?: string;
 }
 
+interface SubmitFile {
+  fileName: string;
+  filePath: string;
+}
+
 export async function POST(req: NextRequest) {
   let uploadedFilePath: string | null = null;
   try {
     const body = await req.json();
     const { name, phone, email, company, inn, message, fileName, filePath, items, needContract, addEquipment } = body;
+    const submitFiles: SubmitFile[] = Array.isArray(body.files) ? body.files : [];
     if (filePath) {
       uploadedFilePath = path.join(
         process.cwd(),
@@ -122,8 +128,19 @@ export async function POST(req: NextRequest) {
           })),
         },
       },
-      include: { items: true },
+      include: { items: true, files: true },
     });
+
+    // Create RequestFile records for uploaded files
+    if (submitFiles.length > 0) {
+      await prisma.requestFile.createMany({
+        data: submitFiles.map((f) => ({
+          requestId: request.id,
+          fileName: f.fileName,
+          filePath: f.filePath,
+        })),
+      });
+    }
 
     // If user is logged in and checked "add equipment", save items as equipment
     if (addEquipment && userId) {
@@ -203,6 +220,7 @@ export async function POST(req: NextRequest) {
           needContract,
           fileName,
           filePath,
+          files: submitFiles,
           requestId: request.id,
           items: serviceItems,
         }),

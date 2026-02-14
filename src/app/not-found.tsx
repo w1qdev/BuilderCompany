@@ -67,7 +67,7 @@ export default function NotFound() {
         >
           <Link
             href="/"
-            className="gradient-primary text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl hover:shadow-primary/30 transition-all hover:scale-105"
+            className="bg-primary text-white px-8 py-4 rounded-2xl font-semibold hover:bg-primary-dark transition-colors hover:scale-105"
           >
             На главную
           </Link>

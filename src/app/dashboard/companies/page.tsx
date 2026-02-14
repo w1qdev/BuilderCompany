@@ -60,7 +60,7 @@ export default function CompaniesPage() {
             onClick={() => setSelectedCategory(null)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               !selectedCategory
-                ? "gradient-primary text-white"
+                ? "bg-primary text-white"
                 : "bg-white dark:bg-dark-light text-neutral hover:bg-gray-50"
             }`}
           >
@@ -72,7 +72,7 @@ export default function CompaniesPage() {
               onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 selectedCategory === cat.id
-                  ? "gradient-primary text-white"
+                  ? "bg-primary text-white"
                   : "bg-white dark:bg-dark-light text-neutral hover:bg-gray-50"
               }`}
             >
@@ -97,7 +97,7 @@ export default function CompaniesPage() {
               <div key={cat.id} className="bg-white dark:bg-dark-light rounded-2xl shadow-sm overflow-hidden">
                 <div className="p-5 border-b border-gray-100 dark:border-white/5">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center text-white shrink-0">
+                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shrink-0">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={cat.icon} />
                       </svg>

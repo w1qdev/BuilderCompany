@@ -125,6 +125,11 @@ async function generateExcelBuffer(
 
 // ─── Admin notification email ───
 
+interface FileData {
+  fileName: string;
+  filePath: string;
+}
+
 interface AdminEmailData {
   name: string;
   phone: string;
@@ -135,6 +140,7 @@ interface AdminEmailData {
   needContract?: boolean;
   fileName?: string;
   filePath?: string;
+  files?: FileData[];
   requestId?: number;
   items: NotificationItem[];
   toEmail?: string;
@@ -254,13 +260,18 @@ export async function sendEmailNotification(data: AdminEmailData) {
         </div>
       </div>
 
-      ${data.fileName ? `
+      ${(() => {
+        const allFiles = data.files && data.files.length > 0 ? data.files : (data.fileName ? [{ fileName: data.fileName, filePath: data.filePath! }] : []);
+        if (allFiles.length === 0) return "";
+        const fileList = allFiles.map(f => `<strong>${escapeHtml(f.fileName)}</strong>`).join(", ");
+        return `
       <!-- File attachment note -->
       <div style="padding: 0 32px 24px;">
         <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; font-size: 13px; color: #1e40af;">
-          &#128206; Прикрепленный файл клиента: <strong>${escapeHtml(data.fileName)}</strong> — во вложении письма
+          &#128206; Прикрепленные файлы клиента (${allFiles.length}): ${fileList} — во вложении письма
         </div>
-      </div>` : ""}
+      </div>`;
+      })()}
     </div>
 
     <!-- Footer -->
@@ -288,14 +299,18 @@ export async function sendEmailNotification(data: AdminEmailData) {
     console.error("Failed to generate Excel attachment:", err);
   }
 
-  // 2. Client uploaded file
-  if (data.filePath && data.fileName) {
+  // 2. Client uploaded files
+  const allFiles = data.files && data.files.length > 0
+    ? data.files
+    : (data.filePath && data.fileName ? [{ fileName: data.fileName, filePath: data.filePath }] : []);
+
+  for (const file of allFiles) {
     try {
-      const absPath = path.join(process.cwd(), "uploads", path.basename(data.filePath));
+      const absPath = path.join(process.cwd(), "uploads", path.basename(file.filePath));
       if (existsSync(absPath)) {
         const fileContent = await readFile(absPath);
         attachments.push({
-          filename: data.fileName,
+          filename: file.fileName,
           content: fileContent,
         });
       }
@@ -398,6 +413,69 @@ export async function sendVerificationReminderEmail(data: {
     });
   } catch (error) {
     console.error("Verification reminder email error:", error);
+  }
+}
+
+// ─── Password reset email ───
+
+export async function sendPasswordResetEmail(email: string, resetUrl: string) {
+  const result = createTransporter();
+  if (!result) {
+    console.log("Email not configured, skipping password reset email");
+    return;
+  }
+  const { transporter, user } = result;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="utf-8"></head>
+<body style="margin: 0; padding: 0; background: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 24px 16px;">
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #e8733a 0%, #d4572a 100%); border-radius: 16px 16px 0 0; padding: 36px 32px; text-align: center;">
+      <h1 style="color: #fff; margin: 0 0 8px 0; font-size: 22px; font-weight: 700;">Сброс пароля</h1>
+      <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 13px;">Центр Стандартизации и Метрологии</p>
+    </div>
+
+    <!-- Body -->
+    <div style="background: #ffffff; padding: 32px; border-left: 1px solid #eee; border-right: 1px solid #eee;">
+      <p style="font-size: 14px; color: #333; margin: 0 0 16px 0; line-height: 1.6;">
+        Вы запросили сброс пароля для вашего аккаунта. Нажмите кнопку ниже, чтобы установить новый пароль.
+      </p>
+      <p style="font-size: 14px; color: #555; margin: 0 0 24px 0; line-height: 1.6;">
+        Ссылка действительна в течение <strong>1 часа</strong>.
+      </p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${escapeHtml(resetUrl)}" style="display: inline-block; background: linear-gradient(135deg, #e8733a, #d4572a); color: #fff; text-decoration: none; padding: 14px 40px; border-radius: 12px; font-size: 15px; font-weight: 600;">
+          Сбросить пароль
+        </a>
+      </div>
+
+      <div style="background: #fafafa; border-left: 3px solid #e8733a; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 13px; color: #888; line-height: 1.6; margin-top: 24px;">
+        Если вы не запрашивали сброс пароля — просто проигнорируйте это письмо. Ваш пароль останется без изменений.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #f9f9fb; border-radius: 0 0 16px 16px; padding: 20px 32px; border: 1px solid #eee; border-top: none; text-align: center;">
+      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">ЦСМ — Центр Стандартизации и Метрологии</p>
+      <p style="margin: 0; font-size: 11px; color: #ddd;">Если вы получили это письмо по ошибке, пожалуйста, проигнорируйте его.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    await transporter.sendMail({
+      from: `"Центр Стандартизации и Метрологии" <${user}>`,
+      to: email,
+      subject: "Сброс пароля — ЦСМ",
+      html,
+    });
+  } catch (error) {
+    console.error("Password reset email error:", error);
   }
 }
 

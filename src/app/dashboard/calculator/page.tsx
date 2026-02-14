@@ -93,7 +93,7 @@ export default function CalculatorPage() {
                 onClick={() => setCalculatorType(type)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   calculatorType === type
-                    ? "gradient-primary text-white shadow-lg shadow-primary/30"
+                    ? "bg-primary text-white"
                     : "bg-white dark:bg-dark-light text-dark dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
                 }`}
               >
@@ -151,7 +151,7 @@ export default function CalculatorPage() {
 
                 {/* Results */}
                 {measuredValue && referenceValue && (
-                  <div className="mt-6 p-4 gradient-primary rounded-xl text-white">
+                  <div className="mt-6 p-4 bg-primary rounded-xl text-white">
                     <p className="text-sm opacity-80 mb-1">Результат:</p>
                     {calculatorType === "absolute" ? (
                       <p className="text-2xl font-bold">
@@ -209,7 +209,7 @@ export default function CalculatorPage() {
                 </div>
 
                 {classValue && scaleMax && (
-                  <div className="mt-6 p-4 gradient-primary rounded-xl text-white">
+                  <div className="mt-6 p-4 bg-primary rounded-xl text-white">
                     <p className="text-sm opacity-80 mb-1">
                       Допускаемая абсолютная погрешность:
                     </p>
@@ -283,7 +283,7 @@ export default function CalculatorPage() {
                 )}
 
                 {errors.filter((e) => e !== "").length >= 2 && (
-                  <div className="mt-6 p-4 gradient-primary rounded-xl text-white">
+                  <div className="mt-6 p-4 bg-primary rounded-xl text-white">
                     <p className="text-sm opacity-80 mb-1">
                       Суммарная погрешность:
                     </p>

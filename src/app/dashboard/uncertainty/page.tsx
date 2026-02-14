@@ -93,7 +93,7 @@ export default function UncertaintyPage() {
           onClick={() => setMode("typeA")}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
             mode === "typeA"
-              ? "gradient-primary text-white shadow-md"
+              ? "bg-primary text-white shadow-md"
               : "bg-white dark:bg-dark-light text-neutral hover:bg-gray-50"
           }`}
         >
@@ -103,7 +103,7 @@ export default function UncertaintyPage() {
           onClick={() => setMode("typeB")}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
             mode === "typeB"
-              ? "gradient-primary text-white shadow-md"
+              ? "bg-primary text-white shadow-md"
               : "bg-white dark:bg-dark-light text-neutral hover:bg-gray-50"
           }`}
         >
@@ -127,7 +127,7 @@ export default function UncertaintyPage() {
 
           <button
             onClick={calculateTypeA}
-            className="mt-4 px-6 py-2.5 gradient-primary text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow"
+            className="mt-4 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors"
           >
             Рассчитать
           </button>
@@ -194,7 +194,7 @@ export default function UncertaintyPage() {
                     onClick={() => setDistribution(d.value as typeof distribution)}
                     className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-colors ${
                       distribution === d.value
-                        ? "gradient-primary text-white"
+                        ? "bg-primary text-white"
                         : "bg-gray-100 dark:bg-white/5 text-neutral hover:bg-gray-200"
                     }`}
                   >
@@ -220,7 +220,7 @@ export default function UncertaintyPage() {
 
             <button
               onClick={calculateTypeB}
-              className="px-6 py-2.5 gradient-primary text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow"
+              className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors"
             >
               Рассчитать
             </button>

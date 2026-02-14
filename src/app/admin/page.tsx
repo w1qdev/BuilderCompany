@@ -53,6 +53,7 @@ interface AdminRequest {
   message: string | null;
   fileName: string | null;
   filePath: string | null;
+  files?: { id: number; fileName: string; filePath: string }[];
   status: string;
   createdAt: string;
   adminNotes: string | null;
@@ -680,7 +681,7 @@ export default function AdminPage() {
             }}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               filter === f.value
-                ? "gradient-primary text-white shadow-md"
+                ? "bg-primary text-white shadow-md"
                 : "bg-white text-neutral hover:bg-gray-50"
             }`}
           >
@@ -797,18 +798,37 @@ export default function AdminPage() {
                         )}
                       </>
                     )}
-                    {r.fileName && r.filePath && (
+                    {((r.files && r.files.length > 0) || (r.fileName && r.filePath)) && (
                       <div>
-                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Прикрепленный файл</div>
-                        <button
-                          onClick={() => openFile(r.filePath!)}
-                          className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          {r.fileName}
-                        </button>
+                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
+                          Прикрепленные файлы ({(r.files && r.files.length > 0) ? r.files.length : 1})
+                        </div>
+                        <div className="space-y-1.5">
+                          {r.files && r.files.length > 0 ? (
+                            r.files.map((file) => (
+                              <button
+                                key={file.id}
+                                onClick={() => openFile(file.filePath)}
+                                className="flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors"
+                              >
+                                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span className="truncate">{file.fileName}</span>
+                              </button>
+                            ))
+                          ) : (
+                            <button
+                              onClick={() => openFile(r.filePath!)}
+                              className="flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors"
+                            >
+                              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="truncate">{r.fileName}</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                     <div>
@@ -966,7 +986,7 @@ export default function AdminPage() {
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${page === p ? "gradient-primary text-white" : "bg-white text-neutral hover:bg-gray-100"}`}
+                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${page === p ? "bg-primary text-white" : "bg-white text-neutral hover:bg-gray-100"}`}
                 >
                   {p}
                 </button>
@@ -1188,30 +1208,37 @@ export default function AdminPage() {
                                 )}
                               </>
                             )}
-                            {r.fileName && r.filePath && (
+                            {((r.files && r.files.length > 0) || (r.fileName && r.filePath)) && (
                               <div>
                                 <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
-                                  Прикрепленный файл
+                                  Прикрепленные файлы ({(r.files && r.files.length > 0) ? r.files.length : 1})
                                 </div>
-                                <button
-                                  onClick={() => openFile(r.filePath!)}
-                                  className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors"
-                                >
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                  </svg>
-                                  {r.fileName}
-                                </button>
+                                <div className="space-y-1.5">
+                                  {r.files && r.files.length > 0 ? (
+                                    r.files.map((file) => (
+                                      <button
+                                        key={file.id}
+                                        onClick={() => openFile(file.filePath)}
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors"
+                                      >
+                                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        {file.fileName}
+                                      </button>
+                                    ))
+                                  ) : (
+                                    <button
+                                      onClick={() => openFile(r.filePath!)}
+                                      className="inline-flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-colors"
+                                    >
+                                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                      {r.fileName}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             )}
                             <div>
@@ -1541,7 +1568,7 @@ export default function AdminPage() {
                   onClick={() => setPage(p)}
                   className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                     page === p
-                      ? "gradient-primary text-white"
+                      ? "bg-primary text-white"
                       : "text-neutral hover:bg-gray-100"
                   }`}
                 >

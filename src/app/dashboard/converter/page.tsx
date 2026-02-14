@@ -331,7 +331,7 @@ export default function ConverterPage() {
                 onClick={() => setCategory(cat)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   category === cat
-                    ? "gradient-primary text-white shadow-lg shadow-primary/30"
+                    ? "bg-primary text-white"
                     : "bg-white dark:bg-dark-light text-dark dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
                 }`}
               >
