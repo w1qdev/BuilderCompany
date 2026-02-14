@@ -46,7 +46,9 @@
       "Bash(git status:*)",
       "Bash(git rm:*)",
       "WebSearch",
-      "WebFetch(domain:yandex.ru)"
+      "WebFetch(domain:yandex.ru)",
+      "Bash(npx mammoth:*)",
+      "Bash(python -c \"import zipfile; z=zipfile.ZipFile\\(''График ИО на 2026.docx''\\); print\\(z.read\\(''word/document.xml''\\).decode\\(''utf-8''\\)[:5000]\\)\")"
     ]
   }
 }

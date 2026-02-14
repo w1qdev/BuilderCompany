@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Equipment {
   id: number;
@@ -32,6 +33,7 @@ interface ScheduleViewProps {
   categories: string[];
   equipmentLink: string;
   equipmentLinkLabel?: string;
+  exportType: "si" | "io";
 }
 
 export default function ScheduleView({
@@ -39,9 +41,34 @@ export default function ScheduleView({
   categories,
   equipmentLink,
   equipmentLinkLabel = "Всё оборудование",
+  exportType,
 }: ScheduleViewProps) {
   const [groups, setGroups] = useState<MonthGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportWord = async () => {
+    try {
+      setExporting(true);
+      const params = new URLSearchParams();
+      categories.forEach((c) => params.append("category", c));
+      params.set("type", exportType);
+      const res = await fetch(`/api/equipment/export-word?${params}`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${title}_${new Date().getFullYear()}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Файл скачан");
+    } catch {
+      toast.error("Ошибка экспорта");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -124,14 +151,26 @@ export default function ScheduleView({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-dark dark:text-white">{title}</h1>
-        <Link
-          href={equipmentLink}
-          className="text-sm text-primary hover:underline"
-        >
-          {equipmentLinkLabel}
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportWord}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark transition-colors disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            {exporting ? "Скачивание..." : "Скачать график (.docx)"}
+          </button>
+          <Link
+            href={equipmentLink}
+            className="text-sm text-primary hover:underline whitespace-nowrap"
+          >
+            {equipmentLinkLabel}
+          </Link>
+        </div>
       </div>
 
       {groups.length === 0 ? (

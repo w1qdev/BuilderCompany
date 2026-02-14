@@ -9,6 +9,7 @@ export default function IOSchedulePage() {
       categories={["attestation"]}
       equipmentLink="/dashboard/equipment/io"
       equipmentLinkLabel="Оборудование ИО"
+      exportType="io"
     />
   );
 }

@@ -9,6 +9,7 @@ export default function SISchedulePage() {
       categories={["verification", "calibration"]}
       equipmentLink="/dashboard/equipment/si"
       equipmentLinkLabel="Оборудование СИ"
+      exportType="si"
     />
   );
 }

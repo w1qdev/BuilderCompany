@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import Logo from "@/components/Logo";
+import { useAdminAuth } from "@/lib/AdminAuthContext";
 import { Input } from "@/components/ui/input";
 
 interface Settings {
@@ -76,8 +75,7 @@ const tabs = [
 ];
 
 export default function AdminSettingsPage() {
-  const router = useRouter();
-  const [password, setPassword] = useState<string | null>(null);
+  const { password, login } = useAdminAuth();
   const [settings, setSettings] = useState<Settings>({
     emailNotifyAdmin: true,
     emailNotifyCustomer: true,
@@ -99,17 +97,10 @@ export default function AdminSettingsPage() {
   const [passwordConfirming, setPasswordConfirming] = useState(false);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("admin-password");
-    if (!stored) {
-      router.push("/admin");
-      return;
-    }
-    setPassword(stored);
-    fetch("/api/admin/settings", { headers: { "x-admin-password": stored } })
+    fetch("/api/admin/settings", { headers: { "x-admin-password": password } })
       .then((res) => {
         if (res.status === 401) {
           sessionStorage.removeItem("admin-password");
-          router.push("/admin");
           throw new Error("unauthorized");
         }
         return res.json();
@@ -117,11 +108,10 @@ export default function AdminSettingsPage() {
       .then((data) => setSettings(data))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [router]);
+  }, [password]);
 
   const saveSettings = useCallback(
     async (updated: Settings) => {
-      if (!password) return;
       await fetch("/api/admin/settings", {
         method: "PUT",
         headers: {
@@ -162,13 +152,13 @@ export default function AdminSettingsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-password": password!,
+          "x-admin-password": password,
         },
         body: JSON.stringify({ newPassword }),
       });
       if (res.ok) {
         sessionStorage.setItem("admin-password", newPassword);
-        setPassword(newPassword);
+        login(newPassword);
         setNewPassword("");
         setConfirmPassword("");
         setPasswordSuccess(true);
@@ -186,7 +176,7 @@ export default function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-warm-bg flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
@@ -345,7 +335,7 @@ export default function AdminSettingsPage() {
               </div>
               <button
                 onClick={saveContacts}
-                className={`w-full mt-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`w-full mt-2 py-2.5 rounded-xl text-sm font-semibold transition-shadow ${
                   contactsSaved
                     ? "bg-green-100 text-green-600"
                     : "gradient-primary text-white hover:shadow-lg hover:shadow-primary/30"
@@ -399,7 +389,7 @@ export default function AdminSettingsPage() {
                     }
                     setPasswordConfirming(true);
                   }}
-                  className="w-full gradient-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all"
+                  className="w-full gradient-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow"
                 >
                   Сменить пароль
                 </button>
@@ -427,62 +417,42 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-bg">
-      {/* Header */}
-      <div className="gradient-dark text-white">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <a href="/admin" className="flex items-center gap-2">
-              <Logo size="sm" />
-            </a>
-            <span className="text-white/40 text-sm">/ Настройки</span>
-          </div>
-          <a href="/admin" className="text-sm text-white/60 hover:text-white transition-colors">
-            ← Вернуться
-          </a>
-        </div>
-      </div>
-
-      {/* Settings Layout */}
-      <div className="py-8 px-4">
-        <div className="mx-auto max-w-4xl">
-          <div className="flex bg-white rounded-3xl shadow-xl overflow-hidden">
-            {/* Sidebar */}
-            <aside className="w-56 bg-warm-bg flex-shrink-0">
-              <div className="p-6">
-                <div className="flex items-center gap-2.5 mb-6">
-                  <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-bold text-dark">Настройки</span>
-                </div>
-                <nav className="space-y-1">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
-                        activeTab === tab.id
-                          ? "gradient-primary text-white shadow-md"
-                          : "text-dark hover:bg-white/60"
-                      }`}
-                    >
-                      {tab.icon}
-                      {tab.label}
-                    </button>
-                  ))}
-                </nav>
+    <div className="mx-auto max-w-4xl">
+      <div className="flex bg-white rounded-3xl shadow-xl overflow-hidden">
+        {/* Sidebar */}
+        <aside className="w-56 bg-warm-bg flex-shrink-0">
+          <div className="p-6">
+            <div className="flex items-center gap-2.5 mb-6">
+              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
               </div>
-            </aside>
-
-            {/* Content */}
-            <main className="flex-1 p-8 min-h-[440px]">
-              {renderContent()}
-            </main>
+              <span className="text-sm font-bold text-dark">Настройки</span>
+            </div>
+            <nav className="space-y-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${
+                    activeTab === tab.id
+                      ? "gradient-primary text-white shadow-md"
+                      : "text-dark hover:bg-white/60"
+                  }`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
           </div>
-        </div>
+        </aside>
+
+        {/* Content */}
+        <main className="flex-1 p-8 min-h-[440px]">
+          {renderContent()}
+        </main>
       </div>
     </div>
   );
