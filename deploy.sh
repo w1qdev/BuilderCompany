@@ -33,7 +33,7 @@ docker system prune -f
 
 # Step 1: Build new image
 echo "[1/4] Building new image..."
-$COMPOSE build
+DOCKER_BUILDKIT=1 $COMPOSE build
 
 # Step 2: Start new container
 echo "[2/4] Starting new container..."

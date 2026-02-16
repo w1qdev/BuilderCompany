@@ -1,4 +1,5 @@
-# Multi-stage build for production (optimized for 1 CPU / 1 GB RAM)
+# syntax=docker/dockerfile:1
+# Multi-stage build with BuildKit cache mounts to reduce disk usage
 
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
@@ -7,8 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci && \
-    npm cache clean --force
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund
 
 RUN npx prisma generate
 
@@ -47,9 +48,10 @@ COPY --from=builder /app/server.js ./server.js
 # Copy generated Prisma client
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Install production dependencies (prisma CLI + socket.io + transitive deps)
+# Install prod deps using cached npm packages (no re-download)
 COPY --from=builder /app/package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev --no-audit --no-fund
 
 # Create directories for uploads and database
 RUN mkdir -p /app/uploads /app/data && \
