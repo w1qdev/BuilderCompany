@@ -37,17 +37,19 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     apk add --no-cache wget
 
-# Copy standalone build (already contains its own node_modules subset)
+# Copy standalone build
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/server.js ./server.js
 
-# Copy only what's needed beyond standalone: prisma CLI binary + prisma client
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=deps /app/node_modules/prisma ./node_modules/prisma
-COPY --from=deps /app/node_modules/@prisma ./node_modules/@prisma
+# Copy generated Prisma client
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Install production dependencies (prisma CLI + socket.io + transitive deps)
+COPY --from=builder /app/package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Create directories for uploads and database
 RUN mkdir -p /app/uploads /app/data && \
@@ -60,4 +62,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
