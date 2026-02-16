@@ -1,46 +1,53 @@
 #!/bin/bash
 
 # Deployment script for VPS
-# Usage: ./deploy.sh
+# Builds Next.js on the host (no node_modules in Docker layers),
+# then packages only the standalone output into a minimal Docker image.
 #
-# Workflow: git pull && ./deploy.sh
-# Builds new image while old container is still serving traffic,
-# then does a quick swap (~5-15 sec downtime).
+# Usage: git pull && ./deploy.sh
 
 set -e
 
 APP_CONTAINER="csm-app"
 COMPOSE="docker compose"
 
-# Fallback to docker-compose (v1) if docker compose (v2) is not available
 if ! docker compose version &>/dev/null; then
     COMPOSE="docker-compose"
 fi
 
 echo "=== Deploy started at $(date) ==="
 
-# Check if .env.production exists
 if [ ! -f .env.production ]; then
     echo "Error: .env.production file not found!"
-    echo "Please copy .env.production.example to .env.production and fill in your values."
     exit 1
 fi
 
-# Step 0: Stop old container and clean up to free space for build
-echo "[0/4] Stopping old container and freeing disk space..."
+# Step 1: Install dependencies and build on host
+echo "[1/5] Installing dependencies..."
+cp .env.production .env
+npm ci --omit=dev --no-audit --no-fund
+# Need devDeps for build (next, typescript, etc.)
+npm install --no-audit --no-fund
+npx prisma generate
+
+echo "[2/5] Building Next.js..."
+NODE_OPTIONS="--max-old-space-size=512" NODE_ENV=production npm run build
+
+# Step 3: Stop old container and clean Docker cache
+echo "[3/5] Stopping old container..."
 $COMPOSE down || true
 docker system prune -f
 
-# Step 1: Build new image
-echo "[1/4] Building new image..."
+# Step 4: Build minimal Docker image (only copies artifacts, no npm install)
+echo "[4/5] Building Docker image..."
 DOCKER_BUILDKIT=1 $COMPOSE build
 
-# Step 2: Start new container
-echo "[2/4] Starting new container..."
+# Step 5: Start new container
+echo "[5/5] Starting container..."
 $COMPOSE up -d --force-recreate --no-build
 
-# Step 3: Wait for the new container to become healthy
-echo "[3/4] Waiting for health check..."
+# Wait for health check
+echo "Waiting for health check..."
 ATTEMPTS=0
 MAX_ATTEMPTS=30
 until [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; do
@@ -49,9 +56,8 @@ until [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; do
         echo "Container is healthy!"
         break
     fi
-    # Also accept "starting" with a successful curl as healthy enough
     if [ "$HEALTH" = "starting" ] && wget -q --spider http://localhost:3000 2>/dev/null; then
-        echo "Container is responding (health check still warming up)."
+        echo "Container is responding."
         break
     fi
     ATTEMPTS=$((ATTEMPTS + 1))
@@ -61,13 +67,10 @@ done
 
 if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
     echo "WARNING: Container did not become healthy in time."
-    echo "Showing recent logs:"
     $COMPOSE logs --tail=30
     exit 1
 fi
 
-# Step 4: Cleanup old images
-echo "[4/4] Cleaning up old images..."
 docker image prune -f
 
 echo ""
