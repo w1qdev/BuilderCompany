@@ -15,6 +15,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads
+      - ./public/images:/app/public/images:ro
     mem_limit: 512m
     memswap_limit: 768m
     cpus: 0.8

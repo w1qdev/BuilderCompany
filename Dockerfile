@@ -38,8 +38,8 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     apk add --no-cache wget
 
-# Copy standalone build
-COPY --from=builder /app/public ./public
+# Copy standalone build (public/images mounted as volume from host)
+COPY --from=builder /app/public/robots.txt ./public/robots.txt
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
@@ -54,8 +54,8 @@ RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev --no-audit --no-fund
 
 # Create directories for uploads and database
-RUN mkdir -p /app/uploads /app/data && \
-    chown -R nextjs:nodejs /app
+RUN mkdir -p /app/uploads /app/data /app/public/images && \
+    chown -R nextjs:nodejs /app/uploads /app/data /app/public
 
 USER nextjs
 
