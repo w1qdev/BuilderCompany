@@ -11,6 +11,4 @@ data/*
 .vscode
 .idea
 *.log
-# node_modules excluded except what Dockerfile explicitly COPYs
 node_modules/.cache
-node_modules/.bin
