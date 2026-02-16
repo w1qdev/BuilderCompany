@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -167,7 +176,7 @@ export async function GET(
           </tr>
         </tfoot>
       </table>
-      ${request.message ? `<p style="margin-top:10px;font-size:11px;color:#666;"><strong>Примечание:</strong> ${request.message}</p>` : ""}
+      ${request.message ? `<p style="margin-top:10px;font-size:11px;color:#666;"><strong>Примечание:</strong> ${escapeHtml(request.message)}</p>` : ""}
     </div>
 
     <!-- Conditions -->

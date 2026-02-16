@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { getIO } from "@/lib/socket";
 import { sendMaxNotification } from "@/lib/max";
 import { sendTelegramNotification } from "@/lib/telegram";
+import { createRateLimiter } from "@/lib/rateLimit";
+
+const submitLimiter = createRateLimiter({ max: 10, windowMs: 15 * 60 * 1000 });
 
 export const dynamic = 'force-dynamic';
 import { existsSync } from "fs";
@@ -28,6 +31,12 @@ interface SubmitFile {
 }
 
 export async function POST(req: NextRequest) {
+  if (!submitLimiter(req)) {
+    return NextResponse.json(
+      { error: "Слишком много запросов. Попробуйте через несколько минут." },
+      { status: 429 }
+    );
+  }
   let uploadedFilePath: string | null = null;
   try {
     const body = await req.json();

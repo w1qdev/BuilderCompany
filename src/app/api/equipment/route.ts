@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
     const limit = Math.min(Number(searchParams.get("limit")) || 50, 500);
     const skip = (page - 1) * limit;
-    const search = searchParams.get("search") || "";
+    const search = (searchParams.get("search") || "").slice(0, 100);
     const status = searchParams.get("status") || "";
     const categoryParams = searchParams.getAll("category");
 

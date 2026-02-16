@@ -28,6 +28,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Файл не загружен" }, { status: 400 });
     }
 
+    // Validate file type (only Excel files allowed)
+    const allowedTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ];
+    const allowedExtensions = [".xlsx", ".xls"];
+    const fileName = file.name.toLowerCase();
+    const hasAllowedExt = allowedExtensions.some((ext) => fileName.endsWith(ext));
+    if (!hasAllowedExt || (file.type && !allowedTypes.includes(file.type))) {
+      return NextResponse.json({ error: "Разрешены только файлы Excel (.xlsx, .xls)" }, { status: 400 });
+    }
+
+    // Limit file size to 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "Файл слишком большой (максимум 5 МБ)" }, { status: 400 });
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const workbook = new ExcelJS.Workbook();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const dynamic = 'force-dynamic';
 
+const adminLimiter = createRateLimiter({ max: 120, windowMs: 60 * 1000 });
+
 export async function GET(req: NextRequest) {
+  if (!adminLimiter(req)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   const headerPassword = req.headers.get("x-admin-password");
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,7 +20,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
   const page = Number(searchParams.get("page")) || 1;
   const limit = 20;
-  const search = searchParams.get("search")?.trim() || "";
+  const search = (searchParams.get("search")?.trim() || "").slice(0, 100);
   const sortBy = searchParams.get("sortBy") || "createdAt";
   const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
 

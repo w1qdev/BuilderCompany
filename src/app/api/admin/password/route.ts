@@ -4,9 +4,10 @@ import { createRateLimiter } from "@/lib/rateLimit";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 const passwordLimiter = createRateLimiter({ max: 3, windowMs: 15 * 60 * 1000 });
+const maxPasswordLength = 40; // To prevent DoS with extremely long passwords
 
 export async function POST(req: NextRequest) {
   if (!passwordLimiter(req)) {
@@ -22,9 +23,9 @@ export async function POST(req: NextRequest) {
   }
 
   const { newPassword } = await req.json();
-  if (!newPassword || newPassword.length < 4) {
+  if (!newPassword || newPassword.length < maxPasswordLength) {
     return NextResponse.json(
-      { error: "Пароль должен быть не менее 4 символов" },
+      { error: `Пароль должен быть не менее ${maxPasswordLength} символов` },
       { status: 400 },
     );
   }

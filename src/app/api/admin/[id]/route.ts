@@ -43,7 +43,7 @@ export async function PATCH(
 
   // Validate and add executorPrice
   if (executorPrice !== undefined) {
-    if (executorPrice !== null && (typeof executorPrice !== "number" || executorPrice < 0)) {
+    if (executorPrice !== null && (typeof executorPrice !== "number" || !isFinite(executorPrice) || executorPrice < 0)) {
       return NextResponse.json({ error: "Invalid executorPrice" }, { status: 400 });
     }
     updateData.executorPrice = executorPrice;
@@ -51,7 +51,7 @@ export async function PATCH(
 
   // Validate and add markup
   if (markup !== undefined) {
-    if (markup !== null && (typeof markup !== "number" || markup < 0 || markup > 100)) {
+    if (markup !== null && (typeof markup !== "number" || !isFinite(markup) || markup < 0 || markup > 100)) {
       return NextResponse.json({ error: "Invalid markup (must be 0-100)" }, { status: 400 });
     }
     updateData.markup = markup;

@@ -125,7 +125,7 @@ export default function Hero({ onOpenModal }: HeroProps) {
           className="mt-16 grid grid-cols-2 sm:grid-cols-1 gap-6 max-w-2xl mx-auto"
         >
           {[
-            { target: 15, suffix: "+", label: "Лет опыта" },
+            { target: 10, suffix: "+", label: "Лет опыта" },
             // { target: 12000, suffix: "+", label: "Поверок выполнено" },
             // { target: 500, suffix: "+", label: "Клиентов" },
             // { target: 98, suffix: "%", label: "Довольных клиентов" },
