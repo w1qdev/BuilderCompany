@@ -22,7 +22,6 @@ COPY node_modules/.prisma ./node_modules/.prisma
 COPY node_modules/@prisma ./node_modules/@prisma
 COPY node_modules/prisma ./node_modules/prisma
 COPY node_modules/effect ./node_modules/effect
-COPY node_modules/@effect ./node_modules/@effect
 
 # Create directories
 RUN mkdir -p /app/uploads /app/data /app/public/images && \
