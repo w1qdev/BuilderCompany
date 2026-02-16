@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -77,6 +78,7 @@ export default function ScheduleView({
   const [groups, setGroups] = useState<MonthGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [exportingArshin, setExportingArshin] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
   const [calYear, setCalYear] = useState(() => new Date().getFullYear());
@@ -114,6 +116,39 @@ export default function ScheduleView({
       toast.error("Ошибка экспорта");
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleExportWordWithArshin = async () => {
+    try {
+      setExportingArshin(true);
+      toast.info("Запрашиваем актуальные даты из Аршин...");
+
+      // First, run Arshin check to update dates in DB
+      await fetch("/api/equipment/arshin-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      });
+
+      // Then export
+      const params = new URLSearchParams();
+      categories.forEach((c) => params.append("category", c));
+      params.set("type", exportType);
+      const res = await fetch(`/api/equipment/export-word?${params}`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${title}_Аршин_${new Date().getFullYear()}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("График с данными Аршин скачан");
+    } catch {
+      toast.error("Ошибка экспорта");
+    } finally {
+      setExportingArshin(false);
     }
   };
 
@@ -304,13 +339,31 @@ export default function ScheduleView({
           </div>
           <button
             onClick={handleExportWord}
-            disabled={exporting}
+            disabled={exporting || exportingArshin}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark transition-colors disabled:opacity-50"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             {exporting ? "Скачивание..." : "Скачать (.docx)"}
+          </button>
+          <button
+            onClick={handleExportWordWithArshin}
+            disabled={exporting || exportingArshin}
+            title="Сначала проверяет актуальные даты в ФГИС Аршин, затем скачивает обновлённый график"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-400/30 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-50"
+          >
+            {exportingArshin ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+            {exportingArshin ? "Проверка Аршин..." : "Экспорт с проверкой Аршин"}
           </button>
           <Link
             href={equipmentLink}
@@ -323,12 +376,24 @@ export default function ScheduleView({
 
       {/* Empty state */}
       {allEquipment.length === 0 && (
-        <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-8 text-center">
-          <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <h3 className="text-lg font-semibold text-dark dark:text-white mb-2">Нет запланированных событий</h3>
-          <p className="text-neutral dark:text-white/70">Добавьте оборудование с датами в разделе оборудования</p>
+        <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm">
+          <EmptyState
+            icon={
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            }
+            title="Нет запланированных событий"
+            description="Добавьте оборудование с датами поверки в разделе оборудования, чтобы увидеть график"
+            action={
+              <Link
+                href="/dashboard/equipment/si"
+                className="inline-flex items-center gap-2 gradient-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold"
+              >
+                Перейти к оборудованию
+              </Link>
+            }
+          />
         </div>
       )}
 

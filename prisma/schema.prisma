@@ -104,6 +104,13 @@ model Equipment {
   company           String?
   contactEmail      String?
   notes             String?
+  arshinValidDate     DateTime?
+  arshinMismatch      Boolean   @default(false)
+  arshinCheckedAt     DateTime?
+  arshinUrl           String?
+  arshinNotifiedDate  DateTime?
+  mitApproved         Boolean?
+  mitUrl              String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

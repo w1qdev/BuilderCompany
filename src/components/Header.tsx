@@ -14,7 +14,6 @@ const navLinks = [
   { href: "#portfolio", label: "Портфолио" },
   { href: "#about", label: "О компании" },
   { href: "/contacts", label: "Контакты" },
-  { href: "/dashboard", label: "Личный кабинет" },
 ];
 
 interface HeaderProps {
@@ -129,7 +128,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
               >
                 {link.label}
               </a>
-            )
+            ),
           )}
         </nav>
 
@@ -202,7 +201,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
                   >
                     {link.label}
                   </a>
-                )
+                ),
               )}
               <button
                 onClick={() => {

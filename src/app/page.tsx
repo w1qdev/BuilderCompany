@@ -10,13 +10,19 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import Modal from "@/components/Modal";
 import Payment from "@/components/Payment";
-import Portfolio from "@/components/Portfolio";
 import Process from "@/components/Process";
 import Science from "@/components/Science";
 import ScrollProgress from "@/components/ScrollProgress";
 import Services from "@/components/Services";
-import Testimonials from "@/components/Testimonials";
+import dynamic from "next/dynamic";
 import { useState } from "react";
+
+const Portfolio = dynamic(() => import("@/components/Portfolio"), {
+  ssr: false,
+});
+const Testimonials = dynamic(() => import("@/components/Testimonials"), {
+  ssr: false,
+});
 
 export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);

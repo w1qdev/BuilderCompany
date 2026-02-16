@@ -153,7 +153,7 @@ export async function sendEmailNotification(data: AdminEmailData) {
     return;
   }
   const { transporter, user } = result;
-  const notifyEmail = process.env.NOTIFY_EMAIL;
+  const notifyEmail = process.env.ZAKAZ_EMAIL || process.env.NOTIFY_EMAIL;
 
   const servicesSummary = data.items.map((i) => i.service).join(", ");
   const orgName = data.company || data.name;
@@ -633,5 +633,151 @@ export async function sendConfirmationEmail(data: {
     });
   } catch (error) {
     console.error("Confirmation email error:", error);
+  }
+}
+
+// ─── Arshin new verification notification ───
+
+export async function sendArshinVerificationEmail(data: {
+  userName: string;
+  email: string;
+  equipment: { name: string; type: string | null; serialNumber: string | null; validDate: string; arshinUrl: string | null }[];
+}) {
+  const result = createTransporter();
+  if (!result) return;
+  const { transporter, user } = result;
+
+  const itemsHtml = data.equipment
+    .map((eq, idx) => `
+    <tr>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; color: #666; font-size: 13px; text-align: center;">${idx + 1}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px; font-weight: 600;">${escapeHtml(eq.name)}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px;">${eq.type ? escapeHtml(eq.type) : '—'}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px;">${eq.serialNumber ? escapeHtml(eq.serialNumber) : '—'}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px; font-weight: 600; color: #16a34a;">${new Date(eq.validDate).toLocaleDateString("ru-RU")}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px;">${eq.arshinUrl ? `<a href="${escapeHtml(eq.arshinUrl)}" style="color: #3b82f6; text-decoration: none;">Открыть ↗</a>` : '—'}</td>
+    </tr>`)
+    .join("");
+
+  const html = `
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="utf-8"></head>
+<body style="margin: 0; padding: 0; background: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+  <div style="max-width: 640px; margin: 0 auto; padding: 24px 16px;">
+    <div style="background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); border-radius: 16px 16px 0 0; padding: 28px 32px; text-align: center;">
+      <h1 style="margin: 0 0 6px 0; font-size: 20px; color: #fff; font-weight: 700;">Поверка зарегистрирована в ФГИС Аршин</h1>
+      <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.6);">Центр Стандартизации и Метрологии</p>
+    </div>
+    <div style="background: #ffffff; padding: 24px 32px; border-left: 1px solid #eee; border-right: 1px solid #eee;">
+      <p style="font-size: 14px; color: #333; margin: 0 0 16px 0;">Уважаемый(-ая) <strong>${escapeHtml(data.userName)}</strong>,</p>
+      <p style="font-size: 14px; color: #555; margin: 0 0 20px 0;">
+        Результаты поверки следующего оборудования появились в базе данных ФГИС «Аршин»:
+      </p>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f0f9ff; border-bottom: 2px solid #bfdbfe;">
+              <th style="padding: 10px 14px; font-size: 12px; color: #1e40af; text-align: center;">№</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #1e40af; text-align: left;">Наименование</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #1e40af; text-align: left;">Тип</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #1e40af; text-align: left;">Зав. №</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #1e40af; text-align: left;">Действует до</th>
+              <th style="padding: 10px 14px; font-size: 12px; color: #1e40af; text-align: left;">Аршин</th>
+            </tr>
+          </thead>
+          <tbody>${itemsHtml}</tbody>
+        </table>
+      </div>
+      <div style="margin: 24px 0; text-align: center;">
+        <a href="https://csm-center.ru/dashboard/arshin-registry" style="display: inline-block; background: linear-gradient(135deg, #1d4ed8, #1e40af); color: #fff; text-decoration: none; padding: 12px 32px; border-radius: 12px; font-size: 14px; font-weight: 600;">Открыть реестр поверок</a>
+      </div>
+    </div>
+    <div style="background: #f9f9fb; border-radius: 0 0 16px 16px; padding: 20px 32px; border: 1px solid #eee; border-top: none; text-align: center;">
+      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">ЦСМ — Центр Стандартизации и Метрологии</p>
+      <p style="margin: 0; font-size: 11px; color: #ddd;">zakaz@csm-center.ru</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    await transporter.sendMail({
+      from: `"ЦСМ — Уведомления" <${user}>`,
+      to: data.email,
+      subject: `Поверка зарегистрирована в Аршин: ${data.equipment.map((e) => e.name).join(", ")}`,
+      html,
+    });
+  } catch (error) {
+    console.error("Arshin verification email error:", error);
+  }
+}
+
+export async function sendStatusUpdateEmail(data: {
+  name: string;
+  email: string;
+  requestId: number;
+  status: string;
+  adminNotes?: string | null;
+}) {
+  const result = createTransporter();
+  if (!result) return;
+  const { transporter, user } = result;
+
+  const statusLabels: Record<string, { label: string; color: string; description: string }> = {
+    in_progress: {
+      label: "В работе",
+      color: "#f59e0b",
+      description: "Ваша заявка принята в работу. Специалисты приступили к выполнению.",
+    },
+    done: {
+      label: "Завершена",
+      color: "#10b981",
+      description: "Ваша заявка выполнена. Документы готовы к выдаче.",
+    },
+    new: {
+      label: "Новая",
+      color: "#3b82f6",
+      description: "Статус вашей заявки изменён на «Новая».",
+    },
+  };
+
+  const statusInfo = statusLabels[data.status] || { label: data.status, color: "#6b7280", description: "" };
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f9f5f0;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:32px 16px;">
+    <div style="background:#1a1a2e;padding:24px 32px;border-radius:16px 16px 0 0;text-align:center;">
+      <h1 style="margin:0;color:#ff6b35;font-size:20px;">ЦСМ</h1>
+      <p style="margin:8px 0 0;color:#fff;opacity:0.7;font-size:13px;">Центр Стандартизации и Метрологии</p>
+    </div>
+    <div style="background:#fff;padding:32px;border:1px solid #eee;border-top:none;">
+      <p style="font-size:16px;color:#333;">Здравствуйте, <strong>${escapeHtml(data.name)}</strong>!</p>
+      <p style="color:#555;font-size:14px;">Статус вашей заявки <strong>№${data.requestId}</strong> изменён:</p>
+      <div style="margin:20px 0;padding:16px 20px;background:#f8f9fa;border-left:4px solid ${statusInfo.color};border-radius:8px;">
+        <p style="margin:0;font-size:18px;font-weight:bold;color:${statusInfo.color};">${statusInfo.label}</p>
+        <p style="margin:8px 0 0;font-size:13px;color:#666;">${statusInfo.description}</p>
+      </div>
+      ${data.adminNotes ? `<div style="margin:16px 0;padding:16px;background:#fff8f3;border:1px solid #ffe0cc;border-radius:8px;"><p style="margin:0 0 6px;font-size:12px;font-weight:bold;color:#f59e0b;text-transform:uppercase;">Комментарий от специалиста:</p><p style="margin:0;font-size:14px;color:#333;">${escapeHtml(data.adminNotes)}</p></div>` : ""}
+      <p style="color:#555;font-size:14px;">Если у вас есть вопросы, свяжитесь с нами.</p>
+    </div>
+    <div style="background:#f0ebe5;padding:16px 32px;border-radius:0 0 16px 16px;text-align:center;">
+      <p style="margin:0;font-size:12px;color:#999;">© ЦСМ — Центр Стандартизации и Метрологии</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    await transporter.sendMail({
+      from: `"Центр Стандартизации и Метрологии" <${user}>`,
+      to: data.email,
+      subject: `Заявка №${data.requestId} — статус обновлён: ${statusInfo.label}`,
+      html,
+    });
+  } catch (error) {
+    console.error("Status update email error:", error);
   }
 }

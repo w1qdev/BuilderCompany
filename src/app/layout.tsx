@@ -4,6 +4,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import CookieConsent from "@/components/CookieConsent";
 import PageViewTracker from "@/components/PageViewTracker";
 import { SiteSettingsProvider } from "@/lib/SiteSettingsContext";
+import { Toaster } from "sonner";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://csm-center.ru";
 
@@ -37,6 +38,14 @@ export const metadata: Metadata = {
     title: "ЦСМ — Центр Стандартизации и Метрологии",
     description:
       "Калибровка, поверка и аттестация измерительного оборудования. Профессиональный центр метрологии с опытом более 10 лет.",
+    images: [
+      {
+        url: `${SITE_URL}/images/hero/hero-1.webp`,
+        width: 1200,
+        height: 630,
+        alt: "ЦСМ — Центр Стандартизации и Метрологии",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -101,6 +110,53 @@ const jsonLd = {
   },
 };
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Какие виды оборудования вы калибруете?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Мы калибруем широкий спектр средств измерений: манометры, термометры, весы, мультиметры, осциллографы, счётчики, расходомеры и многое другое.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Сколько времени занимает калибровка?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Стандартные сроки калибровки — 5-10 рабочих дней. Для срочных заказов предусмотрена ускоренная калибровка за 3-5 рабочих дней.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Чем отличается калибровка от поверки?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Поверка — обязательная процедура для СИ в сферах государственного регулирования. Калибровка — добровольная процедура для обеспечения точности измерений.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Вы работаете с выездом к заказчику?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Да, мы проводим калибровку и поверку на территории заказчика по всей России.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Какие документы я получу после калибровки?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "После калибровки выдаётся сертификат калибровки. При поверке — свидетельство о поверке с записью в реестр ФГИС «Аршин».",
+      },
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -120,6 +176,10 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
       </head>
       <body className="antialiased">
         <ThemeProvider>
@@ -127,6 +187,7 @@ export default function RootLayout({
             {children}
             <PageViewTracker />
             <CookieConsent />
+            <Toaster richColors position="top-center" />
           </SiteSettingsProvider>
         </ThemeProvider>
       </body>

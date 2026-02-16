@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendStatusUpdateEmail } from "@/lib/email";
 import { getIO } from "@/lib/socket";
 import { verifyAdminPassword } from "@/lib/adminAuth";
 
@@ -83,12 +84,28 @@ export async function PATCH(
   const updated = await prisma.request.update({
     where: { id: Number(id) },
     data: updateData,
+    include: { user: true },
   });
 
   // Emit realtime event to admin panel
   const io = getIO();
   if (io) {
     io.emit("request-update", updated);
+  }
+
+  // Send email to user when status changes
+  if (updateData.status && updateData.status !== current.status) {
+    const emailRecipient = (updated as typeof updated & { user?: { email: string; name: string } | null }).user
+      ? (updated as typeof updated & { user: { email: string; name: string } }).user
+      : { email: updated.email, name: updated.name };
+
+    sendStatusUpdateEmail({
+      name: emailRecipient.name,
+      email: emailRecipient.email,
+      requestId: updated.id,
+      status: updateData.status,
+      adminNotes: updated.adminNotes,
+    }).catch(console.error);
   }
 
   return NextResponse.json(updated);

@@ -24,7 +24,9 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(Number(searchParams.get("limit")) || 100, 500);
+    const page = Math.max(1, Number(searchParams.get("page")) || 1);
+    const limit = Math.min(Number(searchParams.get("limit")) || 50, 500);
+    const skip = (page - 1) * limit;
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
     const categoryParams = searchParams.getAll("category");
@@ -45,13 +47,17 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const equipment = await prisma.equipment.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: limit,
-    });
+    const [equipment, total] = await Promise.all([
+      prisma.equipment.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        skip,
+      }),
+      prisma.equipment.count({ where }),
+    ]);
 
-    return NextResponse.json({ equipment });
+    return NextResponse.json({ equipment, total, page, limit });
   } catch (error) {
     console.error("Get equipment error:", error);
     return NextResponse.json({ error: "Ошибка при получении оборудования" }, { status: 500 });
@@ -66,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes } = body;
+    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Наименование обязательно" }, { status: 400 });
@@ -97,6 +103,7 @@ export async function POST(request: NextRequest) {
         company: company?.trim() || null,
         contactEmail: contactEmail?.trim() || null,
         notes: notes?.trim() || null,
+        arshinUrl: arshinUrl?.trim() || null,
       },
     });
 

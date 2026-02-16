@@ -122,9 +122,14 @@ export default function Hero({ onOpenModal }: HeroProps) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-16 flex justify-center items-center md:grid-cols-4 gap-6"
+          className="mt-16 grid grid-cols-2 sm:grid-cols-1 gap-6 max-w-2xl mx-auto"
         >
-          {[{ target: 10, suffix: "+", label: "Лет опыта" }].map((stat, i) => (
+          {[
+            { target: 15, suffix: "+", label: "Лет опыта" },
+            // { target: 12000, suffix: "+", label: "Поверок выполнено" },
+            // { target: 500, suffix: "+", label: "Клиентов" },
+            // { target: 98, suffix: "%", label: "Довольных клиентов" },
+          ].map((stat, i) => (
             <div key={i} className="text-center">
               <div className="text-3xl sm:text-4xl font-extrabold text-primary">
                 <AnimatedCounter target={stat.target} suffix={stat.suffix} />

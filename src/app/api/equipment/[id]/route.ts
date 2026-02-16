@@ -35,7 +35,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes } = body;
+    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl } = body;
 
     // Recalculate status
     const nextDate = nextVerification ? new Date(nextVerification) : existing.nextVerification;
@@ -65,6 +65,7 @@ export async function PATCH(
         ...(company !== undefined && { company: company?.trim() || null }),
         ...(contactEmail !== undefined && { contactEmail: contactEmail?.trim() || null }),
         ...(notes !== undefined && { notes: notes?.trim() || null }),
+        ...(arshinUrl !== undefined && { arshinUrl: arshinUrl?.trim() || null }),
         status,
         ...(shouldResetNotified && { notified: false }),
       },

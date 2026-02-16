@@ -111,6 +111,9 @@ export default function AdminPage() {
   const [sortBy, setSortBy] = useState<SortField>("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [exportPeriod, setExportPeriod] = useState("");
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editingPricing, setEditingPricing] = useState<{
     [key: number]: {
@@ -274,6 +277,71 @@ export default function AdminPage() {
     }
   };
 
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === requests.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(requests.map((r) => r.id)));
+    }
+  };
+
+  const handleBulkStatus = async (status: string) => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/admin/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "x-admin-password": password },
+            body: JSON.stringify({ status }),
+          }),
+        ),
+      );
+      toast.success(`Статус обновлён для ${selectedIds.size} заявок`);
+      setSelectedIds(new Set());
+      fetchRequests();
+      fetchStats();
+    } catch {
+      toast.error("Ошибка при обновлении статусов");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Удалить ${selectedIds.size} заявок? Это действие нельзя отменить.`)) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/admin/${id}`, {
+            method: "DELETE",
+            headers: { "x-admin-password": password },
+          }),
+        ),
+      );
+      toast.success(`Удалено ${selectedIds.size} заявок`);
+      setSelectedIds(new Set());
+      fetchRequests();
+      fetchStats();
+    } catch {
+      toast.error("Ошибка при удалении");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const [exportMenuId, setExportMenuId] = useState<number | null>(null);
 
   const handleExportToExcel = async (id: number, filter?: string) => {
@@ -413,6 +481,15 @@ export default function AdminPage() {
       export: "true",
     });
     if (search) params.set("search", search);
+
+    if (exportPeriod) {
+      const now = new Date();
+      let dateFrom: Date | null = null;
+      if (exportPeriod === "week") dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      else if (exportPeriod === "month") dateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      else if (exportPeriod === "quarter") dateFrom = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      if (dateFrom) params.set("dateFrom", dateFrom.toISOString());
+    }
     const res = await fetch(`/api/admin?${params}`, {
       headers: { "x-admin-password": password },
     });
@@ -637,6 +714,16 @@ export default function AdminPage() {
             </svg>
             <span className="hidden sm:inline">Экспорт</span> CSV
           </button>
+          <select
+            value={exportPeriod}
+            onChange={(e) => setExportPeriod(e.target.value)}
+            className="px-3 py-2 rounded-xl text-sm font-medium bg-white text-neutral border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">Все время</option>
+            <option value="week">За неделю</option>
+            <option value="month">За месяц</option>
+            <option value="quarter">За квартал</option>
+          </select>
         </div>
       </div>
 
@@ -955,6 +1042,18 @@ export default function AdminPage() {
                           </div>
                         )}
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(`/api/admin/kp/${r.id}`, "_blank");
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-violet-600 hover:bg-violet-50 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        КП
+                      </button>
                       {deleteConfirmId === r.id ? (
                         <>
                           <span className="text-sm text-red-600">Удалить?</span>
@@ -995,11 +1094,65 @@ export default function AdminPage() {
           )}
         </div>
 
+        {/* Bulk actions bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 px-4 py-3 bg-primary/10 border border-primary/20 rounded-2xl">
+            <span className="text-sm font-medium text-primary">
+              Выбрано: {selectedIds.size}
+            </span>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => handleBulkStatus("new")}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50"
+              >
+                → Новая
+              </button>
+              <button
+                onClick={() => handleBulkStatus("in_progress")}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition-colors disabled:opacity-50"
+              >
+                → В работе
+              </button>
+              <button
+                onClick={() => handleBulkStatus("done")}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50"
+              >
+                → Завершена
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkLoading}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
+              >
+                Удалить
+              </button>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Desktop Table */}
         <div className="hidden md:block bg-white rounded-2xl shadow-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-warm-bg hover:bg-warm-bg">
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={requests.length > 0 && selectedIds.size === requests.length}
+                    onChange={toggleSelectAll}
+                    className="rounded border-gray-300 text-primary"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </TableHead>
                 <TableHead className="font-semibold text-dark">#</TableHead>
                 {sortableColumns.map((col) => (
                   <TableHead
@@ -1028,6 +1181,14 @@ export default function AdminPage() {
                     }
                     className="border-t border-gray-100 hover:bg-warm-bg/50 cursor-pointer"
                   >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(r.id)}
+                        onChange={() => toggleSelect(r.id)}
+                        className="rounded border-gray-300 text-primary"
+                      />
+                    </TableCell>
                     <TableCell className="text-neutral">{r.id}</TableCell>
                     <TableCell className="text-neutral whitespace-nowrap">
                       {formatDate(r.createdAt)}

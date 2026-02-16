@@ -5,7 +5,6 @@ import { AdminAuthProvider, useAdminAuth } from "@/lib/AdminAuthContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Toaster } from "sonner";
 
 const navItems = [
   {
@@ -38,7 +37,6 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-warm-bg">
-      <Toaster position="top-center" className="rounded-sm" />
 
       {/* Header */}
       <header className="gradient-dark text-white sticky top-0 z-40">

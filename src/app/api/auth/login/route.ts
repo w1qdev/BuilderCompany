@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, rememberMe } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -50,10 +50,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create JWT token
+    // Create JWT token (30 days if rememberMe, else 7 days)
+    const expiresIn = rememberMe ? "30d" : "7d";
     const token = await new SignJWT({ userId: user.id, email: user.email })
       .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("7d")
+      .setExpirationTime(expiresIn)
       .sign(JWT_SECRET);
 
     const response = NextResponse.json({
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7,
     });
 
     return response;

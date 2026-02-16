@@ -192,6 +192,56 @@ export default function DashboardPage() {
         </Link>
       )}
 
+      {/* Nearest verification countdown widget */}
+      {upcoming.length > 0 && (() => {
+        const nearest = upcoming[0];
+        const daysLeft = Math.ceil(
+          (new Date(nearest.nextVerification).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        );
+        const urgency = daysLeft <= 3 ? "red" : daysLeft <= 7 ? "yellow" : "blue";
+        const colors = {
+          red: "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/30",
+          yellow: "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/30",
+          blue: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/30",
+        };
+        const iconColors = {
+          red: "text-red-500",
+          yellow: "text-yellow-500",
+          blue: "text-blue-500",
+        };
+        const textColors = {
+          red: "text-red-700 dark:text-red-300",
+          yellow: "text-yellow-700 dark:text-yellow-300",
+          blue: "text-blue-700 dark:text-blue-300",
+        };
+        return (
+          <Link
+            href="/dashboard/schedule/si"
+            className={`flex items-center gap-4 p-4 rounded-2xl border transition-opacity hover:opacity-90 ${colors[urgency]}`}
+          >
+            <div className={`text-center shrink-0 w-14 ${iconColors[urgency]}`}>
+              <div className="text-3xl font-extrabold leading-none">{daysLeft}</div>
+              <div className="text-xs font-medium">
+                {daysLeft === 1 ? "день" : daysLeft < 5 ? "дня" : "дней"}
+              </div>
+            </div>
+            <div className="w-px h-10 bg-current opacity-20 shrink-0" />
+            <div className="min-w-0">
+              <p className={`text-sm font-semibold ${textColors[urgency]}`}>
+                Ближайшая поверка — {nearest.name}
+              </p>
+              <p className={`text-xs mt-0.5 opacity-70 ${textColors[urgency]}`}>
+                {new Date(nearest.nextVerification).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
+                {nearest.type ? ` · ${nearest.type}` : ""}
+              </p>
+            </div>
+            <svg className={`w-5 h-5 ml-auto shrink-0 opacity-50 ${iconColors[urgency]}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        );
+      })()}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statsCards.map((card) => (

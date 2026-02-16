@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 const projects = [
@@ -97,11 +98,12 @@ export default function Portfolio() {
               className="group bg-warm-bg dark:bg-dark-light rounded-2xl overflow-hidden hover:shadow-xl transition-shadow"
             >
               <div className="relative h-48 overflow-hidden">
-                <img
+                <Image
                   src={project.image}
                   alt={`${project.title} — ${project.category}`}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                  loading="lazy"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-dark/60 via-transparent to-transparent" />
               </div>

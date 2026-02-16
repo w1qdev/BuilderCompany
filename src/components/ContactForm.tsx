@@ -112,6 +112,7 @@ export default function ContactForm({
   initialValues,
 }: ContactFormProps) {
   const maxAllowedFileSizeInBytes = 10 * 1024 * 1024;
+  const maxFiles = 5;
   const [form, setForm] = useState<FormFields>({
     name: initialValues?.name || "",
     phone: initialValues?.phone || "",
@@ -131,6 +132,7 @@ export default function ContactForm({
   const [, setUploadProgress] = useState<UploadProgress>(
     UploadProgressEnums.IDLE,
   );
+  const [fileUploadPercents, setFileUploadPercents] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(
     SubmitStatusEnums.IDLE,
@@ -173,7 +175,14 @@ export default function ContactForm({
       newFiles.push(f);
     }
 
-    setFiles((prev) => [...prev, ...newFiles]);
+    setFiles((prev) => {
+      const combined = [...prev, ...newFiles];
+      if (combined.length > maxFiles) {
+        setErrorMsg(`Максимальное количество файлов: ${maxFiles}`);
+        return prev;
+      }
+      return combined;
+    });
     setErrorMsg("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -201,30 +210,45 @@ export default function ContactForm({
     try {
       const uploadedFiles: { fileName: string; filePath: string }[] = [];
 
-      // Upload files sequentially
+      // Upload files sequentially with progress tracking
       if (files.length > 0) {
         setUploadProgress(UploadProgressEnums.UPLOADING);
         for (const f of files) {
           const formData = new FormData();
           formData.append("file", f);
 
-          const uploadRes = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
+          const uploadData = await new Promise<{ fileName: string; filePath: string }>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/upload");
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                const pct = Math.round((event.loaded / event.total) * 100);
+                setFileUploadPercents((prev) => ({ ...prev, [f.name]: pct }));
+              }
+            };
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(JSON.parse(xhr.responseText));
+              } else {
+                try {
+                  const err = JSON.parse(xhr.responseText);
+                  reject(new Error(err.error || `Ошибка загрузки файла "${f.name}"`));
+                } catch {
+                  reject(new Error(`Ошибка загрузки файла "${f.name}"`));
+                }
+              }
+            };
+            xhr.onerror = () => reject(new Error(`Ошибка загрузки файла "${f.name}"`));
+            xhr.send(formData);
           });
 
-          if (!uploadRes.ok) {
-            const data = await uploadRes.json();
-            throw new Error(data.error || `Ошибка загрузки файла "${f.name}"`);
-          }
-
-          const uploadData = await uploadRes.json();
           uploadedFiles.push({
             fileName: uploadData.fileName,
             filePath: uploadData.filePath,
           });
         }
         setUploadProgress(UploadProgressEnums.DONE);
+        setFileUploadPercents({});
       }
 
       // Backward compat: first file as top-level fields
@@ -268,6 +292,7 @@ export default function ContactForm({
       setServiceItems([createServiceItem()]);
       setFiles([]);
       setUploadProgress(UploadProgressEnums.IDLE);
+      setFileUploadPercents({});
       setNeedContract(false);
       setAddEquipment(false);
 
@@ -525,7 +550,7 @@ export default function ContactForm({
           />
           <label
             htmlFor="file-upload"
-            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 dark:border-white/20 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+            className={`flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed rounded-xl transition-colors ${files.length >= maxFiles ? "border-gray-100 dark:border-white/10 opacity-40 cursor-not-allowed" : "border-gray-200 dark:border-white/20 cursor-pointer hover:border-primary hover:bg-primary/5"}`}
           >
             <svg
               className="w-5 h-5 text-gray-400"
@@ -541,60 +566,73 @@ export default function ContactForm({
               />
             </svg>
             <span className="text-sm text-gray-500 dark:text-white/60">
-              {files.length > 0 ? "Добавить ещё файлы" : "Прикрепить файлы (PDF, Word, фото)"}
+              {files.length >= maxFiles
+                ? `Достигнут лимит (${maxFiles} файлов)`
+                : files.length > 0
+                ? `Добавить ещё (${files.length}/${maxFiles})`
+                : "Прикрепить файлы (PDF, Word, фото)"}
             </span>
           </label>
           {files.length > 0 && (
             <div className="space-y-1.5">
-              {files.map((f, index) => (
-                <div key={`${f.name}-${index}`} className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-white/5 rounded-xl">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <svg
-                      className="w-5 h-5 text-primary shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <span className="text-sm text-dark dark:text-white truncate">
-                      {f.name}
-                    </span>
-                    <span className="text-xs text-gray-400 shrink-0">
-                      ({(f.size / 1024 / 1024).toFixed(2)} МБ)
-                    </span>
+              {files.map((f, index) => {
+                const pct = fileUploadPercents[f.name];
+                const isUploading = pct !== undefined && pct < 100;
+                return (
+                  <div key={`${f.name}-${index}`} className="px-4 py-2.5 bg-gray-50 dark:bg-white/5 rounded-xl space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <svg
+                          className="w-5 h-5 text-primary shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        <span className="text-sm text-dark dark:text-white truncate">
+                          {f.name}
+                        </span>
+                        <span className="text-xs text-gray-400 shrink-0">
+                          ({(f.size / 1024 / 1024).toFixed(2)} МБ)
+                        </span>
+                      </div>
+                      {!isUploading && (
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    {isUploading && (
+                      <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full gradient-primary rounded-full transition-all duration-200"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    )}
+                    {pct === 100 && (
+                      <p className="text-xs text-green-500">Загружен</p>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFile(index)}
-                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
         <p className="text-xs text-gray-400">
-          Макс. размер: 10 МБ на файл. Форматы: PDF, DOC, DOCX, JPG, PNG
+          Макс. {maxFiles} файлов, до 10 МБ каждый. Форматы: PDF, DOC, DOCX, JPG, PNG
         </p>
       </div>
 
