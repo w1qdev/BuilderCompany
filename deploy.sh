@@ -26,12 +26,17 @@ if [ ! -f .env.production ]; then
     exit 1
 fi
 
-# Step 1: Build new image while old container is still running
-echo "[1/4] Building new image (old container still serving traffic)..."
+# Step 0: Stop old container and clean up to free space for build
+echo "[0/4] Stopping old container and freeing disk space..."
+$COMPOSE down || true
+docker system prune -f
+
+# Step 1: Build new image
+echo "[1/4] Building new image..."
 $COMPOSE build
 
-# Step 2: Quick swap — recreate container with new image
-echo "[2/4] Swapping to new container..."
+# Step 2: Start new container
+echo "[2/4] Starting new container..."
 $COMPOSE up -d --force-recreate --no-build
 
 # Step 3: Wait for the new container to become healthy
