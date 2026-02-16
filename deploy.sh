@@ -33,6 +33,9 @@ npx prisma generate
 echo "[2/5] Building Next.js..."
 NODE_OPTIONS="--max-old-space-size=512" NODE_ENV=production npm run build
 
+echo "[2.5/5] Running database migrations..."
+DATABASE_URL="file:$(pwd)/data/prod.db" npx prisma migrate deploy
+
 # Step 3: Stop old container and clean Docker cache
 echo "[3/5] Stopping old container..."
 $COMPOSE down || true
