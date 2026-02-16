@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # Deployment script for VPS
-# Builds Next.js on the host (no node_modules in Docker layers),
+# Builds Next.js on the host (avoids large node_modules layers in Docker),
 # then packages only the standalone output into a minimal Docker image.
 #
+# Prerequisites: node 20+ installed on host (apt install nodejs)
 # Usage: git pull && ./deploy.sh
 
 set -e
@@ -22,27 +23,24 @@ if [ ! -f .env.production ]; then
     exit 1
 fi
 
-# Step 1: Install dependencies and build on host
+# Step 1: Install all deps (dev + prod needed for next build)
 echo "[1/5] Installing dependencies..."
 cp .env.production .env
-npm ci --omit=dev --no-audit --no-fund
-# Need devDeps for build (next, typescript, etc.)
 npm install --no-audit --no-fund
 npx prisma generate
 
+# Step 2: Build Next.js
 echo "[2/5] Building Next.js..."
 NODE_OPTIONS="--max-old-space-size=512" NODE_ENV=production npm run build
 
-echo "[2.5/5] Running database migrations..."
+# Step 3: Run database migrations on host
+echo "[3/5] Running database migrations..."
 DATABASE_URL="file:$(pwd)/data/prod.db" npx prisma migrate deploy
 
-# Step 3: Stop old container and clean Docker cache
-echo "[3/5] Stopping old container..."
+# Step 4: Stop old container, clean Docker cache, build minimal image
+echo "[4/5] Building Docker image..."
 $COMPOSE down || true
 docker system prune -f
-
-# Step 4: Build minimal Docker image (only copies artifacts, no npm install)
-echo "[4/5] Building Docker image..."
 DOCKER_BUILDKIT=1 $COMPOSE build
 
 # Step 5: Start new container
@@ -75,6 +73,9 @@ if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
 fi
 
 docker image prune -f
+
+# Fix permissions for persistent volumes
+chown -R 1001:1001 /usr/csm-center.ru/uploads/ /usr/csm-center.ru/data/ 2>/dev/null || true
 
 echo ""
 echo "=== Deploy completed at $(date) ==="
