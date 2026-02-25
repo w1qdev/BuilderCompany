@@ -9,15 +9,47 @@ datasource db {
 }
 
 model User {
-  id        Int         @id @default(autoincrement())
-  email     String      @unique
-  password  String
-  name      String
-  phone     String?
-  company   String?
-  createdAt DateTime    @default(now())
-  requests  Request[]
-  equipment Equipment[]
+  id             Int                    @id @default(autoincrement())
+  email          String                 @unique
+  password       String
+  name           String
+  phone          String?                @unique
+  company        String?
+  inn            String?
+  kpp            String?
+  legalName      String?
+  legalAddress   String?
+  notifyDays     String?                @default("14,7")
+  telegramChatId String?
+  createdAt      DateTime               @default(now())
+  requests       Request[]
+  equipment      Equipment[]
+  activityLogs   ActivityLog[]
+  orgMemberships OrganizationMember[]
+}
+
+model Organization {
+  id         Int                    @id @default(autoincrement())
+  name       String
+  inn        String?
+  kpp        String?
+  address    String?
+  createdAt  DateTime               @default(now())
+  members    OrganizationMember[]
+  equipment  Equipment[]
+}
+
+model OrganizationMember {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String       @default("member")
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
 }
 
 model Setting {
@@ -66,9 +98,11 @@ model RequestFile {
 }
 
 model RequestItem {
-  id           Int      @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   requestId    Int
-  request      Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  request      Request    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  equipmentId  Int?
+  equipment    Equipment? @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
   service      String
   poverk       String?
   object       String?
@@ -89,9 +123,11 @@ model Service {
 }
 
 model Equipment {
-  id                Int       @id @default(autoincrement())
+  id                Int           @id @default(autoincrement())
   userId            Int
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId    Int?
+  organization      Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   name              String
   type              String?
   serialNumber      String?
@@ -112,8 +148,12 @@ model Equipment {
   arshinNotifiedDate  DateTime?
   mitApproved         Boolean?
   mitUrl              String?
+  ignored             Boolean   @default(false)
+  pinned              Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  verificationRecords VerificationRecord[]
+  requestItems        RequestItem[]
 
   @@index([userId])
   @@index([nextVerification])
@@ -132,6 +172,17 @@ model PasswordReset {
   @@index([email])
 }
 
+model VerificationCode {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}
+
 model PageView {
   id        Int      @id @default(autoincrement())
   url       String
@@ -142,4 +193,33 @@ model PageView {
 
   @@index([createdAt])
   @@index([url])
+}
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  entityType String
+  entityId   Int?
+  details    String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model VerificationRecord {
+  id          Int       @id @default(autoincrement())
+  equipmentId Int
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  date        DateTime
+  nextDate    DateTime?
+  result      String?
+  performer   String?
+  certificate String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  @@index([equipmentId])
 }

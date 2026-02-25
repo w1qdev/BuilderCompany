@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { jwtVerify } from "jose";
-import { JWT_SECRET } from "@/lib/jwt";
+import { getUserId } from "@/lib/auth";
 import {
   Document,
   Packer,
@@ -14,18 +13,8 @@ import {
   WidthType,
   BorderStyle,
   VerticalAlign,
+  PageOrientation,
 } from "docx";
-
-async function getUserId(request: NextRequest): Promise<number | null> {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload.userId as number;
-  } catch {
-    return null;
-  }
-}
 
 function formatDate(date: Date | null | undefined): string {
   if (!date) return "";
@@ -140,7 +129,8 @@ export async function GET(request: NextRequest) {
       "Дата следующей поверки (аттестации)",
       "Примечание",
     ];
-    const colWidths = [700, 2800, 1200, 1600, 1100, 1600, 1500];
+    // Wider columns for landscape A4 (usable width ~13800 DXA)
+    const colWidths = [700, 4000, 1500, 2000, 1300, 2000, 2300];
 
     const headerRow = new TableRow({
       tableHeader: true,
@@ -217,6 +207,7 @@ export async function GET(request: NextRequest) {
         {
           properties: {
             page: {
+              size: { orientation: PageOrientation.LANDSCAPE },
               margin: { top: 720, bottom: 720, left: 1134, right: 567 },
             },
           },

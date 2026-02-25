@@ -1,19 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { jwtVerify } from "jose";
-import { JWT_SECRET } from "@/lib/jwt";
+import { getUserId } from "@/lib/auth";
 import * as ExcelJS from "exceljs";
-
-async function getUserId(request: NextRequest): Promise<number | null> {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload.userId as number;
-  } catch {
-    return null;
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {

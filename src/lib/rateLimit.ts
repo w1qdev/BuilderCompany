@@ -13,8 +13,9 @@ export function createRateLimiter({
   max: number;
   windowMs: number;
 }) {
-  return function isAllowed(req: NextRequest): boolean {
-    const key = getIP(req);
+  return function isAllowed(req: NextRequest, userId?: number | null): boolean {
+    // Use userId if available, otherwise fall back to IP
+    const key = userId ? `user:${userId}` : `ip:${getIP(req)}`;
     const currentMoment = Date.now();
     const record = store.get(key);
     if (!record || currentMoment > record.resetAt) {
@@ -28,3 +29,13 @@ export function createRateLimiter({
     return true;
   };
 }
+
+// Periodically clean up expired entries (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of store) {
+    if (now > record.resetAt) {
+      store.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);

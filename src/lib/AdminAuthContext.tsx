@@ -34,11 +34,27 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     setInitializing(false);
   }, []);
 
-  const login = (pwd: string) => {
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  const login = async (pwd: string) => {
     setError("");
-    sessionStorage.setItem("admin-password", pwd);
-    setPassword(pwd);
-    setAuthenticated(true);
+    setLoginLoading(true);
+    try {
+      const res = await fetch("/api/admin/stats", {
+        headers: { "x-admin-password": pwd },
+      });
+      if (!res.ok) {
+        setError("Неверный пароль");
+        return;
+      }
+      sessionStorage.setItem("admin-password", pwd);
+      setPassword(pwd);
+      setAuthenticated(true);
+    } catch {
+      setError("Ошибка соединения с сервером");
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
   const logout = () => {
@@ -62,7 +78,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            login(inputPassword);
+            void login(inputPassword);
           }}
           className="bg-white rounded-3xl shadow-xl p-8"
         >
@@ -103,9 +119,10 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           />
           <button
             type="submit"
-            className="w-full gradient-primary text-white py-3 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow"
+            disabled={loginLoading}
+            className="w-full gradient-primary text-white py-3 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow disabled:opacity-60"
           >
-            Войти
+            {loginLoading ? "Проверка..." : "Войти"}
           </button>
         </form>
         </div>

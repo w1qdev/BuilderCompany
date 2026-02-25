@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { io as ioClient, Socket } from "socket.io-client";
 
 interface Notification {
   id: string;
@@ -37,79 +38,74 @@ export default function NotificationBell() {
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const [equipRes, reqRes] = await Promise.all([
-          fetch("/api/equipment?limit=200"),
-          fetch("/api/user/requests"),
-        ]);
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch("/api/user/dashboard-stats");
+      if (!res.ok) return;
+      const data = await res.json();
 
-        const items: Notification[] = [];
-        const now = new Date();
-        const in14Days = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+      const items: Notification[] = [];
 
-        if (equipRes.ok) {
-          const equipData = await equipRes.json();
-          const equipment = equipData.equipment || [];
-
-          const overdue = equipment.filter(
-            (e: { nextVerification: string }) =>
-              e.nextVerification && new Date(e.nextVerification) < now,
-          );
-          const upcoming = equipment.filter((e: { nextVerification: string }) => {
-            if (!e.nextVerification) return false;
-            const d = new Date(e.nextVerification);
-            return d >= now && d <= in14Days;
-          });
-
-          if (overdue.length > 0) {
-            items.push({
-              id: "overdue",
-              type: "overdue",
-              title: `${overdue.length} ед. с просроченной поверкой`,
-              description: "Требуется срочная поверка",
-              href: "/dashboard/equipment/si",
-              urgent: true,
-            });
-          }
-          if (upcoming.length > 0) {
-            items.push({
-              id: "upcoming",
-              type: "upcoming",
-              title: `${upcoming.length} ед. — поверка через 14 дней`,
-              description: "Рекомендуем оформить заявку заранее",
-              href: "/dashboard/schedule/si",
-            });
-          }
-        }
-
-        if (reqRes.ok) {
-          const reqData = await reqRes.json();
-          const requests = reqData.requests || [];
-          const inProgress = requests.filter(
-            (r: { status: string }) => r.status === "in_progress",
-          );
-          if (inProgress.length > 0) {
-            items.push({
-              id: "in-progress",
-              type: "status",
-              title: `${inProgress.length} заявки в работе`,
-              description: "Статус ваших заявок обновился",
-              href: "/dashboard/requests",
-            });
-          }
-        }
-
-        setNotifications(items);
-        setReadIds(getReadIds());
-      } catch {
-        // ignore
+      if (data.overdueItems > 0) {
+        items.push({
+          id: "overdue",
+          type: "overdue",
+          title: `${data.overdueItems} ед. с просроченной поверкой`,
+          description: "Требуется срочная поверка",
+          href: "/dashboard/equipment/si",
+          urgent: true,
+        });
       }
-    };
 
-    fetchNotifications();
+      const upcomingCount = data.upcomingItems?.length || 0;
+      if (upcomingCount > 0) {
+        items.push({
+          id: "upcoming",
+          type: "upcoming",
+          title: `${upcomingCount} ед. — поверка в ближайшие 30 дней`,
+          description: "Рекомендуем оформить заявку заранее",
+          href: "/dashboard/schedule/si",
+        });
+      }
+
+      const inProgressCount = data.requestCounts?.in_progress || 0;
+      if (inProgressCount > 0) {
+        items.push({
+          id: "in-progress",
+          type: "status",
+          title: `${inProgressCount} заявки в работе`,
+          description: "Статус ваших заявок обновился",
+          href: "/dashboard/requests",
+        });
+      }
+
+      setNotifications(items);
+      setReadIds(getReadIds());
+    } catch {
+      // ignore
+    }
   }, []);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Socket.IO live updates
+  useEffect(() => {
+    const socket: Socket = ioClient({ path: "/api/socketio" });
+
+    socket.on("request-update", () => {
+      fetchNotifications();
+    });
+    socket.on("new-request", () => {
+      fetchNotifications();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

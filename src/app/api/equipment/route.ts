@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { jwtVerify } from "jose";
-import { JWT_SECRET } from "@/lib/jwt";
+import { getUserId } from "@/lib/auth";
+import { logActivity } from "@/lib/activityLog";
+import { createRateLimiter } from "@/lib/rateLimit";
+import { equipmentCreateSchema, validate } from "@/lib/validation";
+import { calculateEquipmentStatus } from "@/lib/equipmentStatus";
 
 export const dynamic = "force-dynamic";
 
-async function getUserId(request: NextRequest): Promise<number | null> {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload.userId as number;
-  } catch {
-    return null;
-  }
-}
+const equipmentReadLimiter = createRateLimiter({ max: 120, windowMs: 60 * 1000 });
+const equipmentWriteLimiter = createRateLimiter({ max: 30, windowMs: 60 * 1000 });
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,16 +17,34 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
+    if (!equipmentReadLimiter(request, userId)) {
+      return NextResponse.json({ error: "Слишком много запросов" }, { status: 429 });
+    }
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
-    const limit = Math.min(Number(searchParams.get("limit")) || 50, 500);
+    const limit = Math.min(Number(searchParams.get("limit")) || 50, 10000);
     const skip = (page - 1) * limit;
     const search = (searchParams.get("search") || "").slice(0, 100);
     const status = searchParams.get("status") || "";
     const categoryParams = searchParams.getAll("category");
 
-    const where: Record<string, unknown> = { userId };
+    const showIgnored = searchParams.get("ignored") === "true";
+    const orgId = searchParams.get("organizationId");
+
+    // If orgId provided, check membership and show org equipment
+    let where: Record<string, unknown>;
+    if (orgId) {
+      const membership = await prisma.organizationMember.findUnique({
+        where: { userId_organizationId: { userId, organizationId: Number(orgId) } },
+      });
+      if (!membership) {
+        return NextResponse.json({ error: "Нет доступа к организации" }, { status: 403 });
+      }
+      where = { organizationId: Number(orgId), ignored: showIgnored };
+    } else {
+      where = { userId, organizationId: null, ignored: showIgnored };
+    }
     if (status) where.status = status;
     if (categoryParams.length === 1) {
       where.category = categoryParams[0];
@@ -53,6 +66,16 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
         take: limit,
         skip,
+        include: {
+          requestItems: {
+            take: 1,
+            orderBy: { id: "desc" },
+            select: {
+              id: true,
+              request: { select: { id: true, status: true, createdAt: true } },
+            },
+          },
+        },
       }),
       prisma.equipment.count({ where }),
     ]);
@@ -70,23 +93,19 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
+    if (!equipmentWriteLimiter(request, userId)) {
+      return NextResponse.json({ error: "Слишком много запросов" }, { status: 429 });
+    }
 
     const body = await request.json();
-    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl } = body;
-
-    if (!name || !name.trim()) {
-      return NextResponse.json({ error: "Наименование обязательно" }, { status: 400 });
+    const parsed = validate(equipmentCreateSchema, body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
+    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl } = parsed.data;
 
     // Calculate status based on nextVerification date
-    let status = "active";
-    if (nextVerification) {
-      const nextDate = new Date(nextVerification);
-      const now = new Date();
-      const twoWeeks = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-      if (nextDate < now) status = "expired";
-      else if (nextDate < twoWeeks) status = "pending";
-    }
+    const status = calculateEquipmentStatus(nextVerification);
 
     const equipment = await prisma.equipment.create({
       data: {
@@ -106,6 +125,8 @@ export async function POST(request: NextRequest) {
         arshinUrl: arshinUrl?.trim() || null,
       },
     });
+
+    logActivity({ userId, action: "equipment_added", entityType: "equipment", entityId: equipment.id, details: JSON.stringify({ name: equipment.name }) });
 
     return NextResponse.json(equipment, { status: 201 });
   } catch (error) {

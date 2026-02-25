@@ -1,21 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { jwtVerify } from "jose";
-import { JWT_SECRET } from "@/lib/jwt";
+import { getUserId } from "@/lib/auth";
 import { sendEmailNotification, sendConfirmationEmail } from "@/lib/email";
 import { getIO } from "@/lib/socket";
 import { sendTelegramNotification } from "@/lib/telegram";
-
-async function getUserId(request: NextRequest): Promise<number | null> {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload.userId as number;
-  } catch {
-    return null;
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     const mainService = items.length === 1 ? items[0].service : `${items.length} позиций`;
 
-    // Create request with items
+    // Create request with items linked to equipment
     const newRequest = await prisma.request.create({
       data: {
         name: user.name,
@@ -71,12 +59,13 @@ export async function POST(request: NextRequest) {
         status: "new",
         userId,
         items: {
-          create: items.map((item) => ({
-            service: item.service,
-            object: item.object,
-            fabricNumber: item.fabricNumber || null,
-            registry: item.registry || null,
-            poverk: item.poverk || null,
+          create: equipment.map((eq) => ({
+            service: categoryLabels[eq.category] || "Поверка СИ",
+            object: eq.name + (eq.type ? ` (${eq.type})` : ""),
+            fabricNumber: eq.serialNumber || null,
+            registry: eq.registryNumber || null,
+            poverk: eq.category === "verification" ? "периодическая" : null,
+            equipmentId: eq.id,
           })),
         },
       },

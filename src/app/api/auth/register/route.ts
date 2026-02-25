@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createRateLimiter } from "@/lib/rateLimit";
+import { registerSchema, validate } from "@/lib/validation";
 
 export const dynamic = 'force-dynamic';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const registerLimiter = createRateLimiter({ max: 3, windowMs: 15 * 60 * 1000 });
 
 export async function POST(request: NextRequest) {
@@ -18,21 +18,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email, password, name, phone, company } = body;
-
-    if (!email || !password || !name) {
-      return NextResponse.json(
-        { error: "Email, пароль и имя обязательны" },
-        { status: 400 }
-      );
+    const parsed = validate(registerSchema, body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-
-    if (!EMAIL_REGEX.test(email)) {
-      return NextResponse.json(
-        { error: "Некорректный формат email" },
-        { status: 400 }
-      );
-    }
+    const { email, password, name, phone, company } = parsed.data;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -44,6 +34,19 @@ export async function POST(request: NextRequest) {
         { error: "Пользователь с таким email уже существует" },
         { status: 400 }
       );
+    }
+
+    // Check phone uniqueness if provided
+    if (phone) {
+      const phoneExists = await prisma.user.findUnique({
+        where: { phone },
+      });
+      if (phoneExists) {
+        return NextResponse.json(
+          { error: "Пользователь с таким номером телефона уже зарегистрирован" },
+          { status: 400 }
+        );
+      }
     }
 
     // Hash password
@@ -68,8 +71,19 @@ export async function POST(request: NextRequest) {
         name: user.name,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Registration error:", error);
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "Пользователь с такими данными уже зарегистрирован" },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: "Ошибка при регистрации" },
       { status: 500 }

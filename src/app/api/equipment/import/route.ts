@@ -1,20 +1,104 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { jwtVerify } from "jose";
-import { JWT_SECRET } from "@/lib/jwt";
-import * as ExcelJS from "exceljs";
+import { getUserId } from "@/lib/auth";
+import ExcelJS from "exceljs";
+import { calculateEquipmentStatus } from "@/lib/equipmentStatus";
 
-async function getUserId(request: NextRequest): Promise<number | null> {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload.userId as number;
-  } catch {
+export const dynamic = "force-dynamic";
+
+const EXPECTED_HEADERS = [
+  "Наименование",
+  "Тип",
+  "Зав. номер",
+  "Реестр",
+  "Дата последней поверки",
+  "Дата следующей поверки",
+  "Периодичность (мес.)",
+  "Примечание",
+];
+
+function parseDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) return null;
+    return value;
+  }
+  if (typeof value === "number") {
+    // Excel serial date number
+    const excelEpoch = new Date(1899, 11, 30);
+    const date = new Date(excelEpoch.getTime() + value * 86400000);
+    if (isNaN(date.getTime())) return null;
+    return date;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    // Try DD.MM.YYYY format (common in Russian locale)
+    const ddmmyyyy = trimmed.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})$/);
+    if (ddmmyyyy) {
+      const date = new Date(
+        Number(ddmmyyyy[3]),
+        Number(ddmmyyyy[2]) - 1,
+        Number(ddmmyyyy[1])
+      );
+      if (!isNaN(date.getTime())) return date;
+    }
+    // Try ISO format (YYYY-MM-DD)
+    const iso = new Date(trimmed);
+    if (!isNaN(iso.getTime())) return iso;
     return null;
   }
+  return null;
 }
 
+function getCellText(cell: ExcelJS.Cell): string {
+  const value = cell.value;
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object" && "result" in value) {
+    return String((value as ExcelJS.CellFormulaValue).result ?? "");
+  }
+  if (typeof value === "object" && "richText" in value) {
+    return (value as ExcelJS.CellRichTextValue).richText
+      .map((rt) => rt.text)
+      .join("");
+  }
+  return String(value);
+}
+
+// GET — return a template .xlsx file with the correct headers
+export async function GET(request: NextRequest) {
+  const userId = await getUserId(request);
+  if (!userId) {
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  }
+
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Шаблон");
+
+  sheet.columns = EXPECTED_HEADERS.map((header) => ({
+    header,
+    width: header.length + 8,
+  }));
+
+  // Style the header row
+  const headerRow = sheet.getRow(1);
+  headerRow.font = { bold: true };
+  headerRow.commit();
+
+  const buffer = await workbook.xlsx.writeBuffer();
+
+  return new NextResponse(buffer as ArrayBuffer, {
+    status: 200,
+    headers: {
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition":
+        'attachment; filename="equipment_template.xlsx"',
+    },
+  });
+}
+
+// POST — bulk import equipment from an uploaded .xlsx file
 export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId(request);
@@ -23,134 +107,148 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-    if (!file) {
-      return NextResponse.json({ error: "Файл не загружен" }, { status: 400 });
+    const file = formData.get("file");
+    const category = (formData.get("category") as string) || "verification";
+
+    if (!file || !(file instanceof Blob)) {
+      return NextResponse.json(
+        { error: "Файл не найден" },
+        { status: 400 }
+      );
     }
 
-    // Validate file type (only Excel files allowed)
-    const allowedTypes = [
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/vnd.ms-excel",
-    ];
-    const allowedExtensions = [".xlsx", ".xls"];
-    const fileName = file.name.toLowerCase();
-    const hasAllowedExt = allowedExtensions.some((ext) => fileName.endsWith(ext));
-    if (!hasAllowedExt || (file.type && !allowedTypes.includes(file.type))) {
-      return NextResponse.json({ error: "Разрешены только файлы Excel (.xlsx, .xls)" }, { status: 400 });
+    const fileName = (file as File).name?.toLowerCase() ?? "";
+    if (
+      !fileName.endsWith(".xlsx") &&
+      file.type !==
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    ) {
+      return NextResponse.json(
+        { error: "Поддерживается только формат .xlsx" },
+        { status: 400 }
+      );
     }
 
     // Limit file size to 5MB
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "Файл слишком большой (максимум 5 МБ)" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Файл слишком большой (максимум 5 МБ)" },
+        { status: 400 }
+      );
     }
 
     const arrayBuffer = await file.arrayBuffer();
+
     const workbook = new ExcelJS.Workbook();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await workbook.xlsx.load(arrayBuffer as any);
 
-    const worksheet = workbook.worksheets[0];
-    if (!worksheet) {
-      return NextResponse.json({ error: "Пустой файл" }, { status: 400 });
+    const sheet = workbook.worksheets[0];
+    if (!sheet) {
+      return NextResponse.json(
+        { error: "Файл не содержит листов" },
+        { status: 400 }
+      );
     }
 
-    const items: {
+    const errors: string[] = [];
+    let skipped = 0;
+
+    const dataToCreate: {
+      userId: number;
       name: string;
       type: string | null;
       serialNumber: string | null;
       registryNumber: string | null;
-      category: string;
+      verificationDate: Date | null;
+      nextVerification: Date | null;
       interval: number;
-      company: string | null;
+      category: string;
+      status: string;
+      notes: string | null;
     }[] = [];
 
-    // Try to find header row (look for "наименование" in first 5 rows)
-    let headerRowIndex = 1;
-    let nameCol = -1;
-    let typeCol = -1;
-    let serialCol = -1;
-    let registryCol = -1;
-    let categoryCol = -1;
-    let intervalCol = -1;
-    let companyCol = -1;
+    const rowCount = sheet.rowCount;
+    // Row 1 is the header; data starts at row 2
+    for (let rowNum = 2; rowNum <= rowCount; rowNum++) {
+      const row = sheet.getRow(rowNum);
 
-    for (let r = 1; r <= Math.min(5, worksheet.rowCount); r++) {
-      const row = worksheet.getRow(r);
-      row.eachCell((cell, colNumber) => {
-        const val = String(cell.value || "").toLowerCase();
-        if (val.includes("наименование") || val.includes("название") || val.includes("оборудование")) {
-          nameCol = colNumber;
-          headerRowIndex = r;
-        }
-        if (val.includes("тип") || val.includes("модель")) typeCol = colNumber;
-        if (val.includes("заводской") || val.includes("серийный") || val.includes("зав")) serialCol = colNumber;
-        if (val.includes("реестр")) registryCol = colNumber;
-        if (val.includes("категори") || val.includes("вид")) categoryCol = colNumber;
-        if (val.includes("интервал") || val.includes("период")) intervalCol = colNumber;
-        if (val.includes("фирма") || val.includes("организ") || val.includes("компани")) companyCol = colNumber;
-      });
-      if (nameCol > 0) break;
-    }
+      const name = getCellText(row.getCell(1)).trim();
+      const type = getCellText(row.getCell(2)).trim();
+      const serialNumber = getCellText(row.getCell(3)).trim();
+      const registryNumber = getCellText(row.getCell(4)).trim();
+      const verificationDateRaw = row.getCell(5).value;
+      const nextVerificationRaw = row.getCell(6).value;
+      const intervalRaw = getCellText(row.getCell(7)).trim();
+      const notes = getCellText(row.getCell(8)).trim();
 
-    // If no header found, assume columns: A=name, B=type, C=serialNumber, D=registryNumber
-    if (nameCol < 0) {
-      nameCol = 1;
-      typeCol = 2;
-      serialCol = 3;
-      registryCol = 4;
-      headerRowIndex = 0; // Start from row 1
-    }
+      // Skip completely empty rows
+      if (
+        !name &&
+        !type &&
+        !serialNumber &&
+        !registryNumber &&
+        !verificationDateRaw &&
+        !nextVerificationRaw &&
+        !intervalRaw &&
+        !notes
+      ) {
+        continue;
+      }
 
-    for (let r = headerRowIndex + 1; r <= worksheet.rowCount; r++) {
-      const row = worksheet.getRow(r);
-      const name = String(row.getCell(nameCol).value || "").trim();
-      if (!name) continue;
+      // Name is required — skip row without it
+      if (!name) {
+        skipped++;
+        errors.push(`Строка ${rowNum}: отсутствует Наименование, пропущена`);
+        continue;
+      }
 
-      const catVal = categoryCol > 0 ? String(row.getCell(categoryCol).value || "").toLowerCase() : "";
-      let category = "verification";
-      if (catVal.includes("калибров")) category = "calibration";
-      else if (catVal.includes("аттестац")) category = "attestation";
+      const verificationDate = parseDate(verificationDateRaw);
+      const nextVerification = parseDate(nextVerificationRaw);
 
-      const intervalVal = intervalCol > 0 ? Number(row.getCell(intervalCol).value) : 12;
+      if (verificationDateRaw && !verificationDate) {
+        errors.push(
+          `Строка ${rowNum}: не удалось распознать дату последней поверки`
+        );
+      }
+      if (nextVerificationRaw && !nextVerification) {
+        errors.push(
+          `Строка ${rowNum}: не удалось распознать дату следующей поверки`
+        );
+      }
 
-      items.push({
+      const interval = intervalRaw ? parseInt(intervalRaw, 10) : 12;
+      const status = calculateEquipmentStatus(nextVerification);
+
+      dataToCreate.push({
+        userId,
         name,
-        type: typeCol > 0 ? String(row.getCell(typeCol).value || "").trim() || null : null,
-        serialNumber: serialCol > 0 ? String(row.getCell(serialCol).value || "").trim() || null : null,
-        registryNumber: registryCol > 0 ? String(row.getCell(registryCol).value || "").trim() || null : null,
+        type: type || null,
+        serialNumber: serialNumber || null,
+        registryNumber: registryNumber || null,
+        verificationDate,
+        nextVerification,
+        interval: isNaN(interval) ? 12 : interval,
         category,
-        interval: intervalVal && !isNaN(intervalVal) ? intervalVal : 12,
-        company: companyCol > 0 ? String(row.getCell(companyCol).value || "").trim() || null : null,
+        status,
+        notes: notes || null,
       });
     }
 
-    if (items.length === 0) {
-      return NextResponse.json({ error: "Не найдено записей в файле" }, { status: 400 });
+    let imported = 0;
+    if (dataToCreate.length > 0) {
+      const result = await prisma.equipment.createMany({
+        data: dataToCreate,
+      });
+      imported = result.count;
     }
 
-    // Create all equipment records
-    const created = await prisma.$transaction(
-      items.map((item) =>
-        prisma.equipment.create({
-          data: {
-            userId,
-            name: item.name,
-            type: item.type,
-            serialNumber: item.serialNumber,
-            registryNumber: item.registryNumber,
-            category: item.category,
-            interval: item.interval,
-            company: item.company,
-            status: "active",
-          },
-        })
-      )
-    );
-
-    return NextResponse.json({ imported: created.length, equipment: created });
+    return NextResponse.json({ imported, skipped, errors });
   } catch (error) {
     console.error("Import equipment error:", error);
-    return NextResponse.json({ error: "Ошибка при импорте файла" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Ошибка при импорте оборудования" },
+      { status: 500 }
+    );
   }
 }

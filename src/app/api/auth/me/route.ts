@@ -5,6 +5,35 @@ import { JWT_SECRET } from "@/lib/jwt";
 
 export const dynamic = 'force-dynamic';
 
+export async function PATCH(request: NextRequest) {
+  try {
+    const token = request.cookies.get("auth-token")?.value;
+    if (!token) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const userId = payload.userId as number;
+    const body = await request.json();
+    const { name, phone, company, inn, kpp, legalName, legalAddress, notifyDays, telegramChatId } = body;
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(phone !== undefined && { phone: phone || null }),
+        ...(company !== undefined && { company: company || null }),
+        ...(inn !== undefined && { inn: inn || null }),
+        ...(kpp !== undefined && { kpp: kpp || null }),
+        ...(legalName !== undefined && { legalName: legalName || null }),
+        ...(legalAddress !== undefined && { legalAddress: legalAddress || null }),
+        ...(notifyDays !== undefined && { notifyDays }),
+        ...(telegramChatId !== undefined && { telegramChatId }),
+      },
+      select: { id: true, email: true, name: true, phone: true, company: true, inn: true, kpp: true, legalName: true, legalAddress: true, notifyDays: true, telegramChatId: true },
+    });
+    return NextResponse.json({ user });
+  } catch {
+    return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get("auth-token")?.value;
@@ -27,6 +56,12 @@ export async function GET(request: NextRequest) {
         name: true,
         phone: true,
         company: true,
+        inn: true,
+        kpp: true,
+        legalName: true,
+        legalAddress: true,
+        notifyDays: true,
+        telegramChatId: true,
         createdAt: true,
       },
     });

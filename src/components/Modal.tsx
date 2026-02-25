@@ -3,11 +3,13 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect } from "react";
 import ContactForm from "./ContactForm";
+import { Portal } from "./ui/Portal";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  showEquipmentCheckbox?: boolean;
   initialValues?: {
     name?: string;
     phone?: string;
@@ -19,6 +21,7 @@ export default function Modal({
   isOpen,
   onClose,
   onSuccess,
+  showEquipmentCheckbox = false,
   initialValues,
 }: ModalProps) {
   useEffect(() => {
@@ -33,6 +36,7 @@ export default function Modal({
   }, [isOpen]);
 
   return (
+    <Portal>
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -105,6 +109,7 @@ export default function Modal({
 
               <ContactForm
                 onSuccess={onSuccess || onClose}
+                showEquipmentCheckbox={showEquipmentCheckbox}
                 initialValues={initialValues}
               />
             </div>
@@ -112,5 +117,6 @@ export default function Modal({
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }

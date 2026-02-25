@@ -2,7 +2,8 @@
 
 import Modal from "@/components/Modal";
 import { EmptyState } from "@/components/ui/empty-state";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 interface RequestItem {
   id: number;
@@ -11,6 +12,7 @@ interface RequestItem {
   object?: string | null;
   fabricNumber?: string | null;
   registry?: string | null;
+  equipment?: { id: number; name: string; status: string; nextVerification: string | null } | null;
 }
 
 interface Request {
@@ -52,28 +54,86 @@ function DetailField({ label, value }: { label: string; value?: string | null })
 }
 
 export default function RequestsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    }>
+      <RequestsContent />
+    </Suspense>
+  );
+}
+
+const statusFilterOptions = [
+  { value: "", label: "Все" },
+  { value: "new", label: "Новые" },
+  { value: "in_progress", label: "В работе" },
+  { value: "done", label: "Выполнены" },
+];
+
+function RequestsContent() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [repeatValues, setRepeatValues] = useState<{ name?: string; phone?: string; email?: string } | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [user, setUser] = useState<{ name: string; phone: string | null; email: string } | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchParams = useSearchParams();
+  const expandScrollRef = useRef<HTMLDivElement | null>(null);
+  const didAutoExpand = useRef(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Debounce search input
   useEffect(() => {
-    const fetchData = async () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery]);
+
+  const buildRequestUrl = (pageNum: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(pageNum));
+    if (statusFilter) params.set("status", statusFilter);
+    if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+    return `/api/user/requests?${params.toString()}`;
+  };
+
+  // Fetch user on mount
+  useEffect(() => {
+    const fetchUser = async () => {
       try {
-        const [userRes, reqRes] = await Promise.all([
-          fetch("/api/auth/me"),
-          fetch("/api/user/requests"),
-        ]);
-        if (userRes.ok) {
-          const userData = await userRes.json();
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const userData = await res.json();
           setUser(userData.user);
         }
-        if (reqRes.ok) {
-          const data = await reqRes.json();
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  // Fetch requests when filters change
+  useEffect(() => {
+    const fetchRequests = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(buildRequestUrl(1));
+        if (res.ok) {
+          const data = await res.json();
           setRequests(data.requests);
+          setPage(1);
           setTotalPages(data.pages || 1);
         }
       } catch (error) {
@@ -82,11 +142,28 @@ export default function RequestsPage() {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    fetchRequests();
+  }, [statusFilter, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-expand request from ?expand= query param
+  useEffect(() => {
+    if (didAutoExpand.current || loading) return;
+    const expandParam = searchParams.get("expand") || searchParams.get("highlight");
+    if (expandParam) {
+      const id = parseInt(expandParam, 10);
+      if (!isNaN(id) && requests.some((r) => r.id === id)) {
+        setExpandedId(id);
+        didAutoExpand.current = true;
+        // Scroll after render
+        setTimeout(() => {
+          expandScrollRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+      }
+    }
+  }, [loading, requests, searchParams]);
 
   const refreshRequests = async () => {
-    const res = await fetch("/api/user/requests");
+    const res = await fetch(buildRequestUrl(1));
     if (res.ok) {
       const data = await res.json();
       setRequests(data.requests);
@@ -97,7 +174,7 @@ export default function RequestsPage() {
 
   const loadMore = async () => {
     const nextPage = page + 1;
-    const res = await fetch(`/api/user/requests?page=${nextPage}`);
+    const res = await fetch(buildRequestUrl(nextPage));
     if (res.ok) {
       const data = await res.json();
       setRequests((prev) => [...prev, ...data.requests]);
@@ -110,7 +187,9 @@ export default function RequestsPage() {
     r.company || r.inn || r.object || r.fabricNumber || r.registry || r.poverk ||
     r.message || r.fileName || (r.files && r.files.length > 0) || r.needContract || (r.items && r.items.length > 0);
 
-  if (loading) {
+  const isInitialLoad = loading && requests.length === 0 && !statusFilter && !debouncedSearch;
+
+  if (isInitialLoad) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -133,29 +212,93 @@ export default function RequestsPage() {
         </button>
       </div>
 
+      {/* Search & Filter toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral dark:text-white/40"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Поиск по заявкам..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-light text-sm text-dark dark:text-white placeholder:text-neutral dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral dark:text-white/40 hover:text-dark dark:hover:text-white"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-light text-sm text-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors cursor-pointer"
+        >
+          {statusFilterOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="space-y-4">
-        {requests.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          </div>
+        ) : requests.length === 0 ? (
           <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm">
-            <EmptyState
-              icon={
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              }
-              title="У вас пока нет заявок"
-              description="Оформите первую заявку на поверку или аттестацию оборудования"
-              action={
-                <button
-                  onClick={() => setModalOpen(true)}
-                  className="inline-flex items-center gap-2 gradient-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            {statusFilter || debouncedSearch ? (
+              <EmptyState
+                icon={
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  Новая заявка
-                </button>
-              }
-            />
+                }
+                title="Ничего не найдено"
+                description="Попробуйте изменить параметры поиска или фильтра"
+                action={
+                  <button
+                    onClick={() => { setSearchQuery(""); setStatusFilter(""); }}
+                    className="inline-flex items-center gap-2 bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 px-5 py-2.5 rounded-xl text-sm font-semibold hover:shadow-md transition-shadow"
+                  >
+                    Сбросить фильтры
+                  </button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                }
+                title="У вас пока нет заявок"
+                description="Оформите первую заявку на поверку или аттестацию оборудования"
+                action={
+                  <button
+                    onClick={() => setModalOpen(true)}
+                    className="inline-flex items-center gap-2 gradient-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Новая заявка
+                  </button>
+                }
+              />
+            )}
           </div>
         ) : (
           requests.map((request) => {
@@ -166,6 +309,7 @@ export default function RequestsPage() {
             return (
               <div
                 key={request.id}
+                ref={request.id === expandedId ? expandScrollRef : undefined}
                 className={`bg-white dark:bg-dark-light rounded-2xl shadow-sm ${expandable ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
               >
                 {/* Header — always visible */}
@@ -233,7 +377,8 @@ export default function RequestsPage() {
                                 <th className="pb-2 pr-4 font-medium">Объект</th>
                                 <th className="pb-2 pr-4 font-medium">Зав. номер</th>
                                 <th className="pb-2 pr-4 font-medium">Реестр</th>
-                                <th className="pb-2 font-medium">Вид поверки</th>
+                                <th className="pb-2 pr-4 font-medium">Вид поверки</th>
+                                <th className="pb-2 font-medium">Оборудование</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -243,7 +388,18 @@ export default function RequestsPage() {
                                   <td className="py-2 pr-4 text-dark dark:text-white">{item.object || "—"}</td>
                                   <td className="py-2 pr-4 text-dark dark:text-white">{item.fabricNumber || "—"}</td>
                                   <td className="py-2 pr-4 text-dark dark:text-white">{item.registry || "—"}</td>
-                                  <td className="py-2 text-dark dark:text-white">{item.poverk || "—"}</td>
+                                  <td className="py-2 pr-4 text-dark dark:text-white">{item.poverk || "—"}</td>
+                                  <td className="py-2 text-dark dark:text-white">
+                                    {item.equipment ? (
+                                      <a
+                                        href={`/dashboard/equipment/si?highlight=${item.equipment.id}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-primary hover:underline text-xs"
+                                      >
+                                        {item.equipment.name}
+                                      </a>
+                                    ) : "—"}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -328,6 +484,23 @@ export default function RequestsPage() {
                         </span>
                       </div>
                     )}
+
+                    {/* Repeat request */}
+                    <div className="pt-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRepeatValues({ name: request.name, phone: request.phone, email: request.email });
+                          setModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Повторить заявку
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -349,12 +522,14 @@ export default function RequestsPage() {
 
       <Modal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setRepeatValues(undefined); }}
+        showEquipmentCheckbox={true}
         onSuccess={() => {
           setModalOpen(false);
+          setRepeatValues(undefined);
           refreshRequests();
         }}
-        initialValues={{
+        initialValues={repeatValues ?? {
           name: user?.name || "",
           phone: user?.phone || "",
           email: user?.email || "",

@@ -4,11 +4,41 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  const d = digits.startsWith("7") || digits.startsWith("8") ? digits.slice(1) : digits;
+  let result = "+7";
+  if (d.length > 0) result += " (" + d.slice(0, 3);
+  if (d.length >= 3) result += ") " + d.slice(3, 6);
+  if (d.length >= 6) result += "-" + d.slice(6, 8);
+  if (d.length >= 8) result += "-" + d.slice(8, 10);
+  return result;
+}
+
+function unformatPhone(value: string): string {
+  return value.replace(/\D/g, "");
+}
 
 export default function RegisterPage() {
   const router = useRouter();
+  // PHONE_AUTH_ENABLED: set to true to re-enable phone registration tab
+  const PHONE_AUTH_ENABLED = false;
+  // OAUTH_ENABLED: set to true to re-enable Yandex/VK registration
+  const OAUTH_ENABLED = false;
+  const [tab, setTab] = useState<"phone" | "email">("email");
+
+  // Phone registration state
+  const [phoneData, setPhoneData] = useState({ name: "", phone: "", company: "" });
+  const [phoneStep, setPhoneStep] = useState<1 | 2>(1);
+  const [smsCode, setSmsCode] = useState("");
+  const [phoneSending, setPhoneSending] = useState(false);
+  const [phoneVerifying, setPhoneVerifying] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  // Email registration state
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -19,10 +49,23 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const t = setTimeout(() => setResendTimer((v) => v - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendTimer]);
+
+  const handlePhoneChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length <= 11) {
+      setPhoneData((d) => ({ ...d, phone: formatPhone(raw) }));
+    }
+  };
+
   const getPasswordStrength = (pwd: string): { level: number; label: string; color: string } => {
     if (!pwd) return { level: 0, label: "", color: "" };
     let score = 0;
-    if (pwd.length >= 6) score++;
+    if (pwd.length >= 8) score++;
     if (pwd.length >= 10) score++;
     if (/[A-ZА-Я]/.test(pwd)) score++;
     if (/[0-9]/.test(pwd)) score++;
@@ -34,7 +77,70 @@ export default function RegisterPage() {
 
   const passwordStrength = getPasswordStrength(formData.password);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendCode = useCallback(async () => {
+    if (!phoneData.name.trim()) {
+      toast.error("Введите ваше имя");
+      return;
+    }
+    const digits = unformatPhone(phoneData.phone);
+    if (digits.length !== 11) {
+      toast.error("Введите корректный номер телефона");
+      return;
+    }
+    setPhoneSending(true);
+    try {
+      const res = await fetch("/api/auth/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phoneData.phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Ошибка отправки кода");
+        return;
+      }
+      toast.success("Код отправлен");
+      setPhoneStep(2);
+      setResendTimer(60);
+    } catch {
+      toast.error("Ошибка соединения с сервером");
+    } finally {
+      setPhoneSending(false);
+    }
+  }, [phoneData]);
+
+  const handleVerifyCode = async () => {
+    if (smsCode.length !== 4) {
+      toast.error("Введите 4-значный код");
+      return;
+    }
+    setPhoneVerifying(true);
+    try {
+      const res = await fetch("/api/auth/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: phoneData.phone,
+          code: smsCode,
+          name: phoneData.name,
+          ...(phoneData.company ? { company: phoneData.company } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Ошибка проверки кода");
+        return;
+      }
+      toast.success("Аккаунт создан! Добро пожаловать.");
+      router.push("/dashboard");
+    } catch {
+      toast.error("Ошибка соединения с сервером");
+    } finally {
+      setPhoneVerifying(false);
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
@@ -42,8 +148,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error("Пароль должен быть не менее 6 символов");
+    if (formData.password.length < 8) {
+      toast.error("Пароль должен быть не менее 8 символов");
       return;
     }
 
@@ -92,6 +198,9 @@ export default function RegisterPage() {
     }
   };
 
+  const inputClass =
+    "w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all";
+
   return (
     <div className="min-h-screen bg-warm-bg dark:bg-dark flex items-center justify-center p-4">
       <motion.div
@@ -113,135 +222,269 @@ export default function RegisterPage() {
             Создайте аккаунт для доступа к личному кабинету
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-dark dark:text-white mb-1">
-                ФИО <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="Иванов Иван Иванович"
-                required
-              />
+          {/* Tabs — PHONE_AUTH_ENABLED: unhide when phone auth is ready */}
+          {PHONE_AUTH_ENABLED && (
+            <div className="flex bg-gray-100 dark:bg-dark rounded-xl p-1 mb-6">
+              <button
+                onClick={() => setTab("phone")}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  tab === "phone"
+                    ? "bg-white dark:bg-dark-light text-dark dark:text-white shadow-sm"
+                    : "text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/70"
+                }`}
+              >
+                По телефону
+              </button>
+              <button
+                onClick={() => setTab("email")}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  tab === "email"
+                    ? "bg-white dark:bg-dark-light text-dark dark:text-white shadow-sm"
+                    : "text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/70"
+                }`}
+              >
+                Email и пароль
+              </button>
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-dark dark:text-white mb-1">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="example@mail.ru"
-                required
-              />
+          {/* Phone Tab — PHONE_AUTH_ENABLED */}
+          {PHONE_AUTH_ENABLED && tab === "phone" && (
+            <div className="space-y-4">
+              {phoneStep === 1 ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                      ФИО <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={phoneData.name}
+                      onChange={(e) => setPhoneData((d) => ({ ...d, name: e.target.value }))}
+                      className={inputClass}
+                      placeholder="Иванов Иван Иванович"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                      Телефон <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={phoneData.phone}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      className={inputClass}
+                      placeholder="+7 (___) ___-__-__"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                      Компания
+                    </label>
+                    <input
+                      type="text"
+                      value={phoneData.company}
+                      onChange={(e) => setPhoneData((d) => ({ ...d, company: e.target.value }))}
+                      className={inputClass}
+                      placeholder="ООО Компания"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSendCode}
+                    disabled={phoneSending}
+                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  >
+                    {phoneSending ? "Отправка..." : "Получить код"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-neutral dark:text-white/70 text-center">
+                    Код отправлен на{" "}
+                    <span className="font-medium text-dark dark:text-white">{phoneData.phone}</span>
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                      Код из SMS
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={smsCode}
+                      onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      className={`${inputClass} text-center text-2xl tracking-[0.5em] font-mono`}
+                      placeholder="····"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    onClick={handleVerifyCode}
+                    disabled={phoneVerifying || smsCode.length !== 4}
+                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  >
+                    {phoneVerifying ? "Проверка..." : "Создать аккаунт"}
+                  </button>
+                  <div className="text-center">
+                    {resendTimer > 0 ? (
+                      <p className="text-sm text-neutral dark:text-white/50">
+                        Отправить повторно через {resendTimer} сек
+                      </p>
+                    ) : (
+                      <button
+                        onClick={handleSendCode}
+                        className="text-sm text-primary hover:underline font-medium"
+                      >
+                        Отправить код повторно
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => { setPhoneStep(1); setSmsCode(""); }}
+                    className="w-full text-sm text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/70 transition-colors"
+                  >
+                    ← Изменить данные
+                  </button>
+                </>
+              )}
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-4">
+          {/* Email Tab */}
+          {tab === "email" && (
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-dark dark:text-white mb-1">
-                  Телефон
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  placeholder="+7 (999) ..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-dark dark:text-white mb-1">
-                  Компания
+                  ФИО <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  value={formData.company}
+                  value={formData.name}
                   onChange={(e) =>
-                    setFormData({ ...formData, company: e.target.value })
+                    setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  placeholder="ООО Компания"
+                  className={inputClass}
+                  placeholder="Иванов Иван Иванович"
+                  required
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-dark dark:text-white mb-1">
-                Пароль <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="Минимум 6 символов"
-                required
-              />
-              {formData.password && (
-                <div className="mt-2">
-                  <div className="flex gap-1 mb-1">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                          passwordStrength.level >= i
-                            ? passwordStrength.color
-                            : "bg-gray-200 dark:bg-white/10"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className={`text-xs font-medium ${
-                    passwordStrength.level === 1 ? "text-red-500" :
-                    passwordStrength.level === 2 ? "text-yellow-500" :
-                    "text-green-500"
-                  }`}>
-                    {passwordStrength.label}
-                  </p>
+              <div>
+                <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="example@mail.ru"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                    Телефон
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    className={inputClass}
+                    placeholder="+7 (999) ..."
+                  />
                 </div>
-              )}
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                    Компания
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.company}
+                    onChange={(e) =>
+                      setFormData({ ...formData, company: e.target.value })
+                    }
+                    className={inputClass}
+                    placeholder="ООО Компания"
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-dark dark:text-white mb-1">
-                Подтвердите пароль <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="Повторите пароль"
-                required
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                  Пароль <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="Минимум 6 символов"
+                  required
+                />
+                {formData.password && (
+                  <div className="mt-2">
+                    <div className="flex gap-1 mb-1">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                            passwordStrength.level >= i
+                              ? passwordStrength.color
+                              : "bg-gray-200 dark:bg-white/10"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className={`text-xs font-medium ${
+                      passwordStrength.level === 1 ? "text-red-500" :
+                      passwordStrength.level === 2 ? "text-yellow-500" :
+                      "text-green-500"
+                    }`}>
+                      {passwordStrength.label}
+                    </p>
+                  </div>
+                )}
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
-            >
-              {loading ? "Регистрация..." : "Зарегистрироваться"}
-            </button>
-          </form>
+              <div>
+                <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                  Подтвердите пароль <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(e) =>
+                    setFormData({ ...formData, confirmPassword: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="Повторите пароль"
+                  required
+                />
+              </div>
 
-          <div className="mt-6">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+              >
+                {loading ? "Регистрация..." : "Зарегистрироваться"}
+              </button>
+            </form>
+          )}
+
+          {/* OAuth — OAUTH_ENABLED: unhide when Yandex/VK apps are configured */}
+          {OAUTH_ENABLED && <div className="mt-6">
             <div className="relative flex items-center gap-3 mb-4">
               <div className="flex-1 h-px bg-gray-200 dark:bg-white/10" />
               <span className="text-xs text-neutral dark:text-white/40">или зарегистрироваться через</span>
@@ -269,7 +512,7 @@ export default function RegisterPage() {
                 VK ID
               </a>
             </div>
-          </div>
+          </div>}
 
           <p className="text-center text-sm text-neutral dark:text-white/70 mt-4">
             Уже есть аккаунт?{" "}

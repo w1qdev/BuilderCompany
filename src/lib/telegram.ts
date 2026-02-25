@@ -1,3 +1,21 @@
+export async function sendTelegramMessage(text: string, chatId: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token || token === "your_bot_token") {
+    console.log("Telegram not configured, skipping message");
+    return;
+  }
+
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: "Markdown",
+    }),
+  });
+}
+
 function escapeTelegram(str: string): string {
   return str.replace(/[*_`\[\]]/g, "\\$&");
 }

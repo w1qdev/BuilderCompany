@@ -1,136 +1,27 @@
-import nodemailer from "nodemailer";
-import * as ExcelJS from "exceljs";
-import { existsSync } from "fs";
-import { readFile } from "fs/promises";
-import path from "path";
+/**
+ * HTML email template builders.
+ *
+ * Each function returns a plain HTML string ready for Nodemailer's `html` field.
+ * All user-supplied values MUST be pre-escaped with `escapeHtml()` by the caller,
+ * or escaped inline here where raw data is received.
+ */
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+import { escapeHtml, type NotificationItem, type FileData } from "./transport";
+import {
+  COMPANY_NAME,
+  COMPANY_SHORT,
+  COMPANY_TAGLINE,
+  COMPANY_PHONE,
+  COMPANY_PHONE_RAW,
+  COMPANY_EMAIL,
+  COMPANY_SITE,
+  COMPANY_URL,
+  COLORS,
+} from "./constants";
 
-interface NotificationItem {
-  service: string;
-  poverk?: string;
-  object?: string;
-  fabricNumber?: string;
-  registry?: string;
-}
+// ─── Admin notification template ───
 
-function createTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT) || 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!host || !user || !pass || host === "smtp.example.com") {
-    return null;
-  }
-
-  return {
-    transporter: nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    }),
-    user,
-  };
-}
-
-async function generateExcelBuffer(
-  items: NotificationItem[],
-  company: string,
-  inn?: string,
-  message?: string,
-): Promise<Buffer> {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Заявка на оформление поверки");
-
-  worksheet.columns = [
-    { width: 5 },
-    { width: 25 },
-    { width: 30 },
-    { width: 40 },
-    { width: 15 },
-    { width: 15 },
-    { width: 15 },
-    { width: 25 },
-    { width: 30 },
-  ];
-
-  worksheet.addRow([]);
-  const headerRow = worksheet.addRow([
-    "№",
-    "фирма-владелец оборудования (организация, на кого будет оформлено свидетельство)",
-    "Калибровка, аттестация или периодичность поверки (первичная или периодическая)",
-    "Полное название оборудования",
-    "Заводской №",
-    "реестр № (обязательно при поверке!)",
-    "Согласованная стоимость",
-    "На какую фирму выставлять счёт, наименование ИНН",
-    "Комментарии",
-  ]);
-
-  headerRow.eachCell((cell) => {
-    cell.font = { bold: true };
-    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE0E0E0" } };
-    cell.border = {
-      top: { style: "thin" },
-      left: { style: "thin" },
-      bottom: { style: "thin" },
-      right: { style: "thin" },
-    };
-  });
-  headerRow.height = 60;
-
-  const resolveServiceType = (service: string, poverk?: string) => {
-    if (service === "Поверка СИ" && poverk) return `Поверка ${poverk.toLowerCase()}`;
-    if (service === "Поверка СИ") return "Поверка";
-    return service;
-  };
-
-  items.forEach((item, index) => {
-    const dataRow = worksheet.addRow([
-      index + 1,
-      company,
-      resolveServiceType(item.service, item.poverk),
-      item.object || "",
-      item.fabricNumber || "",
-      item.registry || "",
-      "",
-      inn ? `${company}, ИНН ${inn}` : company,
-      message || "",
-    ]);
-
-    dataRow.eachCell((cell) => {
-      cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
-      cell.border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" },
-      };
-    });
-  });
-
-  const arrayBuffer = await workbook.xlsx.writeBuffer();
-  return Buffer.from(arrayBuffer);
-}
-
-// ─── Admin notification email ───
-
-interface FileData {
-  fileName: string;
-  filePath: string;
-}
-
-interface AdminEmailData {
+export interface AdminEmailTemplateData {
   name: string;
   phone: string;
   email: string;
@@ -143,22 +34,9 @@ interface AdminEmailData {
   files?: FileData[];
   requestId?: number;
   items: NotificationItem[];
-  toEmail?: string;
 }
 
-export async function sendEmailNotification(data: AdminEmailData) {
-  const result = createTransporter();
-  if (!result) {
-    console.log("Email not configured, skipping notification");
-    return;
-  }
-  const { transporter, user } = result;
-  const notifyEmail = process.env.ZAKAZ_EMAIL || process.env.NOTIFY_EMAIL;
-
-  const servicesSummary = data.items.map((i) => i.service).join(", ");
-  const orgName = data.company || data.name;
-
-  // Build items HTML
+export function buildAdminNotificationHtml(data: AdminEmailTemplateData): string {
   const itemsHtml = data.items
     .map(
       (item, idx) => `
@@ -185,14 +63,14 @@ export async function sendEmailNotification(data: AdminEmailData) {
     </tr>`
     : "";
 
-  const html = `
+  return `
 <!DOCTYPE html>
 <html lang="ru">
 <head><meta charset="utf-8"></head>
 <body style="margin: 0; padding: 0; background: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
   <div style="max-width: 640px; margin: 0 auto; padding: 24px 16px;">
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); border-radius: 16px 16px 0 0; padding: 28px 32px; text-align: center;">
+    <div style="background: linear-gradient(135deg, ${COLORS.headerDark} 0%, ${COLORS.headerDarkEnd} 100%); border-radius: 16px 16px 0 0; padding: 28px 32px; text-align: center;">
       <h1 style="margin: 0 0 6px 0; font-size: 20px; color: #fff; font-weight: 700;">Новая заявка с сайта</h1>
       <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.5);">Заявка №${data.requestId || "—"} &middot; ${new Date().toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
     </div>
@@ -219,11 +97,11 @@ export async function sendEmailNotification(data: AdminEmailData) {
           </tr>` : ""}
           <tr>
             <td style="padding: 12px 16px; background: #f9f9f9; font-weight: 600; color: #555; border-bottom: 1px solid #eee;">Телефон</td>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #eee;"><a href="tel:${escapeHtml(data.phone)}" style="color: #e8733a; text-decoration: none;">${escapeHtml(data.phone)}</a></td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #eee;"><a href="tel:${escapeHtml(data.phone)}" style="color: ${COLORS.primary}; text-decoration: none;">${escapeHtml(data.phone)}</a></td>
           </tr>
           <tr>
             <td style="padding: 12px 16px; background: #f9f9f9; font-weight: 600; color: #555; border-bottom: 1px solid #eee;">Email</td>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #eee;"><a href="mailto:${escapeHtml(data.email)}" style="color: #e8733a; text-decoration: none;">${escapeHtml(data.email)}</a></td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #eee;"><a href="mailto:${escapeHtml(data.email)}" style="color: ${COLORS.primary}; text-decoration: none;">${escapeHtml(data.email)}</a></td>
           </tr>
           ${contractHtml}
         </table>
@@ -233,7 +111,7 @@ export async function sendEmailNotification(data: AdminEmailData) {
       <!-- Message -->
       <div style="padding: 0 32px 16px;">
         <h2 style="margin: 0 0 12px 0; font-size: 15px; color: #333; text-transform: uppercase; letter-spacing: 0.5px;">Сообщение</h2>
-        <div style="background: #fafafa; border-left: 3px solid #e8733a; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 14px; color: #444; line-height: 1.6;">
+        <div style="background: #fafafa; border-left: 3px solid ${COLORS.primary}; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 14px; color: #444; line-height: 1.6;">
           ${escapeHtml(data.message)}
         </div>
       </div>` : ""}
@@ -277,72 +155,21 @@ export async function sendEmailNotification(data: AdminEmailData) {
     <!-- Footer -->
     <div style="background: #f9f9fb; border-radius: 0 0 16px 16px; padding: 20px 32px; border: 1px solid #eee; border-top: none; text-align: center;">
       <p style="margin: 0; font-size: 12px; color: #999;">Excel-файл с позициями заявки во вложении</p>
-      <p style="margin: 6px 0 0 0; font-size: 12px; color: #bbb;">ЦСМ — Центр Стандартизации и Метрологии</p>
+      <p style="margin: 6px 0 0 0; font-size: 12px; color: #bbb;">${COMPANY_SHORT} — ${COMPANY_NAME}</p>
     </div>
   </div>
 </body>
 </html>`;
-
-  // Build attachments
-  const attachments: nodemailer.SendMailOptions["attachments"] = [];
-
-  // 1. Excel file with all items
-  try {
-    const excelBuffer = await generateExcelBuffer(data.items, orgName, data.inn, data.message);
-    const dateStr = new Date().toISOString().split("T")[0];
-    attachments.push({
-      filename: `Заявка_${data.requestId || "new"}_${dateStr}.xlsx`,
-      content: excelBuffer,
-      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-  } catch (err) {
-    console.error("Failed to generate Excel attachment:", err);
-  }
-
-  // 2. Client uploaded files
-  const allFiles = data.files && data.files.length > 0
-    ? data.files
-    : (data.filePath && data.fileName ? [{ fileName: data.fileName, filePath: data.filePath }] : []);
-
-  for (const file of allFiles) {
-    try {
-      const absPath = path.join(process.cwd(), "uploads", path.basename(file.filePath));
-      if (existsSync(absPath)) {
-        const fileContent = await readFile(absPath);
-        attachments.push({
-          filename: file.fileName,
-          content: fileContent,
-        });
-      }
-    } catch (err) {
-      console.error("Failed to attach client file:", err);
-    }
-  }
-
-  try {
-    await transporter.sendMail({
-      from: `"ЦСМ — Заявки" <${user}>`,
-      to: data.toEmail || notifyEmail || user,
-      subject: `Заявка №${data.requestId || "—"}: ${servicesSummary} — ${orgName}`,
-      html,
-      attachments,
-    });
-  } catch (error) {
-    console.error("Email notification error:", error);
-  }
 }
 
-// ─── Verification reminder email ───
+// ─── Verification reminder template ───
 
-export async function sendVerificationReminderEmail(data: {
+export interface VerificationReminderTemplateData {
   userName: string;
-  email: string;
   equipment: { name: string; type: string | null; serialNumber: string | null; registryNumber: string | null; nextVerification: Date; category: string }[];
-}) {
-  const result = createTransporter();
-  if (!result) return;
-  const { transporter, user } = result;
+}
 
+export function buildVerificationReminderHtml(data: VerificationReminderTemplateData): string {
   const categoryLabels: Record<string, string> = {
     verification: "Поверка",
     calibration: "Калибровка",
@@ -358,20 +185,20 @@ export async function sendVerificationReminderEmail(data: {
       <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px;">${eq.type ? escapeHtml(eq.type) : '—'}</td>
       <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px;">${eq.serialNumber ? escapeHtml(eq.serialNumber) : '—'}</td>
       <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px;">${categoryLabels[eq.category] || eq.category}</td>
-      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px; font-weight: 600; color: #e8733a;">${new Date(eq.nextVerification).toLocaleDateString("ru-RU")}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px; font-weight: 600; color: ${COLORS.primary};">${new Date(eq.nextVerification).toLocaleDateString("ru-RU")}</td>
     </tr>`,
     )
     .join("");
 
-  const html = `
+  return `
 <!DOCTYPE html>
 <html lang="ru">
 <head><meta charset="utf-8"></head>
 <body style="margin: 0; padding: 0; background: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
   <div style="max-width: 640px; margin: 0 auto; padding: 24px 16px;">
-    <div style="background: linear-gradient(135deg, #e8733a 0%, #d4572a 100%); border-radius: 16px 16px 0 0; padding: 28px 32px; text-align: center;">
+    <div style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryDark} 100%); border-radius: 16px 16px 0 0; padding: 28px 32px; text-align: center;">
       <h1 style="margin: 0 0 6px 0; font-size: 20px; color: #fff; font-weight: 700;">Напоминание о поверке</h1>
-      <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.7);">Центр Стандартизации и Метрологии</p>
+      <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.7);">${COMPANY_NAME}</p>
     </div>
     <div style="background: #ffffff; padding: 24px 32px; border-left: 1px solid #eee; border-right: 1px solid #eee;">
       <p style="font-size: 14px; color: #333; margin: 0 0 16px 0;">Уважаемый(-ая) <strong>${escapeHtml(data.userName)}</strong>,</p>
@@ -392,50 +219,32 @@ export async function sendVerificationReminderEmail(data: {
         </table>
       </div>
       <div style="margin: 24px 0; text-align: center;">
-        <a href="https://csm-center.ru/dashboard/equipment" style="display: inline-block; background: linear-gradient(135deg, #e8733a, #d4572a); color: #fff; text-decoration: none; padding: 12px 32px; border-radius: 12px; font-size: 14px; font-weight: 600;">Оформить заявку</a>
+        <a href="${COMPANY_URL}/dashboard/equipment" style="display: inline-block; background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryDark}); color: #fff; text-decoration: none; padding: 12px 32px; border-radius: 12px; font-size: 14px; font-weight: 600;">Оформить заявку</a>
       </div>
       <p style="font-size: 13px; color: #888; margin: 0;">Вы можете создать заявку на поверку прямо из личного кабинета.</p>
     </div>
     <div style="background: #f9f9fb; border-radius: 0 0 16px 16px; padding: 20px 32px; border: 1px solid #eee; border-top: none; text-align: center;">
-      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">ЦСМ — Центр Стандартизации и Метрологии</p>
-      <p style="margin: 0; font-size: 11px; color: #ddd;">+7 (966) 730-30-03 &middot; zakaz@csm-center.ru</p>
+      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">${COMPANY_SHORT} — ${COMPANY_NAME}</p>
+      <p style="margin: 0; font-size: 11px; color: #ddd;">${COMPANY_PHONE} &middot; ${COMPANY_EMAIL}</p>
     </div>
   </div>
 </body>
 </html>`;
-
-  try {
-    await transporter.sendMail({
-      from: `"ЦСМ — Напоминания" <${user}>`,
-      to: data.email,
-      subject: `Напоминание: ${data.equipment.length} ед. оборудования требуют поверки`,
-      html,
-    });
-  } catch (error) {
-    console.error("Verification reminder email error:", error);
-  }
 }
 
-// ─── Password reset email ───
+// ─── Password reset template ───
 
-export async function sendPasswordResetEmail(email: string, resetUrl: string) {
-  const result = createTransporter();
-  if (!result) {
-    console.log("Email not configured, skipping password reset email");
-    return;
-  }
-  const { transporter, user } = result;
-
-  const html = `
+export function buildPasswordResetHtml(resetUrl: string): string {
+  return `
 <!DOCTYPE html>
 <html lang="ru">
 <head><meta charset="utf-8"></head>
 <body style="margin: 0; padding: 0; background: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
   <div style="max-width: 600px; margin: 0 auto; padding: 24px 16px;">
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, #e8733a 0%, #d4572a 100%); border-radius: 16px 16px 0 0; padding: 36px 32px; text-align: center;">
+    <div style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryDark} 100%); border-radius: 16px 16px 0 0; padding: 36px 32px; text-align: center;">
       <h1 style="color: #fff; margin: 0 0 8px 0; font-size: 22px; font-weight: 700;">Сброс пароля</h1>
-      <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 13px;">Центр Стандартизации и Метрологии</p>
+      <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 13px;">${COMPANY_NAME}</p>
     </div>
 
     <!-- Body -->
@@ -448,54 +257,35 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
       </p>
 
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${escapeHtml(resetUrl)}" style="display: inline-block; background: linear-gradient(135deg, #e8733a, #d4572a); color: #fff; text-decoration: none; padding: 14px 40px; border-radius: 12px; font-size: 15px; font-weight: 600;">
+        <a href="${escapeHtml(resetUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryDark}); color: #fff; text-decoration: none; padding: 14px 40px; border-radius: 12px; font-size: 15px; font-weight: 600;">
           Сбросить пароль
         </a>
       </div>
 
-      <div style="background: #fafafa; border-left: 3px solid #e8733a; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 13px; color: #888; line-height: 1.6; margin-top: 24px;">
+      <div style="background: #fafafa; border-left: 3px solid ${COLORS.primary}; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 13px; color: #888; line-height: 1.6; margin-top: 24px;">
         Если вы не запрашивали сброс пароля — просто проигнорируйте это письмо. Ваш пароль останется без изменений.
       </div>
     </div>
 
     <!-- Footer -->
     <div style="background: #f9f9fb; border-radius: 0 0 16px 16px; padding: 20px 32px; border: 1px solid #eee; border-top: none; text-align: center;">
-      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">ЦСМ — Центр Стандартизации и Метрологии</p>
+      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">${COMPANY_SHORT} — ${COMPANY_NAME}</p>
       <p style="margin: 0; font-size: 11px; color: #ddd;">Если вы получили это письмо по ошибке, пожалуйста, проигнорируйте его.</p>
     </div>
   </div>
 </body>
 </html>`;
-
-  try {
-    await transporter.sendMail({
-      from: `"Центр Стандартизации и Метрологии" <${user}>`,
-      to: email,
-      subject: "Сброс пароля — ЦСМ",
-      html,
-    });
-  } catch (error) {
-    console.error("Password reset email error:", error);
-  }
 }
 
-// ─── Customer confirmation email ───
+// ─── Customer confirmation template ───
 
-export async function sendConfirmationEmail(data: {
+export interface ConfirmationTemplateData {
   name: string;
-  email: string;
   requestId?: number;
   items: NotificationItem[];
-}) {
-  const result = createTransporter();
-  if (!result) {
-    console.log("Email not configured, skipping confirmation");
-    return;
-  }
-  const { transporter, user } = result;
+}
 
-  const servicesSummary = data.items.map((i) => i.service).join(", ");
-
+export function buildConfirmationHtml(data: ConfirmationTemplateData): string {
   const itemsHtml = data.items
     .map(
       (item, idx) => `
@@ -514,7 +304,7 @@ export async function sendConfirmationEmail(data: {
     )
     .join("");
 
-  const html = `
+  return `
 <!DOCTYPE html>
 <html lang="ru">
 <head><meta charset="utf-8"></head>
@@ -522,9 +312,9 @@ export async function sendConfirmationEmail(data: {
   <div style="max-width: 600px; margin: 0 auto; padding: 24px 16px;">
 
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, #e8733a 0%, #d4572a 100%); border-radius: 16px 16px 0 0; padding: 36px 32px; text-align: center;">
-      <h1 style="color: #fff; margin: 0 0 8px 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">Центр Стандартизации и Метрологии</h1>
-      <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 13px;">Калибровка &middot; Поверка &middot; Аттестация</p>
+    <div style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryDark} 100%); border-radius: 16px 16px 0 0; padding: 36px 32px; text-align: center;">
+      <h1 style="color: #fff; margin: 0 0 8px 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">${COMPANY_NAME}</h1>
+      <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 13px;">${COMPANY_TAGLINE}</p>
     </div>
 
     <!-- Body -->
@@ -533,7 +323,7 @@ export async function sendConfirmationEmail(data: {
       <!-- Greeting -->
       <div style="padding: 32px 32px 0;">
         <p style="font-size: 16px; color: #333; margin: 0 0 16px 0; line-height: 1.5;">Уважаемый(-ая) <strong>${escapeHtml(data.name)}</strong>,</p>
-        <p style="font-size: 14px; color: #555; margin: 0 0 12px 0; line-height: 1.6;">Благодарим вас за обращение! Ваша заявка успешно принята и зарегистрирована${data.requestId ? ` под номером <strong style="color: #e8733a;">№${data.requestId}</strong>` : ""}.</p>
+        <p style="font-size: 14px; color: #555; margin: 0 0 12px 0; line-height: 1.6;">Благодарим вас за обращение! Ваша заявка успешно принята и зарегистрирована${data.requestId ? ` под номером <strong style="color: ${COLORS.primary};">№${data.requestId}</strong>` : ""}.</p>
       </div>
 
       <!-- Status card -->
@@ -600,15 +390,15 @@ export async function sendConfirmationEmail(data: {
         <table style="border-collapse: collapse;">
           <tr>
             <td style="padding: 4px 12px 4px 0; font-size: 13px; color: #aaa;">Телефон</td>
-            <td style="padding: 4px 0; font-size: 13px;"><a href="tel:+79667303003" style="color: #e8733a; text-decoration: none; font-weight: 600;">+7 (966) 730-30-03</a></td>
+            <td style="padding: 4px 0; font-size: 13px;"><a href="tel:${COMPANY_PHONE_RAW}" style="color: ${COLORS.primary}; text-decoration: none; font-weight: 600;">${COMPANY_PHONE}</a></td>
           </tr>
           <tr>
             <td style="padding: 4px 12px 4px 0; font-size: 13px; color: #aaa;">Email</td>
-            <td style="padding: 4px 0; font-size: 13px;"><a href="mailto:zakaz@csm-center.ru" style="color: #e8733a; text-decoration: none; font-weight: 600;">zakaz@csm-center.ru</a></td>
+            <td style="padding: 4px 0; font-size: 13px;"><a href="mailto:${COMPANY_EMAIL}" style="color: ${COLORS.primary}; text-decoration: none; font-weight: 600;">${COMPANY_EMAIL}</a></td>
           </tr>
           <tr>
             <td style="padding: 4px 12px 4px 0; font-size: 13px; color: #aaa;">Сайт</td>
-            <td style="padding: 4px 0; font-size: 13px;"><a href="https://csm-center.ru" style="color: #e8733a; text-decoration: none; font-weight: 600;">csm-center.ru</a></td>
+            <td style="padding: 4px 0; font-size: 13px;"><a href="${COMPANY_URL}" style="color: ${COLORS.primary}; text-decoration: none; font-weight: 600;">${COMPANY_SITE}</a></td>
           </tr>
         </table>
       </div>
@@ -616,37 +406,23 @@ export async function sendConfirmationEmail(data: {
 
     <!-- Footer -->
     <div style="background: #f9f9fb; border-radius: 0 0 16px 16px; padding: 20px 32px; border: 1px solid #eee; border-top: none; text-align: center;">
-      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">ЦСМ — Центр Стандартизации и Метрологии</p>
+      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">${COMPANY_SHORT} — ${COMPANY_NAME}</p>
       <p style="margin: 0; font-size: 11px; color: #ddd;">Если вы получили это письмо по ошибке, пожалуйста, проигнорируйте его.</p>
     </div>
 
   </div>
 </body>
 </html>`;
-
-  try {
-    await transporter.sendMail({
-      from: `"Центр Стандартизации и Метрологии" <${user}>`,
-      to: data.email,
-      subject: `Заявка ${data.requestId ? `№${data.requestId} ` : ""}принята — ${servicesSummary}`,
-      html,
-    });
-  } catch (error) {
-    console.error("Confirmation email error:", error);
-  }
 }
 
-// ─── Arshin new verification notification ───
+// ─── Arshin verification template ───
 
-export async function sendArshinVerificationEmail(data: {
+export interface ArshinVerificationTemplateData {
   userName: string;
-  email: string;
   equipment: { name: string; type: string | null; serialNumber: string | null; validDate: string; arshinUrl: string | null }[];
-}) {
-  const result = createTransporter();
-  if (!result) return;
-  const { transporter, user } = result;
+}
 
+export function buildArshinVerificationHtml(data: ArshinVerificationTemplateData): string {
   const itemsHtml = data.equipment
     .map((eq, idx) => `
     <tr>
@@ -659,15 +435,15 @@ export async function sendArshinVerificationEmail(data: {
     </tr>`)
     .join("");
 
-  const html = `
+  return `
 <!DOCTYPE html>
 <html lang="ru">
 <head><meta charset="utf-8"></head>
 <body style="margin: 0; padding: 0; background: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
   <div style="max-width: 640px; margin: 0 auto; padding: 24px 16px;">
-    <div style="background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); border-radius: 16px 16px 0 0; padding: 28px 32px; text-align: center;">
+    <div style="background: linear-gradient(135deg, ${COLORS.blue} 0%, ${COLORS.blueDark} 100%); border-radius: 16px 16px 0 0; padding: 28px 32px; text-align: center;">
       <h1 style="margin: 0 0 6px 0; font-size: 20px; color: #fff; font-weight: 700;">Поверка зарегистрирована в ФГИС Аршин</h1>
-      <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.6);">Центр Стандартизации и Метрологии</p>
+      <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.6);">${COMPANY_NAME}</p>
     </div>
     <div style="background: #ffffff; padding: 24px 32px; border-left: 1px solid #eee; border-right: 1px solid #eee;">
       <p style="font-size: 14px; color: #333; margin: 0 0 16px 0;">Уважаемый(-ая) <strong>${escapeHtml(data.userName)}</strong>,</p>
@@ -690,40 +466,28 @@ export async function sendArshinVerificationEmail(data: {
         </table>
       </div>
       <div style="margin: 24px 0; text-align: center;">
-        <a href="https://csm-center.ru/dashboard/arshin-registry" style="display: inline-block; background: linear-gradient(135deg, #1d4ed8, #1e40af); color: #fff; text-decoration: none; padding: 12px 32px; border-radius: 12px; font-size: 14px; font-weight: 600;">Открыть реестр поверок</a>
+        <a href="${COMPANY_URL}/dashboard/arshin-registry" style="display: inline-block; background: linear-gradient(135deg, ${COLORS.blue}, ${COLORS.blueDark}); color: #fff; text-decoration: none; padding: 12px 32px; border-radius: 12px; font-size: 14px; font-weight: 600;">Открыть реестр поверок</a>
       </div>
     </div>
     <div style="background: #f9f9fb; border-radius: 0 0 16px 16px; padding: 20px 32px; border: 1px solid #eee; border-top: none; text-align: center;">
-      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">ЦСМ — Центр Стандартизации и Метрологии</p>
-      <p style="margin: 0; font-size: 11px; color: #ddd;">zakaz@csm-center.ru</p>
+      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">${COMPANY_SHORT} — ${COMPANY_NAME}</p>
+      <p style="margin: 0; font-size: 11px; color: #ddd;">${COMPANY_EMAIL}</p>
     </div>
   </div>
 </body>
 </html>`;
-
-  try {
-    await transporter.sendMail({
-      from: `"ЦСМ — Уведомления" <${user}>`,
-      to: data.email,
-      subject: `Поверка зарегистрирована в Аршин: ${data.equipment.map((e) => e.name).join(", ")}`,
-      html,
-    });
-  } catch (error) {
-    console.error("Arshin verification email error:", error);
-  }
 }
 
-export async function sendStatusUpdateEmail(data: {
+// ─── Status update template ───
+
+export interface StatusUpdateTemplateData {
   name: string;
-  email: string;
   requestId: number;
   status: string;
   adminNotes?: string | null;
-}) {
-  const result = createTransporter();
-  if (!result) return;
-  const { transporter, user } = result;
+}
 
+export function buildStatusUpdateHtml(data: StatusUpdateTemplateData): { html: string; statusLabel: string } {
   const statusLabels: Record<string, { label: string; color: string; description: string }> = {
     in_progress: {
       label: "В работе",
@@ -750,8 +514,8 @@ export async function sendStatusUpdateEmail(data: {
 <body style="margin:0;padding:0;background:#f9f5f0;font-family:Arial,sans-serif;">
   <div style="max-width:600px;margin:0 auto;padding:32px 16px;">
     <div style="background:#1a1a2e;padding:24px 32px;border-radius:16px 16px 0 0;text-align:center;">
-      <h1 style="margin:0;color:#ff6b35;font-size:20px;">ЦСМ</h1>
-      <p style="margin:8px 0 0;color:#fff;opacity:0.7;font-size:13px;">Центр Стандартизации и Метрологии</p>
+      <h1 style="margin:0;color:#ff6b35;font-size:20px;">${COMPANY_SHORT}</h1>
+      <p style="margin:8px 0 0;color:#fff;opacity:0.7;font-size:13px;">${COMPANY_NAME}</p>
     </div>
     <div style="background:#fff;padding:32px;border:1px solid #eee;border-top:none;">
       <p style="font-size:16px;color:#333;">Здравствуйте, <strong>${escapeHtml(data.name)}</strong>!</p>
@@ -764,20 +528,11 @@ export async function sendStatusUpdateEmail(data: {
       <p style="color:#555;font-size:14px;">Если у вас есть вопросы, свяжитесь с нами.</p>
     </div>
     <div style="background:#f0ebe5;padding:16px 32px;border-radius:0 0 16px 16px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#999;">© ЦСМ — Центр Стандартизации и Метрологии</p>
+      <p style="margin:0;font-size:12px;color:#999;">© ${COMPANY_SHORT} — ${COMPANY_NAME}</p>
     </div>
   </div>
 </body>
 </html>`;
 
-  try {
-    await transporter.sendMail({
-      from: `"Центр Стандартизации и Метрологии" <${user}>`,
-      to: data.email,
-      subject: `Заявка №${data.requestId} — статус обновлён: ${statusInfo.label}`,
-      html,
-    });
-  } catch (error) {
-    console.error("Status update email error:", error);
-  }
+  return { html, statusLabel: statusInfo.label };
 }

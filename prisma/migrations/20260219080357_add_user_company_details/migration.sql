@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "inn" TEXT;
+ALTER TABLE "User" ADD COLUMN "kpp" TEXT;
+ALTER TABLE "User" ADD COLUMN "legalAddress" TEXT;
+ALTER TABLE "User" ADD COLUMN "legalName" TEXT;
+ALTER TABLE "User" ADD COLUMN "notifyDays" TEXT DEFAULT '14,7';

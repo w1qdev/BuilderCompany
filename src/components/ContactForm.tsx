@@ -28,6 +28,7 @@ const ALLOWED_EXTENSIONS = [
 
 interface ContactFormProps {
   onSuccess?: () => void;
+  showEquipmentCheckbox?: boolean;
   initialValues?: {
     name?: string;
     phone?: string;
@@ -90,9 +91,12 @@ function formatPhone(value: string): string {
 
   if (normalized.length === 0) return "";
   if (normalized.length <= 1) return `+${normalized}`;
-  if (normalized.length <= 4) return `+${normalized[0]} (${normalized.slice(1)}`;
-  if (normalized.length <= 7) return `+${normalized[0]} (${normalized.slice(1, 4)}) ${normalized.slice(4)}`;
-  if (normalized.length <= 9) return `+${normalized[0]} (${normalized.slice(1, 4)}) ${normalized.slice(4, 7)}-${normalized.slice(7)}`;
+  if (normalized.length <= 4)
+    return `+${normalized[0]} (${normalized.slice(1)}`;
+  if (normalized.length <= 7)
+    return `+${normalized[0]} (${normalized.slice(1, 4)}) ${normalized.slice(4)}`;
+  if (normalized.length <= 9)
+    return `+${normalized[0]} (${normalized.slice(1, 4)}) ${normalized.slice(4, 7)}-${normalized.slice(7)}`;
   return `+${normalized[0]} (${normalized.slice(1, 4)}) ${normalized.slice(4, 7)}-${normalized.slice(7, 9)}-${normalized.slice(9, 11)}`;
 }
 
@@ -109,6 +113,7 @@ function createServiceItem(initial?: Partial<ServiceItem>): ServiceItem {
 
 export default function ContactForm({
   onSuccess,
+  showEquipmentCheckbox = false,
   initialValues,
 }: ContactFormProps) {
   const maxAllowedFileSizeInBytes = 10 * 1024 * 1024;
@@ -132,7 +137,9 @@ export default function ContactForm({
   const [, setUploadProgress] = useState<UploadProgress>(
     UploadProgressEnums.IDLE,
   );
-  const [fileUploadPercents, setFileUploadPercents] = useState<Record<string, number>>({});
+  const [fileUploadPercents, setFileUploadPercents] = useState<
+    Record<string, number>
+  >({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(
     SubmitStatusEnums.IDLE,
@@ -165,7 +172,9 @@ export default function ContactForm({
       const f = selectedFiles[i];
       const ext = "." + f.name.split(".").pop()?.toLowerCase();
       if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        setErrorMsg(`Файл "${f.name}": недопустимый тип. Разрешены: PDF, Word, JPEG, PNG`);
+        setErrorMsg(
+          `Файл "${f.name}": недопустимый тип. Разрешены: PDF, Word, JPEG, PNG`,
+        );
         return;
       }
       if (f.size > maxAllowedFileSizeInBytes) {
@@ -200,9 +209,14 @@ export default function ContactForm({
 
     // Validate registry for Поверка СИ items
     for (let i = 0; i < serviceItems.length; i++) {
-      if (serviceItems[i].service === "Поверка СИ" && !serviceItems[i].registry.trim()) {
+      if (
+        serviceItems[i].service === "Поверка СИ" &&
+        !serviceItems[i].registry.trim()
+      ) {
         setSubmitStatus(SubmitStatusEnums.ERROR);
-        setErrorMsg(`Позиция ${i + 1}: номер реестра обязателен для поверки СИ`);
+        setErrorMsg(
+          `Позиция ${i + 1}: номер реестра обязателен для поверки СИ`,
+        );
         return;
       }
     }
@@ -217,7 +231,10 @@ export default function ContactForm({
           const formData = new FormData();
           formData.append("file", f);
 
-          const uploadData = await new Promise<{ fileName: string; filePath: string }>((resolve, reject) => {
+          const uploadData = await new Promise<{
+            fileName: string;
+            filePath: string;
+          }>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("POST", "/api/upload");
             xhr.upload.onprogress = (event) => {
@@ -232,13 +249,16 @@ export default function ContactForm({
               } else {
                 try {
                   const err = JSON.parse(xhr.responseText);
-                  reject(new Error(err.error || `Ошибка загрузки файла "${f.name}"`));
+                  reject(
+                    new Error(err.error || `Ошибка загрузки файла "${f.name}"`),
+                  );
                 } catch {
                   reject(new Error(`Ошибка загрузки файла "${f.name}"`));
                 }
               }
             };
-            xhr.onerror = () => reject(new Error(`Ошибка загрузки файла "${f.name}"`));
+            xhr.onerror = () =>
+              reject(new Error(`Ошибка загрузки файла "${f.name}"`));
             xhr.send(formData);
           });
 
@@ -260,13 +280,15 @@ export default function ContactForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          items: serviceItems.map(({ service, poverk, object, fabricNumber, registry }) => ({
-            service,
-            poverk: service === "Поверка СИ" ? poverk : undefined,
-            object,
-            fabricNumber,
-            registry: service === "Поверка СИ" ? registry : undefined,
-          })),
+          items: serviceItems.map(
+            ({ service, poverk, object, fabricNumber, registry }) => ({
+              service,
+              poverk: service === "Поверка СИ" ? poverk : undefined,
+              object,
+              fabricNumber,
+              registry: service === "Поверка СИ" ? registry : undefined,
+            }),
+          ),
           fileName: firstName,
           filePath: firstPath,
           files: uploadedFiles,
@@ -339,7 +361,9 @@ export default function ContactForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid sm:grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="contact-name">Ваше имя <span className="text-red-500">*</span></Label>
+          <Label htmlFor="contact-name">
+            Ваше имя <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="contact-name"
             type="text"
@@ -350,18 +374,24 @@ export default function ContactForm({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="contact-phone">Телефон <span className="text-red-500">*</span></Label>
+          <Label htmlFor="contact-phone">
+            Телефон <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="contact-phone"
             type="tel"
             placeholder="+7 (___) ___-__-__"
             required
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
+            onChange={(e) =>
+              setForm({ ...form, phone: formatPhone(e.target.value) })
+            }
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="contact-email">Email <span className="text-red-500">*</span></Label>
+          <Label htmlFor="contact-email">
+            Email <span className="text-red-500">*</span>
+          </Label>
           <Input
             id="contact-email"
             type="email"
@@ -379,7 +409,6 @@ export default function ContactForm({
           <Input
             id="contact-company"
             type="text"
-            placeholder="ООО «Название компании»"
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
           />
@@ -392,7 +421,9 @@ export default function ContactForm({
             placeholder="1234567890"
             maxLength={12}
             value={form.inn}
-            onChange={(e) => setForm({ ...form, inn: e.target.value.replace(/\D/g, "") })}
+            onChange={(e) =>
+              setForm({ ...form, inn: e.target.value.replace(/\D/g, "") })
+            }
           />
         </div>
       </div>
@@ -434,10 +465,14 @@ export default function ContactForm({
 
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Услуга <span className="text-red-500">*</span></Label>
+                <Label>
+                  Услуга <span className="text-red-500">*</span>
+                </Label>
                 <Select
                   value={item.service}
-                  onValueChange={(value) => updateItem(item.id, { service: value })}
+                  onValueChange={(value) =>
+                    updateItem(item.id, { service: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите услугу" />
@@ -457,7 +492,9 @@ export default function ContactForm({
                   <Label>Поверка</Label>
                   <Select
                     value={item.poverk}
-                    onValueChange={(value) => updateItem(item.id, { poverk: value })}
+                    onValueChange={(value) =>
+                      updateItem(item.id, { poverk: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Выберите тип поверки" />
@@ -480,7 +517,9 @@ export default function ContactForm({
                 type="text"
                 placeholder=""
                 value={item.object}
-                onChange={(e) => updateItem(item.id, { object: e.target.value })}
+                onChange={(e) =>
+                  updateItem(item.id, { object: e.target.value })
+                }
               />
             </div>
 
@@ -491,19 +530,25 @@ export default function ContactForm({
                   type="text"
                   placeholder="123"
                   value={item.fabricNumber}
-                  onChange={(e) => updateItem(item.id, { fabricNumber: e.target.value })}
+                  onChange={(e) =>
+                    updateItem(item.id, { fabricNumber: e.target.value })
+                  }
                 />
               </div>
 
               {item.service === "Поверка СИ" && (
                 <div className="space-y-1.5">
-                  <Label>Номер реестра <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Номер реестра <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     type="text"
                     placeholder="12345-12"
                     required
                     value={item.registry}
-                    onChange={(e) => updateItem(item.id, { registry: e.target.value })}
+                    onChange={(e) =>
+                      updateItem(item.id, { registry: e.target.value })
+                    }
                   />
                 </div>
               )}
@@ -516,8 +561,18 @@ export default function ContactForm({
           onClick={addItem}
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-200 dark:border-white/20 rounded-xl text-sm text-neutral dark:text-white/60 hover:border-primary hover:text-primary transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
           Добавить позицию
         </button>
@@ -569,8 +624,8 @@ export default function ContactForm({
               {files.length >= maxFiles
                 ? `Достигнут лимит (${maxFiles} файлов)`
                 : files.length > 0
-                ? `Добавить ещё (${files.length}/${maxFiles})`
-                : "Прикрепить файлы (PDF, Word, фото)"}
+                  ? `Добавить ещё (${files.length}/${maxFiles})`
+                  : "Прикрепить файлы (PDF, Word, фото)"}
             </span>
           </label>
           {files.length > 0 && (
@@ -579,7 +634,10 @@ export default function ContactForm({
                 const pct = fileUploadPercents[f.name];
                 const isUploading = pct !== undefined && pct < 100;
                 return (
-                  <div key={`${f.name}-${index}`} className="px-4 py-2.5 bg-gray-50 dark:bg-white/5 rounded-xl space-y-1.5">
+                  <div
+                    key={`${f.name}-${index}`}
+                    className="px-4 py-2.5 bg-gray-50 dark:bg-white/5 rounded-xl space-y-1.5"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
                         <svg
@@ -608,8 +666,18 @@ export default function ContactForm({
                           onClick={() => removeFile(index)}
                           className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
                           </svg>
                         </button>
                       )}
@@ -632,7 +700,8 @@ export default function ContactForm({
           )}
         </div>
         <p className="text-xs text-gray-400">
-          Макс. {maxFiles} файлов, до 10 МБ каждый. Форматы: PDF, DOC, DOCX, JPG, PNG
+          Макс. {maxFiles} файлов, до 10 МБ каждый. Форматы: PDF, DOC, DOCX,
+          JPG, PNG
         </p>
       </div>
 
@@ -657,20 +726,22 @@ export default function ContactForm({
             Требуется оформление договора оказания услуг
           </Label>
         </div>
-        <div className="flex items-start gap-3 p-4 bg-warm-bg dark:bg-neutral-900 rounded-xl">
-          <Checkbox
-            id="addEquipment"
-            checked={addEquipment}
-            onCheckedChange={(checked) => setAddEquipment(checked === true)}
-            className="mt-0.5"
-          />
-          <Label
-            htmlFor="addEquipment"
-            className="text-sm text-dark dark:text-white cursor-pointer select-none leading-relaxed"
-          >
-            Добавить оборудование в личный кабинет
-          </Label>
-        </div>
+        {showEquipmentCheckbox && (
+          <div className="flex items-start gap-3 p-4 bg-warm-bg dark:bg-neutral-900 rounded-xl">
+            <Checkbox
+              id="addEquipment"
+              checked={addEquipment}
+              onCheckedChange={(checked) => setAddEquipment(checked === true)}
+              className="mt-0.5"
+            />
+            <Label
+              htmlFor="addEquipment"
+              className="text-sm text-dark dark:text-white cursor-pointer select-none leading-relaxed"
+            >
+              Добавить в личный кабинет
+            </Label>
+          </div>
+        )}
       </div>
 
       <button

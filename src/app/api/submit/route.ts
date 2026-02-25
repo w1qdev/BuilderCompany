@@ -5,6 +5,8 @@ import { getIO } from "@/lib/socket";
 import { sendMaxNotification } from "@/lib/max";
 import { sendTelegramNotification } from "@/lib/telegram";
 import { createRateLimiter } from "@/lib/rateLimit";
+import { logActivity } from "@/lib/activityLog";
+import { submitRequestSchema, validate } from "@/lib/validation";
 
 const submitLimiter = createRateLimiter({ max: 10, windowMs: 15 * 60 * 1000 });
 
@@ -14,8 +16,6 @@ import { unlink } from "fs/promises";
 import { jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface SubmitItem {
   service: string;
@@ -40,8 +40,12 @@ export async function POST(req: NextRequest) {
   let uploadedFilePath: string | null = null;
   try {
     const body = await req.json();
-    const { name, phone, email, company, inn, message, fileName, filePath, items, needContract, addEquipment } = body;
-    const submitFiles: SubmitFile[] = Array.isArray(body.files) ? body.files : [];
+    const parsed = validate(submitRequestSchema, body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+    const { name, phone, email, company, inn, message, fileName, filePath, needContract, addEquipment } = parsed.data;
+    const submitFiles: SubmitFile[] = parsed.data.files || [];
     if (filePath) {
       uploadedFilePath = path.join(
         process.cwd(),
@@ -51,45 +55,28 @@ export async function POST(req: NextRequest) {
     }
 
     // Support both old format (single service) and new format (items array)
+    const toItem = (i: { service: string; poverk?: string | null; object?: string | null; fabricNumber?: string | null; registry?: string | null }): SubmitItem => ({
+      service: i.service,
+      poverk: i.poverk || undefined,
+      object: i.object || undefined,
+      fabricNumber: i.fabricNumber || undefined,
+      registry: i.registry || undefined,
+    });
+
     let serviceItems: SubmitItem[];
-    if (Array.isArray(items) && items.length > 0) {
-      serviceItems = items;
-    } else if (body.service) {
-      // Backwards compatibility: single service field
-      serviceItems = [{
-        service: body.service,
-        poverk: body.poverk,
-        object: body.object,
-        fabricNumber: body.fabricNumber,
-        registry: body.registry,
-      }];
+    if (parsed.data.items && parsed.data.items.length > 0) {
+      serviceItems = parsed.data.items.map(toItem);
+    } else if (parsed.data.service) {
+      serviceItems = [toItem({
+        service: parsed.data.service,
+        poverk: parsed.data.poverk,
+        object: parsed.data.object,
+        fabricNumber: parsed.data.fabricNumber,
+        registry: parsed.data.registry,
+      })];
     } else {
       return NextResponse.json(
         { error: "Заполните все обязательные поля" },
-        { status: 400 },
-      );
-    }
-
-    if (!name || !phone || !email) {
-      return NextResponse.json(
-        { error: "Заполните все обязательные поля" },
-        { status: 400 },
-      );
-    }
-
-    // Validate each item has a service
-    for (const item of serviceItems) {
-      if (!item.service) {
-        return NextResponse.json(
-          { error: "Каждая позиция должна содержать услугу" },
-          { status: 400 },
-        );
-      }
-    }
-
-    if (!EMAIL_REGEX.test(email)) {
-      return NextResponse.json(
-        { error: "Некорректный формат email" },
         { status: 400 },
       );
     }
@@ -177,6 +164,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Log activity for logged-in users
+    if (userId) {
+      logActivity({ userId, action: "request_created", entityType: "request", entityId: request.id, details: JSON.stringify({ service: serviceJoined }) });
+    }
+
     // Emit realtime event to admin panel
     const io = getIO();
     if (io) {
@@ -210,9 +202,9 @@ export async function POST(req: NextRequest) {
           name,
           phone,
           email,
-          company,
-          inn,
-          message,
+          company: company || undefined,
+          inn: inn || undefined,
+          message: message || undefined,
           items: serviceItems,
         }),
       );
@@ -223,12 +215,12 @@ export async function POST(req: NextRequest) {
           name,
           phone,
           email,
-          company,
-          inn,
-          message,
+          company: company || undefined,
+          inn: inn || undefined,
+          message: message || undefined,
           needContract,
-          fileName,
-          filePath,
+          fileName: fileName || undefined,
+          filePath: filePath || undefined,
           files: submitFiles,
           requestId: request.id,
           items: serviceItems,
@@ -244,9 +236,9 @@ export async function POST(req: NextRequest) {
           name,
           phone,
           email,
-          company,
-          inn,
-          message,
+          company: company || undefined,
+          inn: inn || undefined,
+          message: message || undefined,
           items: serviceItems,
         }),
       );

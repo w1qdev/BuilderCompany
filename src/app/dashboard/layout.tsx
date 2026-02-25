@@ -1,7 +1,10 @@
 "use client";
 
+import BugReportButton from "@/components/BugReportButton";
+import CommandSearch from "@/components/CommandSearch";
 import Logo from "@/components/Logo";
 import NotificationBell from "@/components/NotificationBell";
+import { useTheme } from "@/components/ThemeProvider";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -45,35 +48,52 @@ const navItems: NavItem[] = [
   { type: "divider", label: "Средства измерений" },
   {
     href: "/dashboard/equipment/si",
-    label: "Оборудование СИ",
+    label: "СИ",
     icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z",
   },
   {
     href: "/dashboard/schedule/si",
-    label: "График поверки СИ",
+    label: "График поверки (СИ)",
     icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
   },
-  {
-    href: "/dashboard/arshin-registry",
-    label: "Реестр поверок (Аршин)",
-    icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-  },
+  // ARSHIN_ENABLED: Hidden until integration is ready
+  // {
+  //   href: "/dashboard/arshin-registry",
+  //   label: "Реестр поверок (Аршин)",
+  //   icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+  // },
   { type: "divider", label: "Испытательное оборудование" },
   {
     href: "/dashboard/equipment/io",
-    label: "Оборудование ИО",
+    label: "Оборудование (ИО)",
     icon: "M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z",
   },
   {
     href: "/dashboard/schedule/io",
-    label: "График аттестации ИО",
+    label: "График аттестации (ИО)",
     icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
   },
-  { type: "divider", label: "Заявки" },
+  { type: "divider", label: "Организация" },
+  {
+    href: "/dashboard/organization",
+    label: "Моя организация",
+    icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
+  },
+  { type: "divider", label: "Заявки и аналитика" },
   {
     href: "/dashboard/requests",
     label: "Мои заявки",
     icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+  },
+  {
+    href: "/dashboard/analytics",
+    label: "Аналитика",
+    icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+  },
+  {
+    href: "/dashboard/notifications",
+    label: "Уведомления",
+    icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9",
   },
   {
     type: "group",
@@ -100,11 +120,11 @@ const navItems: NavItem[] = [
         label: "Неопределённость",
         icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
       },
-      {
-        href: "/dashboard/protocol",
-        label: "Генератор протоколов",
-        icon: "M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z",
-      },
+      // {
+      //   href: "/dashboard/protocol",
+      //   label: "Генератор протоколов",
+      //   icon: "M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+      // },
       {
         href: "/dashboard/documents",
         label: "Шаблоны документов",
@@ -131,8 +151,11 @@ const breadcrumbMap: Record<string, string> = {
   "/dashboard/schedule/si": "График поверки СИ",
   "/dashboard/schedule/io": "График аттестации ИО",
   "/dashboard/requests": "Мои заявки",
+  "/dashboard/analytics": "Аналитика",
+  "/dashboard/notifications": "Настройки уведомлений",
   "/dashboard/profile": "Профиль",
   "/dashboard/companies": "Справочник организаций",
+  "/dashboard/organization": "Моя организация",
   "/dashboard/calculator": "Калькулятор",
   "/dashboard/converter": "Конвертер единиц",
   "/dashboard/accuracy": "Классы точности",
@@ -141,7 +164,7 @@ const breadcrumbMap: Record<string, string> = {
   "/dashboard/gosts": "Справочник ГОСТов",
   "/dashboard/documents": "Шаблоны документов",
   "/dashboard/mpi": "Калькулятор МПИ",
-  "/dashboard/arshin-registry": "Реестр поверок (Аршин)",
+  // "/dashboard/arshin-registry": "Реестр поверок (Аршин)", // ARSHIN_ENABLED
 };
 
 const toolPaths = [
@@ -162,10 +185,12 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   const isToolActive = toolPaths.some(
@@ -178,9 +203,24 @@ export default function DashboardLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
+  // Ctrl+K / Cmd+K global shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(e.target as Node)
+      ) {
         setProfileOpen(false);
       }
     };
@@ -297,6 +337,33 @@ export default function DashboardLayout({
             </span>
           </div>
           <div className="flex items-center gap-3">
+            {/* Search button */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+              title="Поиск (Ctrl+K)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="hidden sm:inline text-xs text-white/40">Ctrl+K</span>
+            </button>
+            {/* Dark theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+              title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+            >
+              {theme === "dark" ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
             <NotificationBell />
             <div className="hidden sm:flex items-center gap-2 text-sm text-white/70">
               <svg
@@ -415,19 +482,28 @@ export default function DashboardLayout({
           </nav>
 
           {/* Profile */}
-          <div ref={profileRef} className="relative border-t border-gray-200 dark:border-white/10 p-3">
+          <div
+            ref={profileRef}
+            className="relative border-t border-gray-200 dark:border-white/10 p-3"
+          >
             {profileOpen && (
               <div className="absolute bottom-full left-3 right-3 mb-1 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-xl shadow-lg py-1">
                 <Link
                   href="/dashboard/profile"
-                  onClick={() => { setProfileOpen(false); setSidebarOpen(false); }}
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setSidebarOpen(false);
+                  }}
                   className="block px-4 py-2 text-sm text-neutral dark:text-white/70 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   Профиль
                 </Link>
                 <div className="border-t border-gray-100 dark:border-white/5 my-1" />
                 <button
-                  onClick={() => { setProfileOpen(false); handleLogout(); }}
+                  onClick={() => {
+                    setProfileOpen(false);
+                    handleLogout();
+                  }}
                   className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   Выйти
@@ -442,9 +518,13 @@ export default function DashboardLayout({
                 {user.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm font-medium text-dark dark:text-white truncate">{user.name}</div>
+                <div className="text-sm font-medium text-dark dark:text-white truncate">
+                  {user.name}
+                </div>
                 {user.company && (
-                  <div className="text-xs text-neutral dark:text-white/40 truncate">{user.company}</div>
+                  <div className="text-xs text-neutral dark:text-white/40 truncate">
+                    {user.company}
+                  </div>
                 )}
               </div>
               <svg
@@ -453,7 +533,12 @@ export default function DashboardLayout({
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 15l7-7 7 7"
+                />
               </svg>
             </button>
           </div>
@@ -463,11 +548,24 @@ export default function DashboardLayout({
         <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           {pathname !== "/dashboard" && breadcrumbMap[pathname] && (
             <nav className="flex items-center gap-1.5 text-sm text-neutral dark:text-white/40 mb-4">
-              <Link href="/dashboard" className="hover:text-primary transition-colors">
+              <Link
+                href="/dashboard"
+                className="hover:text-primary transition-colors"
+              >
                 Обзор
               </Link>
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="w-3.5 h-3.5 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
               {(() => {
                 const parts = pathname.split("/").filter(Boolean);
@@ -476,11 +574,24 @@ export default function DashboardLayout({
                   if (breadcrumbMap[parent]) {
                     return (
                       <>
-                        <Link href={parent} className="hover:text-primary transition-colors">
+                        <Link
+                          href={parent}
+                          className="hover:text-primary transition-colors"
+                        >
                           {breadcrumbMap[parent]}
                         </Link>
-                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        <svg
+                          className="w-3.5 h-3.5 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
                         </svg>
                       </>
                     );
@@ -496,6 +607,9 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      <CommandSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      <BugReportButton />
     </div>
   );
 }

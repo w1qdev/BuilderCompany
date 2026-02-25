@@ -1,15 +1,35 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  const d = digits.startsWith("7") || digits.startsWith("8") ? digits.slice(1) : digits;
+  let result = "+7";
+  if (d.length > 0) result += " (" + d.slice(0, 3);
+  if (d.length >= 3) result += ") " + d.slice(3, 6);
+  if (d.length >= 6) result += "-" + d.slice(6, 8);
+  if (d.length >= 8) result += "-" + d.slice(8, 10);
+  return result;
+}
+
+function unformatPhone(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // PHONE_AUTH_ENABLED: set to true to re-enable phone login tab
+  const PHONE_AUTH_ENABLED = false;
+  // OAUTH_ENABLED: set to true to re-enable Yandex/VK login
+  const OAUTH_ENABLED = false;
+  const [tab, setTab] = useState<"phone" | "email">("email");
 
   useEffect(() => {
     const error = searchParams.get("error");
@@ -17,14 +37,87 @@ function LoginForm() {
     if (error === "no_email") toast.error("Не удалось получить email. Разрешите доступ к email в настройках.");
   }, [searchParams]);
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  // Phone login state
+  const [phone, setPhone] = useState("");
+  const [phoneStep, setPhoneStep] = useState<1 | 2>(1);
+  const [smsCode, setSmsCode] = useState("");
+  const [phoneSending, setPhoneSending] = useState(false);
+  const [phoneVerifying, setPhoneVerifying] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  // Email login state
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const t = setTimeout(() => setResendTimer((v) => v - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendTimer]);
+
+  const handlePhoneChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length <= 11) {
+      setPhone(formatPhone(raw));
+    }
+  };
+
+  const handleSendCode = useCallback(async () => {
+    const digits = unformatPhone(phone);
+    if (digits.length !== 11) {
+      toast.error("Введите корректный номер телефона");
+      return;
+    }
+    setPhoneSending(true);
+    try {
+      const res = await fetch("/api/auth/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Ошибка отправки кода");
+        return;
+      }
+      toast.success("Код отправлен");
+      setPhoneStep(2);
+      setResendTimer(60);
+    } catch {
+      toast.error("Ошибка соединения с сервером");
+    } finally {
+      setPhoneSending(false);
+    }
+  }, [phone]);
+
+  const handleVerifyCode = async () => {
+    if (smsCode.length !== 4) {
+      toast.error("Введите 4-значный код");
+      return;
+    }
+    setPhoneVerifying(true);
+    try {
+      const res = await fetch("/api/auth/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, code: smsCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Ошибка проверки кода");
+        return;
+      }
+      toast.success("Вход выполнен успешно");
+      router.push("/dashboard");
+    } catch {
+      toast.error("Ошибка соединения с сервером");
+    } finally {
+      setPhoneVerifying(false);
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -51,6 +144,9 @@ function LoginForm() {
     }
   };
 
+  const inputClass =
+    "w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all";
+
   return (
     <div className="min-h-screen bg-warm-bg dark:bg-dark flex items-center justify-center p-4">
       <motion.div
@@ -58,12 +154,10 @@ function LoginForm() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-2 mb-8">
           <Logo size="sm" />
         </Link>
 
-        {/* Form */}
         <div className="bg-white dark:bg-dark-light rounded-2xl shadow-xl p-8">
           <h1 className="text-2xl font-bold text-dark dark:text-white text-center mb-2">
             Вход в личный кабинет
@@ -72,60 +166,169 @@ function LoginForm() {
             Введите данные для входа
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-dark dark:text-white mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="example@mail.ru"
-                required
-              />
+          {/* Tabs — PHONE_AUTH_ENABLED: unhide when phone auth is ready */}
+          {PHONE_AUTH_ENABLED && (
+            <div className="flex bg-gray-100 dark:bg-dark rounded-xl p-1 mb-6">
+              <button
+                onClick={() => setTab("phone")}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  tab === "phone"
+                    ? "bg-white dark:bg-dark-light text-dark dark:text-white shadow-sm"
+                    : "text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/70"
+                }`}
+              >
+                По телефону
+              </button>
+              <button
+                onClick={() => setTab("email")}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  tab === "email"
+                    ? "bg-white dark:bg-dark-light text-dark dark:text-white shadow-sm"
+                    : "text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/70"
+                }`}
+              >
+                По email
+              </button>
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-dark dark:text-white mb-1">
-                Пароль
-              </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="Введите пароль"
-                required
-              />
+          {/* Phone Tab — PHONE_AUTH_ENABLED */}
+          {PHONE_AUTH_ENABLED && tab === "phone" && (
+            <div className="space-y-4">
+              {phoneStep === 1 ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                      Телефон
+                    </label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      className={inputClass}
+                      placeholder="+7 (___) ___-__-__"
+                      required
+                    />
+                  </div>
+                  <button
+                    onClick={handleSendCode}
+                    disabled={phoneSending}
+                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  >
+                    {phoneSending ? "Отправка..." : "Получить код"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-neutral dark:text-white/70 text-center">
+                    Код отправлен на{" "}
+                    <span className="font-medium text-dark dark:text-white">{phone}</span>
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                      Код из SMS
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={smsCode}
+                      onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      className={`${inputClass} text-center text-2xl tracking-[0.5em] font-mono`}
+                      placeholder="····"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    onClick={handleVerifyCode}
+                    disabled={phoneVerifying || smsCode.length !== 4}
+                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  >
+                    {phoneVerifying ? "Проверка..." : "Войти"}
+                  </button>
+                  <div className="text-center">
+                    {resendTimer > 0 ? (
+                      <p className="text-sm text-neutral dark:text-white/50">
+                        Отправить повторно через {resendTimer} сек
+                      </p>
+                    ) : (
+                      <button
+                        onClick={handleSendCode}
+                        className="text-sm text-primary hover:underline font-medium"
+                      >
+                        Отправить код повторно
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => { setPhoneStep(1); setSmsCode(""); }}
+                    className="w-full text-sm text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/70 transition-colors"
+                  >
+                    ← Изменить номер
+                  </button>
+                </>
+              )}
             </div>
+          )}
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
+          {/* Email Tab */}
+          {tab === "email" && (
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                  Email
+                </label>
                 <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className={inputClass}
+                  placeholder="example@mail.ru"
+                  required
                 />
-                <span className="text-sm text-neutral dark:text-white/70">Запомнить меня</span>
-              </label>
-              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                Забыли пароль?
-              </Link>
-            </div>
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
-            >
-              {loading ? "Вход..." : "Войти"}
-            </button>
-          </form>
+              <div>
+                <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                  Пароль
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className={inputClass}
+                  placeholder="Введите пароль"
+                  required
+                />
+              </div>
 
-          <div className="mt-6">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-neutral dark:text-white/70">Запомнить меня</span>
+                </label>
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                  Забыли пароль?
+                </Link>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+              >
+                {loading ? "Вход..." : "Войти"}
+              </button>
+            </form>
+          )}
+
+          {/* OAuth — OAUTH_ENABLED: unhide when Yandex/VK apps are configured */}
+          {OAUTH_ENABLED && <div className="mt-6">
             <div className="relative flex items-center gap-3 mb-4">
               <div className="flex-1 h-px bg-gray-200 dark:bg-white/10" />
               <span className="text-xs text-neutral dark:text-white/40">или войти через</span>
@@ -153,7 +356,7 @@ function LoginForm() {
                 VK ID
               </a>
             </div>
-          </div>
+          </div>}
 
           <p className="text-center text-sm text-neutral dark:text-white/70 mt-4">
             Нет аккаунта?{" "}

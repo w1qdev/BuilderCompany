@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { jwtVerify } from "jose";
-import { JWT_SECRET } from "@/lib/jwt";
+import { getUserId } from "@/lib/auth";
+import { logActivity } from "@/lib/activityLog";
+import { createRateLimiter } from "@/lib/rateLimit";
+import { calculateEquipmentStatus } from "@/lib/equipmentStatus";
 
-async function getUserId(request: NextRequest): Promise<number | null> {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload.userId as number;
-  } catch {
-    return null;
-  }
-}
+const equipmentWriteLimiter = createRateLimiter({ max: 30, windowMs: 60 * 1000 });
 
 export async function PATCH(
   request: NextRequest,
@@ -22,6 +15,9 @@ export async function PATCH(
     const userId = await getUserId(request);
     if (!userId) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    }
+    if (!equipmentWriteLimiter(request, userId)) {
+      return NextResponse.json({ error: "Слишком много запросов" }, { status: 429 });
     }
 
     const { id } = await params;
@@ -35,17 +31,26 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl } = body;
+    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl, ignored, pinned } = body;
+
+    // If only toggling ignored or pinned, do a quick update and return
+    if (ignored !== undefined && Object.keys(body).length === 1) {
+      const updated = await prisma.equipment.update({
+        where: { id: equipmentId },
+        data: { ignored },
+      });
+      return NextResponse.json(updated);
+    }
+    if (pinned !== undefined && Object.keys(body).length === 1) {
+      const updated = await prisma.equipment.update({
+        where: { id: equipmentId },
+        data: { pinned },
+      });
+      return NextResponse.json(updated);
+    }
 
     // Recalculate status
-    const nextDate = nextVerification ? new Date(nextVerification) : existing.nextVerification;
-    let status = "active";
-    if (nextDate) {
-      const now = new Date();
-      const twoWeeks = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-      if (nextDate < now) status = "expired";
-      else if (nextDate < twoWeeks) status = "pending";
-    }
+    const status = calculateEquipmentStatus(nextVerification || existing.nextVerification);
 
     // Reset notified flag only when nextVerification date changes
     const shouldResetNotified = nextVerification !== undefined &&
@@ -70,6 +75,21 @@ export async function PATCH(
         ...(shouldResetNotified && { notified: false }),
       },
     });
+
+    // Auto-create verification record when verificationDate changes
+    if (verificationDate !== undefined && verificationDate !== (existing.verificationDate?.toISOString().split("T")[0] ?? "")) {
+      prisma.verificationRecord.create({
+        data: {
+          equipmentId,
+          date: new Date(verificationDate),
+          nextDate: nextVerification ? new Date(nextVerification) : (existing.nextVerification ?? null),
+          performer: company || existing.company || null,
+          notes: "Обновлено через редактирование",
+        },
+      }).catch(e => console.error("Failed to create verification record:", e));
+    }
+
+    logActivity({ userId, action: "equipment_updated", entityType: "equipment", entityId: equipmentId, details: JSON.stringify({ name: updated.name }) });
 
     return NextResponse.json(updated);
   } catch (error) {
@@ -99,6 +119,8 @@ export async function DELETE(
     }
 
     await prisma.equipment.delete({ where: { id: equipmentId } });
+
+    logActivity({ userId, action: "equipment_deleted", entityType: "equipment", entityId: equipmentId, details: JSON.stringify({ name: existing.name }) });
 
     return NextResponse.json({ success: true });
   } catch (error) {

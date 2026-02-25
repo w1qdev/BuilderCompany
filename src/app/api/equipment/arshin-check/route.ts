@@ -1,21 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { jwtVerify } from "jose";
-import { JWT_SECRET } from "@/lib/jwt";
+import { getUserId } from "@/lib/auth";
 import { sendArshinVerificationEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
-
-async function getUserId(request: NextRequest): Promise<number | null> {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload.userId as number;
-  } catch {
-    return null;
-  }
-}
 
 const RECHECK_DAYS = 7;
 
@@ -139,81 +127,99 @@ export async function POST(request: NextRequest) {
     type NewVerifItem = { name: string; type: string | null; serialNumber: string | null; validDate: string; arshinUrl: string | null };
     const newVerifItems: NewVerifItem[] = [];
 
-    for (const eq of equipment) {
-      const query = eq.serialNumber || eq.registryNumber;
-      if (!query) continue;
+    // Filter equipment that actually needs checking
+    const toCheck = equipment.filter((eq) => {
+      if (!eq.serialNumber && !eq.registryNumber) return false;
+      if (!ids?.length && eq.arshinCheckedAt && eq.arshinCheckedAt > staleThreshold) return false;
+      return true;
+    });
 
-      // Skip recently checked (unless explicit ids request)
-      if (!ids?.length && eq.arshinCheckedAt && eq.arshinCheckedAt > staleThreshold) {
-        continue;
-      }
+    // Process in parallel batches of 5
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < toCheck.length; i += BATCH_SIZE) {
+      const batch = toCheck.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(async (eq) => {
+          const query = (eq.serialNumber || eq.registryNumber)!;
 
-      const data = await fetchArshinVri(query);
-      const item = extractVriItem(data);
+          // Fetch VRI and MIT in parallel
+          const data = await fetchArshinVri(query);
+          const item = extractVriItem(data);
 
-      const arshinValidDate = item?.validDate ? new Date(item.validDate) : null;
-      const arshinUrl = item?.vriId
-        ? `https://fgis.gost.ru/fundmetrology/cm/results/${item.vriId}`
-        : null;
+          const mitQuery = item?.miTypeNumber || query;
+          const mitResult = await fetchMit(mitQuery);
 
-      // MIT check — use type registry number from VRI result, fallback to query
-      const mitQuery = item?.miTypeNumber || query;
-      const mitResult = await fetchMit(mitQuery);
+          const arshinValidDate = item?.validDate ? new Date(item.validDate) : null;
+          const arshinUrl = item?.vriId
+            ? `https://fgis.gost.ru/fundmetrology/cm/results/${item.vriId}`
+            : null;
 
-      // Detect mismatch: arshin says expired but our DB says active/pending
-      // OR arshin validDate differs from our nextVerification by more than 3 days
-      let mismatch = false;
-      if (arshinValidDate) {
-        const now = new Date();
-        if (arshinValidDate < now && (eq.status === "active" || eq.status === "pending")) {
-          mismatch = true;
-        } else if (eq.nextVerification) {
-          const diffMs = Math.abs(arshinValidDate.getTime() - eq.nextVerification.getTime());
-          const diffDays = diffMs / (1000 * 60 * 60 * 24);
-          if (diffDays > 3) mismatch = true;
-        }
-      }
+          // Auto-sync: update nextVerification & verificationDate from Arshin data
+          const arshinVriDate = item?.vriDate ? new Date(item.vriDate) : null;
+          let autoNextVerification: Date | undefined;
+          let autoVerificationDate: Date | undefined;
 
-      // Auto-update status to expired if Arshin says so
-      let statusUpdate: string | undefined;
-      if (arshinValidDate && arshinValidDate < new Date() && eq.status !== "expired") {
-        statusUpdate = "expired";
-      }
+          if (arshinValidDate) {
+            // Update nextVerification if differs by more than 3 days
+            if (!eq.nextVerification || Math.abs(arshinValidDate.getTime() - eq.nextVerification.getTime()) > 3 * 24 * 60 * 60 * 1000) {
+              autoNextVerification = arshinValidDate;
+            }
+          }
+          if (arshinVriDate) {
+            if (!eq.verificationDate || Math.abs(arshinVriDate.getTime() - eq.verificationDate.getTime()) > 3 * 24 * 60 * 60 * 1000) {
+              autoVerificationDate = arshinVriDate;
+            }
+          }
 
-      // Detect NEW verification: arshinValidDate changed and is in the future + not yet notified for this date
-      const isNewVerification =
-        arshinValidDate !== null &&
-        arshinValidDate > new Date() &&
-        (
-          !eq.arshinNotifiedDate ||
-          Math.abs(arshinValidDate.getTime() - eq.arshinNotifiedDate.getTime()) > 24 * 60 * 60 * 1000
-        );
+          // Auto-update status based on Arshin dates
+          let statusUpdate: string | undefined;
+          if (arshinValidDate) {
+            const now = new Date();
+            if (arshinValidDate < now && eq.status !== "expired") {
+              statusUpdate = "expired";
+            } else if (arshinValidDate > now && eq.status === "expired") {
+              statusUpdate = "active";
+            }
+          }
 
-      await prisma.equipment.update({
-        where: { id: eq.id },
-        data: {
-          arshinValidDate,
-          arshinMismatch: mismatch,
-          arshinCheckedAt: new Date(),
-          arshinUrl,
-          mitApproved: mitResult.approved,
-          mitUrl: mitResult.mitUrl,
-          ...(isNewVerification ? { arshinNotifiedDate: arshinValidDate } : {}),
-          ...(statusUpdate ? { status: statusUpdate } : {}),
-        },
-      });
+          const isNewVerification =
+            arshinValidDate !== null &&
+            arshinValidDate > new Date() &&
+            (
+              !eq.arshinNotifiedDate ||
+              Math.abs(arshinValidDate.getTime() - eq.arshinNotifiedDate.getTime()) > 24 * 60 * 60 * 1000
+            );
 
-      if (isNewVerification && item?.validDate) {
-        newVerifItems.push({
-          name: eq.name,
-          type: eq.type,
-          serialNumber: eq.serialNumber,
-          validDate: item.validDate,
-          arshinUrl,
-        });
-      }
+          await prisma.equipment.update({
+            where: { id: eq.id },
+            data: {
+              arshinValidDate,
+              arshinMismatch: false,
+              arshinCheckedAt: new Date(),
+              arshinUrl,
+              mitApproved: mitResult.approved,
+              mitUrl: mitResult.mitUrl,
+              ...(autoNextVerification ? { nextVerification: autoNextVerification } : {}),
+              ...(autoVerificationDate ? { verificationDate: autoVerificationDate } : {}),
+              ...(isNewVerification ? { arshinNotifiedDate: arshinValidDate } : {}),
+              ...(statusUpdate ? { status: statusUpdate } : {}),
+            },
+          });
 
-      results.push({ id: eq.id, mismatch, arshinValidDate: item?.validDate ?? null, arshinUrl });
+          if (isNewVerification && item?.validDate) {
+            newVerifItems.push({
+              name: eq.name,
+              type: eq.type,
+              serialNumber: eq.serialNumber,
+              validDate: item.validDate,
+              arshinUrl,
+            });
+          }
+
+          return { id: eq.id, mismatch: false, arshinValidDate: item?.validDate ?? null, arshinUrl };
+        })
+      );
+      results.push(...batchResults);
     }
 
     // Send email notification for new verifications (use contactEmail or user email)

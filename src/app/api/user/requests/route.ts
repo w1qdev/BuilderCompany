@@ -21,17 +21,36 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const page = Number(searchParams.get("page")) || 1;
-    const limit = 20;
+    const limitParam = Number(searchParams.get("limit")) || 20;
+    const limit = Math.min(Math.max(limitParam, 1), 100);
+    const status = searchParams.get("status");
+    const search = searchParams.get("search");
+
+    // Build where clause
+    const where: Record<string, unknown> = { userId };
+
+    if (status && ["new", "in_progress", "done"].includes(status)) {
+      where.status = status;
+    }
+
+    if (search && search.trim()) {
+      const term = search.trim();
+      where.OR = [
+        { service: { contains: term, mode: "insensitive" } },
+        { name: { contains: term, mode: "insensitive" } },
+        { message: { contains: term, mode: "insensitive" } },
+      ];
+    }
 
     const [requests, total] = await Promise.all([
       prisma.request.findMany({
-        where: { userId },
+        where,
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
-        include: { items: true, files: true },
+        include: { items: { include: { equipment: { select: { id: true, name: true, status: true, nextVerification: true } } } }, files: true },
       }),
-      prisma.request.count({ where: { userId } }),
+      prisma.request.count({ where }),
     ]);
 
     return NextResponse.json({

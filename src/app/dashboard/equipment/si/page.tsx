@@ -1,8 +1,14 @@
 "use client";
 
 import EquipmentList from "@/components/EquipmentList";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function SIEquipmentPage() {
+function SIEquipmentContent() {
+  const searchParams = useSearchParams();
+  const highlightParam = searchParams.get("highlight") || searchParams.get("id");
+  const highlightId = highlightParam ? Number(highlightParam) : undefined;
+
   return (
     <EquipmentList
       title="Средства измерений"
@@ -14,6 +20,15 @@ export default function SIEquipmentPage() {
       defaultCategory="verification"
       dateLabel="Дата последней поверки"
       nextDateLabel="Дата следующей поверки"
+      highlightId={highlightId}
     />
+  );
+}
+
+export default function SIEquipmentPage() {
+  return (
+    <Suspense>
+      <SIEquipmentContent />
+    </Suspense>
   );
 }

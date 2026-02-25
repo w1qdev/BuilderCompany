@@ -139,8 +139,8 @@ export default function AdminSettingsPage() {
   const changePassword = async () => {
     setPasswordError("");
     setPasswordSuccess(false);
-    if (newPassword.length < 4) {
-      setPasswordError("Пароль должен быть не менее 4 символов");
+    if (newPassword.length < 8) {
+      setPasswordError("Пароль должен быть не менее 8 символов");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -379,8 +379,8 @@ export default function AdminSettingsPage() {
                 <button
                   onClick={() => {
                     setPasswordError("");
-                    if (newPassword.length < 4) {
-                      setPasswordError("Пароль должен быть не менее 4 символов");
+                    if (newPassword.length < 8) {
+                      setPasswordError("Пароль должен быть не менее 8 символов");
                       return;
                     }
                     if (newPassword !== confirmPassword) {

@@ -78,6 +78,7 @@ export default function ScheduleView({
   const [groups, setGroups] = useState<MonthGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingArshin, setExportingArshin] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
@@ -119,6 +120,29 @@ export default function ScheduleView({
     }
   };
 
+  const handleExportExcel = async () => {
+    try {
+      setExportingExcel(true);
+      const params = new URLSearchParams();
+      categories.forEach((c) => params.append("category", c));
+      params.set("type", exportType);
+      const res = await fetch(`/api/equipment/export-excel?${params}`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${title}_${new Date().getFullYear()}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Файл скачан");
+    } catch {
+      toast.error("Ошибка экспорта");
+    } finally {
+      setExportingExcel(false);
+    }
+  };
+
   const handleExportWordWithArshin = async () => {
     try {
       setExportingArshin(true);
@@ -156,7 +180,7 @@ export default function ScheduleView({
     const fetchSchedule = async () => {
       try {
         const params = new URLSearchParams();
-        params.set("limit", "500");
+        params.set("limit", "10000");
         categories.forEach((c) => params.append("category", c));
 
         const res = await fetch(`/api/equipment?${params}`);
@@ -339,31 +363,23 @@ export default function ScheduleView({
           </div>
           <button
             onClick={handleExportWord}
-            disabled={exporting || exportingArshin}
+            disabled={exporting || exportingArshin || exportingExcel}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark transition-colors disabled:opacity-50"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            {exporting ? "Скачивание..." : "Скачать (.docx)"}
+            {exporting ? "Скачивание..." : "Word (.docx)"}
           </button>
           <button
-            onClick={handleExportWordWithArshin}
-            disabled={exporting || exportingArshin}
-            title="Сначала проверяет актуальные даты в ФГИС Аршин, затем скачивает обновлённый график"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-400/30 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-50"
+            onClick={handleExportExcel}
+            disabled={exporting || exportingArshin || exportingExcel}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark transition-colors disabled:opacity-50"
           >
-            {exportingArshin ? (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            )}
-            {exportingArshin ? "Проверка Аршин..." : "Экспорт с проверкой Аршин"}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            {exportingExcel ? "Скачивание..." : "Excel (.xlsx)"}
           </button>
           <Link
             href={equipmentLink}
