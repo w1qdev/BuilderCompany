@@ -56,8 +56,11 @@ function DetailField({ label, value }: { label: string; value?: string | null })
 export default function RequestsPage() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <div className="flex items-center justify-center py-20" role="status" aria-label="Загрузка">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <span className="text-xs text-neutral dark:text-white/50">Загрузка...</span>
+        </div>
       </div>
     }>
       <RequestsContent />
@@ -84,6 +87,9 @@ function RequestsContent() {
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
   const searchParams = useSearchParams();
   const expandScrollRef = useRef<HTMLDivElement | null>(null);
   const didAutoExpand = useRef(false);
@@ -135,6 +141,7 @@ function RequestsContent() {
           setRequests(data.requests);
           setPage(1);
           setTotalPages(data.pages || 1);
+          setTotalCount(data.total || data.requests.length);
         }
       } catch (error) {
         console.error("Error fetching requests:", error);
@@ -187,12 +194,21 @@ function RequestsContent() {
     r.company || r.inn || r.object || r.fabricNumber || r.registry || r.poverk ||
     r.message || r.fileName || (r.files && r.files.length > 0) || r.needContract || (r.items && r.items.length > 0);
 
+  const filteredRequests = requests.filter((r) => {
+    if (dateFrom && new Date(r.createdAt) < new Date(dateFrom)) return false;
+    if (dateTo && new Date(r.createdAt) > new Date(dateTo + "T23:59:59")) return false;
+    return true;
+  });
+
   const isInitialLoad = loading && requests.length === 0 && !statusFilter && !debouncedSearch;
 
   if (isInitialLoad) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <div className="flex items-center justify-center py-20" role="status" aria-label="Загрузка">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <span className="text-xs text-neutral dark:text-white/50">Загрузка...</span>
+        </div>
       </div>
     );
   }
@@ -213,7 +229,7 @@ function RequestsContent() {
       </div>
 
       {/* Search & Filter toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral dark:text-white/40"
@@ -252,12 +268,56 @@ function RequestsContent() {
         </select>
       </div>
 
+      {/* Date filter + count */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-neutral dark:text-white/50 shrink-0">С</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-light text-sm text-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
+          />
+          <label className="text-xs text-neutral dark:text-white/50 shrink-0">По</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-light text-sm text-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(""); setDateTo(""); }}
+              className="text-xs text-neutral hover:text-primary transition-colors"
+            >
+              Сбросить
+            </button>
+          )}
+        </div>
+        <span className="text-xs text-neutral dark:text-white/50 sm:ml-auto">
+          Показано {filteredRequests.length} из {totalCount}
+        </span>
+      </div>
+
       <div className="space-y-4">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <div className="flex items-center justify-center py-12" role="status" aria-label="Загрузка">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+              <span className="text-xs text-neutral dark:text-white/50">Загрузка...</span>
+            </div>
           </div>
-        ) : requests.length === 0 ? (
+        ) : filteredRequests.length === 0 && (dateFrom || dateTo) && requests.length > 0 ? (
+          <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-8 text-center">
+            <p className="text-sm text-neutral dark:text-white/50">Нет заявок за выбранный период</p>
+            <button
+              onClick={() => { setDateFrom(""); setDateTo(""); }}
+              className="mt-2 text-sm text-primary hover:underline"
+            >
+              Сбросить фильтр дат
+            </button>
+          </div>
+        ) : filteredRequests.length === 0 ? (
           <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm">
             {statusFilter || debouncedSearch ? (
               <EmptyState
@@ -301,7 +361,7 @@ function RequestsContent() {
             )}
           </div>
         ) : (
-          requests.map((request) => {
+          filteredRequests.map((request) => {
             const isExpanded = expandedId === request.id;
             const expandable = hasDetails(request);
             const items = request.items || [];

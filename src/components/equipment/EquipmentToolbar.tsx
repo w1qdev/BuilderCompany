@@ -14,7 +14,7 @@ interface EquipmentToolbarProps {
   showIgnored: boolean;
   filterCategory: string;
   categoryOptions: { value: string; label: string }[];
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  fileInputRef: React.RefObject<HTMLInputElement>;
   onAddClick: () => void;
   onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDownloadTemplate: () => void;

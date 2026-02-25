@@ -48,6 +48,23 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateField = (field: string, value: string) => {
+    let error = "";
+    if (field === "name" && !value.trim()) error = "Введите ваше имя";
+    if (field === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = "Введите корректный email";
+    if (field === "password" && value && value.length < 8) error = "Пароль должен быть не менее 8 символов";
+    if (field === "confirmPassword" && value && value !== formData.password) error = "Пароли не совпадают";
+    setFieldErrors((prev) => {
+      if (error) return { ...prev, [field]: error };
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -294,7 +311,7 @@ export default function RegisterPage() {
                   <button
                     onClick={handleSendCode}
                     disabled={phoneSending}
-                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                   >
                     {phoneSending ? "Отправка..." : "Получить код"}
                   </button>
@@ -323,7 +340,7 @@ export default function RegisterPage() {
                   <button
                     onClick={handleVerifyCode}
                     disabled={phoneVerifying || smsCode.length !== 4}
-                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                    className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                   >
                     {phoneVerifying ? "Проверка..." : "Создать аккаунт"}
                   </button>
@@ -362,13 +379,13 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className={inputClass}
+                  onChange={(e) => { setFormData({ ...formData, name: e.target.value }); if (fieldErrors.name) validateField("name", e.target.value); }}
+                  onBlur={(e) => validateField("name", e.target.value)}
+                  className={`${inputClass} ${fieldErrors.name ? "border-red-400 dark:border-red-500" : ""}`}
                   placeholder="Иванов Иван Иванович"
                   required
                 />
+                {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
               </div>
 
               <div>
@@ -378,13 +395,13 @@ export default function RegisterPage() {
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className={inputClass}
+                  onChange={(e) => { setFormData({ ...formData, email: e.target.value }); if (fieldErrors.email) validateField("email", e.target.value); }}
+                  onBlur={(e) => validateField("email", e.target.value)}
+                  className={`${inputClass} ${fieldErrors.email ? "border-red-400 dark:border-red-500" : ""}`}
                   placeholder="example@mail.ru"
                   required
                 />
+                {fieldErrors.email && <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -422,16 +439,30 @@ export default function RegisterPage() {
                 <label className="block text-sm font-medium text-dark dark:text-white mb-1">
                   Пароль <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className={inputClass}
-                  placeholder="Минимум 6 символов"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => { setFormData({ ...formData, password: e.target.value }); if (fieldErrors.password) validateField("password", e.target.value); }}
+                    onBlur={(e) => validateField("password", e.target.value)}
+                    className={`${inputClass} ${fieldErrors.password ? "border-red-400 dark:border-red-500" : ""}`}
+                    placeholder="Минимум 8 символов"
+                    required
+                  />
+                  {fieldErrors.password && <p className="text-xs text-red-500 mt-1 pr-8">{fieldErrors.password}</p>}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white/70 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    )}
+                  </button>
+                </div>
                 {formData.password && (
                   <div className="mt-2">
                     <div className="flex gap-1 mb-1">
@@ -461,22 +492,36 @@ export default function RegisterPage() {
                 <label className="block text-sm font-medium text-dark dark:text-white mb-1">
                   Подтвердите пароль <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({ ...formData, confirmPassword: e.target.value })
-                  }
-                  className={inputClass}
-                  placeholder="Повторите пароль"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => { setFormData({ ...formData, confirmPassword: e.target.value }); if (fieldErrors.confirmPassword) validateField("confirmPassword", e.target.value); }}
+                    onBlur={(e) => validateField("confirmPassword", e.target.value)}
+                    className={`${inputClass} ${fieldErrors.confirmPassword ? "border-red-400 dark:border-red-500" : ""}`}
+                    placeholder="Повторите пароль"
+                    required
+                  />
+                  {fieldErrors.confirmPassword && <p className="text-xs text-red-500 mt-1 pr-8">{fieldErrors.confirmPassword}</p>}
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white/70 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >
                 {loading ? "Регистрация..." : "Зарегистрироваться"}
               </button>

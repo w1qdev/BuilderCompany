@@ -11,6 +11,17 @@ interface Notification {
   description: string;
   href: string;
   urgent?: boolean;
+  createdAt: number;
+}
+
+function timeAgo(ts: number): string {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "только что";
+  if (mins < 60) return `${mins} мин назад`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} ч назад`;
+  return "сегодня";
 }
 
 const STORAGE_KEY = "notifications_read";
@@ -46,6 +57,8 @@ export default function NotificationBell() {
 
       const items: Notification[] = [];
 
+      const now = Date.now();
+
       if (data.overdueItems > 0) {
         items.push({
           id: "overdue",
@@ -54,6 +67,7 @@ export default function NotificationBell() {
           description: "Требуется срочная поверка",
           href: "/dashboard/equipment/si",
           urgent: true,
+          createdAt: now,
         });
       }
 
@@ -65,6 +79,7 @@ export default function NotificationBell() {
           title: `${upcomingCount} ед. — поверка в ближайшие 30 дней`,
           description: "Рекомендуем оформить заявку заранее",
           href: "/dashboard/schedule/si",
+          createdAt: now,
         });
       }
 
@@ -76,6 +91,7 @@ export default function NotificationBell() {
           title: `${inProgressCount} заявки в работе`,
           description: "Статус ваших заявок обновился",
           href: "/dashboard/requests",
+          createdAt: now,
         });
       }
 
@@ -137,7 +153,7 @@ export default function NotificationBell() {
             setReadIds(new Set(allIds));
           }
         }}
-        className="relative p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+        className="relative p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
         aria-label="Уведомления"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,6 +207,7 @@ export default function NotificationBell() {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-dark dark:text-white leading-tight">{n.title}</p>
                       <p className="text-xs text-neutral dark:text-white/50 mt-0.5">{n.description}</p>
+                      <p className="text-xs text-neutral/60 dark:text-white/30 mt-0.5">{timeAgo(n.createdAt)}</p>
                     </div>
                   </Link>
                 </li>

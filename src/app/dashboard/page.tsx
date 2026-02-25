@@ -606,8 +606,8 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Onboarding for new users */}
-      {stats.totalEquipment === 0 && recentRequests.length === 0 && (
+      {/* Onboarding for new users — hide if stepper is showing */}
+      {stats.totalEquipment === 0 && recentRequests.length === 0 && typeof window !== "undefined" && localStorage.getItem("onboarding_completed") === "true" && (
         <div className="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/5 border border-primary/20 rounded-2xl p-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center shrink-0">

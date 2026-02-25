@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const services = ["Поверка СИ", "Калибровка", "Аттестация", "Другое"];
 const poverkOptions = ["Первичная", "Периодическая"];
@@ -37,6 +37,7 @@ interface ContactFormProps {
     fabricNumber?: string;
     registry?: string;
   };
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 enum UploadProgressEnums {
@@ -115,6 +116,7 @@ export default function ContactForm({
   onSuccess,
   showEquipmentCheckbox = false,
   initialValues,
+  onDirtyChange,
 }: ContactFormProps) {
   const maxAllowedFileSizeInBytes = 10 * 1024 * 1024;
   const maxFiles = 5;
@@ -147,6 +149,29 @@ export default function ContactForm({
   const [errorMsg, setErrorMsg] = useState("");
   const [needContract, setNeedContract] = useState(false);
   const [addEquipment, setAddEquipment] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateContactField = (field: string, value: string) => {
+    let error = "";
+    if (field === "name" && !value.trim()) error = "Введите ваше имя";
+    if (field === "phone" && value) {
+      const digits = value.replace(/\D/g, "");
+      if (digits.length < 11) error = "Введите корректный номер телефона";
+    }
+    if (field === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = "Введите корректный email";
+    setFieldErrors((prev) => {
+      if (error) return { ...prev, [field]: error };
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  // Track form dirtiness
+  useEffect(() => {
+    const isDirty = !!(form.name || form.phone || form.email || form.company || form.inn || form.message || files.length > 0);
+    onDirtyChange?.(isDirty);
+  }, [form, files, onDirtyChange]);
 
   const updateItem = (id: string, updates: Partial<ServiceItem>) => {
     setServiceItems((prev) =>
@@ -370,8 +395,11 @@ export default function ContactForm({
             placeholder="Иванов Иван"
             required
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) validateContactField("name", e.target.value); }}
+            onBlur={(e) => validateContactField("name", e.target.value)}
+            className={fieldErrors.name ? "border-red-400 dark:border-red-500" : ""}
           />
+          {fieldErrors.name && <p className="text-xs text-red-500">{fieldErrors.name}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="contact-phone">
@@ -383,10 +411,11 @@ export default function ContactForm({
             placeholder="+7 (___) ___-__-__"
             required
             value={form.phone}
-            onChange={(e) =>
-              setForm({ ...form, phone: formatPhone(e.target.value) })
-            }
+            onChange={(e) => { setForm({ ...form, phone: formatPhone(e.target.value) }); if (fieldErrors.phone) validateContactField("phone", formatPhone(e.target.value)); }}
+            onBlur={(e) => validateContactField("phone", e.target.value)}
+            className={fieldErrors.phone ? "border-red-400 dark:border-red-500" : ""}
           />
+          {fieldErrors.phone && <p className="text-xs text-red-500">{fieldErrors.phone}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="contact-email">
@@ -398,8 +427,11 @@ export default function ContactForm({
             placeholder="email@example.com"
             required
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            onChange={(e) => { setForm({ ...form, email: e.target.value }); if (fieldErrors.email) validateContactField("email", e.target.value); }}
+            onBlur={(e) => validateContactField("email", e.target.value)}
+            className={fieldErrors.email ? "border-red-400 dark:border-red-500" : ""}
           />
+          {fieldErrors.email && <p className="text-xs text-red-500">{fieldErrors.email}</p>}
         </div>
       </div>
 

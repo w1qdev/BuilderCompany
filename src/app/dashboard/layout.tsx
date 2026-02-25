@@ -5,6 +5,7 @@ import CommandSearch from "@/components/CommandSearch";
 import Logo from "@/components/Logo";
 import NotificationBell from "@/components/NotificationBell";
 import { useTheme } from "@/components/ThemeProvider";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -196,10 +197,25 @@ export default function DashboardLayout({
   const isToolActive = toolPaths.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
-  const [toolsOpen, setToolsOpen] = useState(isToolActive);
+  const [toolsOpen, setToolsOpen] = useState(() => {
+    if (typeof window === "undefined") return isToolActive;
+    const saved = localStorage.getItem("sidebar_tools_open");
+    return saved !== null ? saved === "true" : isToolActive;
+  });
+
+  const handleToolsToggle = () => {
+    setToolsOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar_tools_open", String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
-    if (isToolActive) setToolsOpen(true);
+    if (isToolActive) {
+      setToolsOpen(true);
+      localStorage.setItem("sidebar_tools_open", "true");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -252,7 +268,10 @@ export default function DashboardLayout({
   if (loading) {
     return (
       <div className="min-h-screen bg-warm-bg dark:bg-dark flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <div role="status" aria-label="Загрузка" className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <span className="text-xs text-neutral dark:text-white/50">Загрузка...</span>
+        </div>
       </div>
     );
   }
@@ -304,7 +323,7 @@ export default function DashboardLayout({
             {/* Mobile menu button */}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              className="lg:hidden p-1.5 rounded-lg hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             >
               <svg
                 className="w-5 h-5"
@@ -351,7 +370,7 @@ export default function DashboardLayout({
             {/* Dark theme toggle */}
             <button
               onClick={toggleTheme}
-              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
             >
               {theme === "dark" ? (
@@ -386,7 +405,7 @@ export default function DashboardLayout({
             </div>
             <button
               onClick={handleLogout}
-              className="text-sm text-white/60 hover:text-white transition-colors"
+              className="text-sm text-white/60 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded"
             >
               Выйти
             </button>
@@ -396,12 +415,18 @@ export default function DashboardLayout({
 
       <div className="flex">
         {/* Sidebar overlay for mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Sidebar */}
         <aside
@@ -425,7 +450,7 @@ export default function DashboardLayout({
                 return (
                   <div key={index} className="pt-4">
                     <button
-                      onClick={() => setToolsOpen(!toolsOpen)}
+                      onClick={handleToolsToggle}
                       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                         isToolActive && !toolsOpen
                           ? "text-primary dark:text-primary"
@@ -547,64 +572,85 @@ export default function DashboardLayout({
         {/* Main content */}
         <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           {pathname !== "/dashboard" && breadcrumbMap[pathname] && (
-            <nav className="flex items-center gap-1.5 text-sm text-neutral dark:text-white/40 mb-4">
-              <Link
-                href="/dashboard"
-                className="hover:text-primary transition-colors"
-              >
-                Обзор
-              </Link>
-              <svg
-                className="w-3.5 h-3.5 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-              {(() => {
-                const parts = pathname.split("/").filter(Boolean);
-                if (parts.length > 2) {
-                  const parent = "/" + parts.slice(0, 2).join("/");
-                  if (breadcrumbMap[parent]) {
-                    return (
-                      <>
-                        <Link
-                          href={parent}
-                          className="hover:text-primary transition-colors"
-                        >
-                          {breadcrumbMap[parent]}
-                        </Link>
-                        <svg
-                          className="w-3.5 h-3.5 shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </>
-                    );
+            <nav aria-label="Навигация" className="flex items-center gap-1.5 text-sm text-neutral dark:text-white/40 mb-4">
+              <ol className="flex items-center gap-1.5">
+                <li>
+                  <Link
+                    href="/dashboard"
+                    className="hover:text-primary transition-colors"
+                  >
+                    Обзор
+                  </Link>
+                </li>
+                <li aria-hidden="true">
+                  <svg
+                    className="w-3.5 h-3.5 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </li>
+                {(() => {
+                  const parts = pathname.split("/").filter(Boolean);
+                  if (parts.length > 2) {
+                    const parent = "/" + parts.slice(0, 2).join("/");
+                    if (breadcrumbMap[parent]) {
+                      return (
+                        <>
+                          <li>
+                            <Link
+                              href={parent}
+                              className="hover:text-primary transition-colors"
+                            >
+                              {breadcrumbMap[parent]}
+                            </Link>
+                          </li>
+                          <li aria-hidden="true">
+                            <svg
+                              className="w-3.5 h-3.5 shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </li>
+                        </>
+                      );
+                    }
                   }
-                }
-                return null;
-              })()}
-              <span className="text-dark dark:text-white/70 font-medium">
-                {breadcrumbMap[pathname]}
-              </span>
+                  return null;
+                })()}
+                <li aria-current="page">
+                  <span className="text-dark dark:text-white/70 font-medium">
+                    {breadcrumbMap[pathname]}
+                  </span>
+                </li>
+              </ol>
             </nav>
           )}
-          {children}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

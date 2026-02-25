@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ContactForm from "./ContactForm";
 import { Portal } from "./ui/Portal";
 
@@ -24,11 +24,35 @@ export default function Modal({
   showEquipmentCheckbox = false,
   initialValues,
 }: ModalProps) {
+  const [isDirty, setIsDirty] = useState(false);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+
+  const handleDirtyChange = useCallback((dirty: boolean) => {
+    setIsDirty(dirty);
+  }, []);
+
+  const handleClose = () => {
+    if (isDirty) {
+      setShowConfirmClose(true);
+    } else {
+      setShowConfirmClose(false);
+      onClose();
+    }
+  };
+
+  const confirmClose = () => {
+    setShowConfirmClose(false);
+    setIsDirty(false);
+    onClose();
+  };
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
+      setShowConfirmClose(false);
+      setIsDirty(false);
     }
     return () => {
       document.body.style.overflow = "";
@@ -45,7 +69,7 @@ export default function Modal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
 
@@ -59,7 +83,7 @@ export default function Modal({
           >
             {/* Close button */}
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors z-10"
             >
               <svg
@@ -107,10 +131,33 @@ export default function Modal({
                 </p>
               </div>
 
+              {showConfirmClose && (
+                <div className="mb-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-xl p-4">
+                  <p className="text-sm font-medium text-dark dark:text-white mb-3">
+                    Закрыть форму? Несохранённые данные будут потеряны.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={confirmClose}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
+                    >
+                      Закрыть
+                    </button>
+                    <button
+                      onClick={() => setShowConfirmClose(false)}
+                      className="px-4 py-2 border border-gray-200 dark:border-white/10 rounded-lg text-sm font-medium text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    >
+                      Продолжить заполнение
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <ContactForm
                 onSuccess={onSuccess || onClose}
                 showEquipmentCheckbox={showEquipmentCheckbox}
                 initialValues={initialValues}
+                onDirtyChange={handleDirtyChange}
               />
             </div>
           </motion.div>

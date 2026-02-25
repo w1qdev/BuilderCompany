@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { Portal } from "./ui/Portal";
@@ -70,15 +71,26 @@ export default function OnboardingStepper({ userName }: OnboardingStepperProps) 
 
   return (
     <Portal>
+    <AnimatePresence>
+    {visible && (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-dark-light rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="relative bg-white dark:bg-dark-light rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+      >
         {/* Close button */}
         <button
           onClick={handleClose}
@@ -102,64 +114,76 @@ export default function OnboardingStepper({ userName }: OnboardingStepperProps) 
         </div>
 
         <div className="px-6 pb-6">
-          {/* Icon */}
-          <div className="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center text-white mb-4">
-            {current.icon}
-          </div>
-
-          {/* Step number */}
-          <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
-            Шаг {step + 1} из {steps.length}
-          </p>
-
-          {/* Title */}
-          <h2 className="text-xl font-bold text-dark dark:text-white mb-2">
-            {step === 0 && userName
-              ? `${userName}, давайте начнём!`
-              : current.title}
-          </h2>
-          {step === 0 && userName && (
-            <p className="text-sm font-semibold text-dark dark:text-white/80 mb-2">{current.title}</p>
-          )}
-
-          {/* Description */}
-          <p className="text-sm text-neutral dark:text-white/60 mb-6 leading-relaxed">
-            {current.description}
-          </p>
-
-          {/* Actions */}
-          <div className="flex flex-wrap gap-3">
-            {current.action && (
-              <Link
-                href={current.action.href}
-                onClick={handleClose}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors"
-              >
-                {current.action.label}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            )}
-            {current.secondaryAction && (
-              <Link
-                href={current.secondaryAction.href}
-                onClick={handleClose}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-dark text-dark dark:text-white border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-              >
-                {current.secondaryAction.label}
-              </Link>
-            )}
-            <button
-              onClick={handleNext}
-              className="ml-auto text-sm text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/70 transition-colors"
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
             >
-              {step < steps.length - 1 ? "Далее →" : "Готово"}
-            </button>
-          </div>
+              {/* Icon */}
+              <div className="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center text-white mb-4">
+                {current.icon}
+              </div>
+
+              {/* Step number */}
+              <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+                Шаг {step + 1} из {steps.length}
+              </p>
+
+              {/* Title */}
+              <h2 className="text-xl font-bold text-dark dark:text-white mb-2">
+                {step === 0 && userName
+                  ? `${userName}, давайте начнём!`
+                  : current.title}
+              </h2>
+              {step === 0 && userName && (
+                <p className="text-sm font-semibold text-dark dark:text-white/80 mb-2">{current.title}</p>
+              )}
+
+              {/* Description */}
+              <p className="text-sm text-neutral dark:text-white/60 mb-6 leading-relaxed">
+                {current.description}
+              </p>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-3">
+                {current.action && (
+                  <Link
+                    href={current.action.href}
+                    onClick={handleClose}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors"
+                  >
+                    {current.action.label}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                )}
+                {current.secondaryAction && (
+                  <Link
+                    href={current.secondaryAction.href}
+                    onClick={handleClose}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-dark text-dark dark:text-white border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    {current.secondaryAction.label}
+                  </Link>
+                )}
+                <button
+                  onClick={handleNext}
+                  className="ml-auto text-sm text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white/70 transition-colors"
+                >
+                  {step < steps.length - 1 ? "Далее →" : "Готово"}
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
     </div>
+    )}
+    </AnimatePresence>
     </Portal>
   );
 }
