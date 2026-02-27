@@ -61,6 +61,7 @@ interface AdminRequest {
   markup: number | null;
   clientPrice: number | null;
   needContract: boolean;
+  assignee: string | null;
   items?: ServiceItemData[];
 }
 
@@ -68,19 +69,33 @@ interface Stats {
   total: number;
   new: number;
   in_progress: number;
+  pending_payment: number;
+  review: number;
   done: number;
+  cancelled: number;
 }
 
 const statusLabels: Record<
   string,
-  { label: string; variant: "new" | "in_progress" | "done" }
+  { label: string; variant: "new" | "in_progress" | "pending_payment" | "review" | "done" | "cancelled" }
 > = {
   new: { label: "Новая", variant: "new" },
   in_progress: { label: "В работе", variant: "in_progress" },
+  pending_payment: { label: "Ожидает оплаты", variant: "pending_payment" },
+  review: { label: "На проверке", variant: "review" },
   done: { label: "Завершена", variant: "done" },
+  cancelled: { label: "Отменена", variant: "cancelled" },
 };
 
-const statusCycle = ["new", "in_progress", "done"];
+const statusCycle = ["new", "in_progress", "pending_payment", "review", "done", "cancelled"];
+
+const RESPONSE_TEMPLATES = [
+  { label: "Принято в работу", text: "Ваша заявка принята в работу. Мы свяжемся с вами в ближайшее время для уточнения деталей." },
+  { label: "Запрос документов", text: "Для обработки заявки нам необходимы дополнительные документы. Пожалуйста, предоставьте копии свидетельств о поверке." },
+  { label: "Готово к выдаче", text: "Работы по вашей заявке завершены. Документы готовы к выдаче. Свяжитесь с нами для получения." },
+  { label: "Ожидание оплаты", text: "Счёт на оплату направлен на вашу электронную почту. После оплаты мы приступим к выполнению работ." },
+  { label: "Уточнение данных", text: "Просим уточнить данные по заявке: наименование СИ, заводской номер и номер в реестре ФИФ." },
+];
 
 type SortField = "createdAt" | "name" | "service" | "status";
 
@@ -114,6 +129,8 @@ export default function AdminPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [exportPeriod, setExportPeriod] = useState("");
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+  const [draggedRequest, setDraggedRequest] = useState<AdminRequest | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editingPricing, setEditingPricing] = useState<{
     [key: number]: {
@@ -122,6 +139,9 @@ export default function AdminPage() {
       markup: string;
     };
   }>({});
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [clientHistory, setClientHistory] = useState<{ email: string; requests: AdminRequest[] } | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -208,6 +228,30 @@ export default function AdminPage() {
       });
       setTotal((prev) => prev + 1);
       fetchStats();
+
+      // Sound notification
+      if (soundEnabled) {
+        try {
+          if (!audioRef.current) {
+            audioRef.current = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGdCPFmGtN3LfVBCS3ORwNbEd0lCSHKNudTKe0tESW2JtNDMgE5FS2mEr87OhVBGS2d/q8vRilJHS2V7p8jTj1VIS2N3o8XVlFhJS2FznMLYmVtLTF9vm7/boF5NTF1rlrvdpWFOTVtolbfgqmRQTlllkLPjr2dST1dhiqvmtWtUUFZdg6fovnBXUVVafKHrw3RZU1RWdJrnyHlcVVRTbZPjzX9gV1VRZozf0oVjWVZPX4Xb1oxnXFdNV37W2pNrYFlNUHfR3ZpyZFpMSHDM4KB3aFxKQWnF5KZ9bF5IP2K+6K2Db2BHOlu37LOKc2JGNFS07rmRd2VFMk2u8cCYfGlELkao7sigiG1CKD+h6dCok3NEIzib5NmynntDHTOT39+5poZCFyyM2uXEsZFBFCSF0uy/t5s/");
+          }
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => {});
+        } catch {}
+      }
+
+      // Browser notification
+      if (Notification.permission === "granted") {
+        new Notification("Новая заявка", {
+          body: `${request.name} — ${request.service}`,
+          icon: "/favicon.ico",
+        });
+      }
+
+      toast.success("Новая заявка!", {
+        description: `${request.name} — ${request.service}`,
+        duration: 5000,
+      });
     });
 
     socket.on("request-update", (updated: AdminRequest) => {
@@ -463,6 +507,42 @@ export default function AdminPage() {
     }
   };
 
+  const handleAssigneeChange = async (id: number, assignee: string) => {
+    try {
+      const res = await fetch(`/api/admin/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({ assignee: assignee || null }),
+      });
+      if (res.ok) {
+        setRequests((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, assignee: assignee || null } : r)),
+        );
+        toast.success("Исполнитель назначен");
+      }
+    } catch {
+      toast.error("Ошибка назначения исполнителя");
+    }
+  };
+
+  const fetchClientHistory = async (email: string) => {
+    try {
+      const params = new URLSearchParams({ search: email, export: "true" });
+      const res = await fetch(`/api/admin?${params}`, {
+        headers: { "x-admin-password": password },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setClientHistory({ email, requests: data.requests });
+      }
+    } catch {
+      toast.error("Ошибка загрузки истории клиента");
+    }
+  };
+
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -602,12 +682,28 @@ export default function AdminPage() {
       iconBg: "bg-yellow-200 text-yellow-600",
     },
     {
+      key: "pending_payment",
+      label: "Ожидает оплаты",
+      value: stats?.pending_payment ?? 0,
+      icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
+      bg: "bg-orange-50",
+      iconBg: "bg-orange-200 text-orange-600",
+    },
+    {
       key: "done",
       label: "Завершены",
       value: stats?.done ?? 0,
       icon: "M5 13l4 4L19 7",
       bg: "bg-green-50",
       iconBg: "bg-green-200 text-green-600",
+    },
+    {
+      key: "cancelled",
+      label: "Отменены",
+      value: stats?.cancelled ?? 0,
+      icon: "M6 18L18 6M6 6l12 12",
+      bg: "bg-red-50",
+      iconBg: "bg-red-200 text-red-600",
     },
   ];
 
@@ -679,7 +775,7 @@ export default function AdminPage() {
             className="pl-10 bg-white"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Socket.IO indicator */}
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-gray-200">
             <div
@@ -689,6 +785,33 @@ export default function AdminPage() {
               {connected ? "Онлайн" : "Оффлайн"}
             </span>
           </div>
+          {/* Sound toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={`px-3 py-2 rounded-xl border transition-colors ${soundEnabled ? "bg-white border-gray-200 text-neutral hover:bg-gray-50" : "bg-gray-100 border-gray-300 text-gray-400"}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {soundEnabled ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                  )}
+                </svg>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{soundEnabled ? "Звук включён" : "Звук выключен"}</TooltipContent>
+          </Tooltip>
+          {/* Browser notification permission */}
+          {typeof Notification !== "undefined" && Notification.permission !== "granted" && (
+            <button
+              onClick={() => Notification.requestPermission()}
+              className="px-3 py-2 rounded-xl text-xs font-medium bg-white text-neutral hover:bg-gray-50 transition-colors border border-gray-200"
+            >
+              Включить уведомления
+            </button>
+          )}
           <button
             onClick={fetchRequests}
             className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-colors border border-gray-200"
@@ -714,6 +837,46 @@ export default function AdminPage() {
             </svg>
             <span className="hidden sm:inline">Экспорт</span> CSV
           </button>
+          <button
+            onClick={async () => {
+              toast.loading("Формирование Excel...", { id: "bulk-excel" });
+              try {
+                const params = new URLSearchParams();
+                if (filter !== "all") params.set("status", filter);
+                if (search) params.set("search", search);
+                if (exportPeriod) {
+                  const now = new Date();
+                  let dateFrom: Date | null = null;
+                  if (exportPeriod === "week") dateFrom = new Date(now.getTime() - 7 * 86400000);
+                  else if (exportPeriod === "month") dateFrom = new Date(now.getTime() - 30 * 86400000);
+                  else if (exportPeriod === "quarter") dateFrom = new Date(now.getTime() - 90 * 86400000);
+                  if (dateFrom) params.set("dateFrom", dateFrom.toISOString());
+                }
+                const res = await fetch(`/api/admin/export/bulk?${params}`, {
+                  headers: { "x-admin-password": password },
+                });
+                if (!res.ok) throw new Error();
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                const cd = res.headers.get("Content-Disposition");
+                const match = cd?.match(/filename\*=UTF-8''(.+)/);
+                a.download = match ? decodeURIComponent(match[1]) : "export.xlsx";
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success("Excel скачан", { id: "bulk-excel" });
+              } catch {
+                toast.error("Ошибка экспорта", { id: "bulk-excel" });
+              }
+            }}
+            className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors border border-green-200 flex items-center justify-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="hidden sm:inline">Экспорт</span> Excel
+          </button>
           <select
             value={exportPeriod}
             onChange={(e) => setExportPeriod(e.target.value)}
@@ -724,6 +887,31 @@ export default function AdminPage() {
             <option value="month">За месяц</option>
             <option value="quarter">За квартал</option>
           </select>
+          {/* View mode toggle */}
+          <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`px-3 py-2 transition-colors ${viewMode === "table" ? "bg-primary text-white" : "bg-white text-neutral hover:bg-gray-50"}`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Таблица</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setViewMode("kanban")}
+                  className={`px-3 py-2 transition-colors ${viewMode === "kanban" ? "bg-primary text-white" : "bg-white text-neutral hover:bg-gray-50"}`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Канбан</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
 
@@ -758,7 +946,10 @@ export default function AdminPage() {
           { value: "all", label: "Все" },
           { value: "new", label: "Новые" },
           { value: "in_progress", label: "В работе" },
+          { value: "pending_payment", label: "Ожидает оплаты" },
+          { value: "review", label: "На проверке" },
           { value: "done", label: "Завершены" },
+          { value: "cancelled", label: "Отменены" },
         ].map((f) => (
           <button
             key={f.value}
@@ -783,6 +974,74 @@ export default function AdminPage() {
       ) : requests.length === 0 ? (
         <div className="text-center py-20 text-neutral">
           Заявок пока нет
+        </div>
+      ) : viewMode === "kanban" ? (
+        /* Kanban Board */
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 overflow-x-auto">
+          {statusCycle.map((status) => {
+            const columnRequests = requests.filter((r) => r.status === status);
+            const label = statusLabels[status];
+            return (
+              <div
+                key={status}
+                className="bg-gray-50 rounded-2xl p-3 min-w-[220px] min-h-[300px]"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  if (!draggedRequest || draggedRequest.status === status) return;
+                  const reqId = draggedRequest.id;
+                  setRequests((prev) => prev.map((r) => r.id === reqId ? { ...r, status } : r));
+                  try {
+                    const res = await fetch(`/api/admin/${reqId}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json", "x-admin-password": password },
+                      body: JSON.stringify({ status }),
+                    });
+                    if (res.ok) {
+                      fetchStats();
+                      toast.success(`Статус изменён: ${label?.label}`);
+                    } else {
+                      setRequests((prev) => prev.map((r) => r.id === reqId ? { ...r, status: draggedRequest.status } : r));
+                    }
+                  } catch {
+                    setRequests((prev) => prev.map((r) => r.id === reqId ? { ...r, status: draggedRequest.status } : r));
+                  }
+                  setDraggedRequest(null);
+                }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <Badge variant={label?.variant || "default"}>
+                    {label?.label || status}
+                  </Badge>
+                  <span className="text-xs text-neutral font-medium">{columnRequests.length}</span>
+                </div>
+                <div className="space-y-2">
+                  {columnRequests.map((r) => (
+                    <div
+                      key={r.id}
+                      draggable
+                      onDragStart={() => setDraggedRequest(r)}
+                      onDragEnd={() => setDraggedRequest(null)}
+                      onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                      className={`bg-white rounded-xl p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow border border-gray-100 ${draggedRequest?.id === r.id ? "opacity-50" : ""}`}
+                    >
+                      <div className="font-medium text-dark text-sm truncate">{r.company || r.name}</div>
+                      <div className="text-xs text-neutral mt-1 truncate">{r.service}</div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-neutral">{formatDate(r.createdAt)}</span>
+                        {r.assignee && (
+                          <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{r.assignee}</span>
+                        )}
+                      </div>
+                      {r.clientPrice && (
+                        <div className="text-xs font-medium text-primary mt-1">{r.clientPrice.toFixed(2)} ₽</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <>
@@ -1017,6 +1276,71 @@ export default function AdminPage() {
                       </div>
                     </div>
 
+                    {/* Quick actions mobile */}
+                    <div className="pt-3 border-t border-gray-200">
+                      <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">Быстрые действия</div>
+                      <div className="flex flex-wrap gap-2">
+                        <a href={`tel:${r.phone}`} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-green-50 text-green-700">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                          Позвонить
+                        </a>
+                        <a href={`mailto:${r.email}`} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          Написать
+                        </a>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${r.name}, ${r.phone}, ${r.email}`);
+                            toast.success("Скопировано");
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-50 text-gray-700"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                          Копировать
+                        </button>
+                      </div>
+                      {/* Assignee mobile */}
+                      <div className="mt-3">
+                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Исполнитель</div>
+                        <Input
+                          placeholder="Имя исполнителя..."
+                          defaultValue={r.assignee || ""}
+                          onBlur={(e) => {
+                            if (e.target.value !== (r.assignee || "")) {
+                              handleAssigneeChange(r.id, e.target.value);
+                            }
+                          }}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      {/* Status dropdown mobile */}
+                      <div className="mt-3">
+                        <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">Изменить статус</div>
+                        <Select
+                          value={r.status}
+                          onValueChange={(value) => {
+                            fetch(`/api/admin/${r.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json", "x-admin-password": password },
+                              body: JSON.stringify({ status: value }),
+                            }).then((res) => {
+                              if (res.ok) {
+                                setRequests((prev) => prev.map((req) => req.id === r.id ? { ...req, status: value } : req));
+                                fetchStats();
+                              }
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {statusCycle.map((s) => (
+                              <SelectItem key={s} value={s}>{statusLabels[s]?.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     {/* Actions */}
                     <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-200">
                       <div className="relative">
@@ -1100,28 +1424,21 @@ export default function AdminPage() {
             <span className="text-sm font-medium text-primary">
               Выбрано: {selectedIds.size}
             </span>
-            <div className="flex items-center gap-2 ml-auto">
-              <button
-                onClick={() => handleBulkStatus("new")}
-                disabled={bulkLoading}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50"
-              >
-                → Новая
-              </button>
-              <button
-                onClick={() => handleBulkStatus("in_progress")}
-                disabled={bulkLoading}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition-colors disabled:opacity-50"
-              >
-                → В работе
-              </button>
-              <button
-                onClick={() => handleBulkStatus("done")}
-                disabled={bulkLoading}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50"
-              >
-                → Завершена
-              </button>
+            <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {statusCycle.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => handleBulkStatus(s)}
+                  disabled={bulkLoading}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                  style={{
+                    backgroundColor: s === "new" ? "#dbeafe" : s === "in_progress" ? "#fef3c7" : s === "pending_payment" ? "#ffedd5" : s === "review" ? "#f3e8ff" : s === "done" ? "#dcfce7" : "#fee2e2",
+                    color: s === "new" ? "#1d4ed8" : s === "in_progress" ? "#a16207" : s === "pending_payment" ? "#c2410c" : s === "review" ? "#7c3aed" : s === "done" ? "#15803d" : "#dc2626",
+                  }}
+                >
+                  → {statusLabels[s]?.label}
+                </button>
+              ))}
               <button
                 onClick={handleBulkDelete}
                 disabled={bulkLoading}
@@ -1232,7 +1549,7 @@ export default function AdminPage() {
                       key={`${r.id}-detail`}
                       className="border-t border-gray-100"
                     >
-                      <TableCell colSpan={7} className="bg-warm-bg/30">
+                      <TableCell colSpan={8} className="bg-warm-bg/30">
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div>
                             <div className="text-xs text-neutral mb-1 font-medium uppercase tracking-wide">
@@ -1611,6 +1928,135 @@ export default function AdminPage() {
                           </div>
                         </div>
 
+                        {/* Quick actions + Assignee + Templates */}
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                          <div className="grid lg:grid-cols-3 gap-6">
+                            {/* Quick actions */}
+                            <div>
+                              <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">Быстрые действия</div>
+                              <div className="flex flex-wrap gap-2">
+                                <a
+                                  href={`tel:${r.phone}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                  Позвонить
+                                </a>
+                                <a
+                                  href={`mailto:${r.email}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                  Написать
+                                </a>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(`${r.name}, ${r.phone}, ${r.email}${r.company ? `, ${r.company}` : ""}`);
+                                    toast.success("Контакт скопирован");
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                  Копировать
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    fetchClientHistory(r.email);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                  История клиента
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Assignee */}
+                            <div>
+                              <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">Исполнитель</div>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  placeholder="Имя исполнителя..."
+                                  defaultValue={r.assignee || ""}
+                                  onBlur={(e) => {
+                                    if (e.target.value !== (r.assignee || "")) {
+                                      handleAssigneeChange(r.id, e.target.value);
+                                    }
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      (e.target as HTMLInputElement).blur();
+                                    }
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Status dropdown */}
+                            <div>
+                              <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">Изменить статус</div>
+                              <Select
+                                value={r.status}
+                                onValueChange={(value) => {
+                                  fetch(`/api/admin/${r.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json", "x-admin-password": password },
+                                    body: JSON.stringify({ status: value }),
+                                  }).then((res) => {
+                                    if (res.ok) {
+                                      setRequests((prev) => prev.map((req) => req.id === r.id ? { ...req, status: value } : req));
+                                      fetchStats();
+                                      toast.success(`Статус изменён: ${statusLabels[value]?.label}`);
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="h-8 text-sm" onClick={(e) => e.stopPropagation()}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {statusCycle.map((s) => (
+                                    <SelectItem key={s} value={s}>{statusLabels[s]?.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Response templates */}
+                        <div className="mt-4">
+                          <div className="text-xs text-neutral mb-2 font-medium uppercase tracking-wide">Шаблоны ответов</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {RESPONSE_TEMPLATES.map((tmpl, idx) => (
+                              <button
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingPricing((prev) => ({
+                                    ...prev,
+                                    [r.id]: {
+                                      adminNotes: (prev[r.id]?.adminNotes ?? (r.adminNotes || "")) + (prev[r.id]?.adminNotes || r.adminNotes ? "\n" : "") + tmpl.text,
+                                      executorPrice: prev[r.id]?.executorPrice ?? (r.executorPrice?.toString() || ""),
+                                      markup: prev[r.id]?.markup ?? (r.markup?.toString() || ""),
+                                    },
+                                  }));
+                                  toast.success(`Шаблон "${tmpl.label}" добавлен`);
+                                }}
+                                className="px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                              >
+                                {tmpl.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         <div className="mt-4 flex items-center gap-2">
                           <div className="relative">
                             <button
@@ -1740,6 +2186,49 @@ export default function AdminPage() {
           )}
         </div>
         </>
+      )}
+      {/* Client History Modal */}
+      {clientHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setClientHistory(null)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div>
+                <h3 className="font-semibold text-dark">История клиента</h3>
+                <p className="text-sm text-neutral">{clientHistory.email} — {clientHistory.requests.length} заявок</p>
+              </div>
+              <button onClick={() => setClientHistory(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <svg className="w-5 h-5 text-neutral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh] space-y-3">
+              {clientHistory.requests.length === 0 ? (
+                <div className="text-center py-8 text-neutral">Заявок не найдено</div>
+              ) : (
+                clientHistory.requests.map((req) => (
+                  <div key={req.id} className="bg-warm-bg/50 rounded-xl p-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-dark">#{req.id} — {req.service}</span>
+                      <Badge variant={statusLabels[req.status]?.variant || "default"}>
+                        {statusLabels[req.status]?.label || req.status}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-neutral">{formatDate(req.createdAt)}</div>
+                    {req.message && <div className="text-sm text-dark mt-1">{req.message}</div>}
+                    {req.clientPrice && (
+                      <div className="text-sm font-medium text-primary">{req.clientPrice.toFixed(2)} ₽</div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </TooltipProvider>
   );

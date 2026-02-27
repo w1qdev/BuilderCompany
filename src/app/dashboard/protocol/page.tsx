@@ -237,7 +237,7 @@ export default function ProtocolPage() {
 
         <div>
           <label className="block text-xs font-medium text-neutral mb-1">Методика поверки</label>
-          <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.method} onChange={(e) => updateField("method", e.target.value)} placeholder="МИ 2124-90, ГОСТ 8.529-85" />
+          <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.method} onChange={(e) => updateField("method", e.target.value)} placeholder="Методика поверки" />
         </div>
 
         <div>

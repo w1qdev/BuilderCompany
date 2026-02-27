@@ -17,7 +17,10 @@ const badgeVariants = cva(
         outline: "text-foreground",
         new: "border-transparent bg-blue-100 text-blue-700",
         in_progress: "border-transparent bg-yellow-100 text-yellow-700",
+        pending_payment: "border-transparent bg-orange-100 text-orange-700",
+        review: "border-transparent bg-purple-100 text-purple-700",
         done: "border-transparent bg-green-100 text-green-700",
+        cancelled: "border-transparent bg-red-100 text-red-700",
       },
     },
     defaultVariants: {

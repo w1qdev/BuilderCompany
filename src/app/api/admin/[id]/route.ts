@@ -17,7 +17,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { status, adminNotes, executorPrice, markup } = body;
+  const { status, adminNotes, executorPrice, markup, assignee } = body;
 
   // Build update data object with validated fields
   const updateData: {
@@ -26,14 +26,20 @@ export async function PATCH(
     executorPrice?: number | null;
     markup?: number | null;
     clientPrice?: number | null;
+    assignee?: string | null;
   } = {};
 
   // Validate and add status
   if (status !== undefined) {
-    if (!["new", "in_progress", "done"].includes(status)) {
+    if (!["new", "in_progress", "pending_payment", "review", "done", "cancelled"].includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
     updateData.status = status;
+  }
+
+  // Validate and add assignee
+  if (assignee !== undefined) {
+    updateData.assignee = assignee === "" ? null : assignee;
   }
 
   // Validate and add adminNotes

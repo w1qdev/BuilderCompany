@@ -72,7 +72,7 @@ const activityLabels: Record<string, { label: string; icon: string }> = {
   request_created: { label: "Создана заявка", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
 };
 
-type WidgetKey = "stats" | "health" | "calendar" | "pinned" | "upcoming" | "requests" | "activity" | "actions";
+type WidgetKey = "stats" | "health" | "calendar" | "pinned" | "upcoming" | "requests" | "activity" | "actions" | "weekly";
 
 const WIDGET_LABELS: Record<WidgetKey, string> = {
   stats: "Статистика",
@@ -83,9 +83,10 @@ const WIDGET_LABELS: Record<WidgetKey, string> = {
   requests: "Последние заявки",
   activity: "Последние действия",
   actions: "Быстрые действия",
+  weekly: "Сводка за неделю",
 };
 
-const DEFAULT_WIDGETS: WidgetKey[] = ["stats", "health", "calendar", "pinned", "upcoming", "requests", "activity", "actions"];
+const DEFAULT_WIDGETS: WidgetKey[] = ["stats", "weekly", "health", "calendar", "pinned", "upcoming", "requests", "activity", "actions"];
 
 function getVisibleWidgets(): WidgetKey[] {
   if (typeof window === "undefined") return DEFAULT_WIDGETS;
@@ -124,6 +125,7 @@ export default function DashboardPage() {
   const requestCounts: RequestCounts = statsData?.requestCounts || { new: 0, in_progress: 0, done: 0, total: 0 };
   const recentRequests: RecentRequest[] = statsData?.recentRequests || [];
   const activities: ActivityItem[] = statsData?.activities || [];
+  const weeklySummary = statsData?.weeklySummary || { equipmentAdded: 0, requestsCreated: 0, verified: 0 };
 
   const [modalOpen, setModalOpen] = useState(false);
   const [visibleWidgets, setVisibleWidgets] = useState<WidgetKey[]>(getVisibleWidgets);
@@ -382,6 +384,32 @@ export default function DashboardPage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Weekly Summary */}
+      {isWidgetVisible("weekly") && (
+        <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <h2 className="text-sm font-semibold text-dark dark:text-white">Сводка за неделю</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{weeklySummary.equipmentAdded}</div>
+              <div className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">Добавлено</div>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-green-50 dark:bg-green-900/20">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{weeklySummary.verified}</div>
+              <div className="text-xs text-green-600/70 dark:text-green-400/70 mt-0.5">Поверено</div>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{weeklySummary.requestsCreated}</div>
+              <div className="text-xs text-orange-600/70 dark:text-orange-400/70 mt-0.5">Заявок</div>
+            </div>
+          </div>
         </div>
       )}
 

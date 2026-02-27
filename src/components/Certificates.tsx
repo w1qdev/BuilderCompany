@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 const certificates = [
   {
-    title: "ГОСТ Р 8.568-2017",
+    title: "ГОСТ",
     issuer: "Росстандарт",
     number: "Стандарт РФ",
     description: "Аттестация испытательного оборудования по государственному стандарту",

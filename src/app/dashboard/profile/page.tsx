@@ -218,13 +218,55 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={savingCompany}
-            className="bg-primary text-white py-3 px-6 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          >
-            {savingCompany ? "Сохранение..." : "Сохранить данные"}
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="submit"
+              disabled={savingCompany}
+              className="bg-primary text-white py-3 px-6 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
+              {savingCompany ? "Сохранение..." : "Сохранить данные"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const data = JSON.stringify(companyForm, null, 2);
+                const blob = new Blob([data], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "profile-settings.json";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="py-2.5 px-4 rounded-xl text-sm font-medium border border-gray-200 dark:border-white/10 text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+            >
+              Экспорт настроек
+            </button>
+            <label className="py-2.5 px-4 rounded-xl text-sm font-medium border border-gray-200 dark:border-white/10 text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+              Импорт настроек
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    try {
+                      const imported = JSON.parse(ev.target?.result as string);
+                      setCompanyForm((prev) => ({ ...prev, ...imported }));
+                      toast.success("Настройки загружены — нажмите «Сохранить» для применения");
+                    } catch {
+                      toast.error("Ошибка чтения файла");
+                    }
+                  };
+                  reader.readAsText(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         </form>
       </div>
 

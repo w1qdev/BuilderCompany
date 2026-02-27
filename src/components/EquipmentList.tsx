@@ -5,6 +5,7 @@ const ARSHIN_ENABLED = false;
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { Portal } from "@/components/ui/Portal";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { statusConfig as _statusConfig } from "@/lib/equipmentStatus";
@@ -148,6 +149,48 @@ export default function EquipmentList({
   // Comparison
   const [compareMode, setCompareMode] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
+  // Grouping
+  const [groupBy, setGroupBy] = useState<"" | "category" | "status">("");
+  // Inline editing
+  const [inlineEdit, setInlineEdit] = useState<{ id: number; field: string; value: string } | null>(null);
+  const inlineInputRef = useRef<HTMLInputElement>(null);
+
+  const startInlineEdit = (id: number, field: string, value: string) => {
+    setInlineEdit({ id, field, value });
+    setTimeout(() => inlineInputRef.current?.focus(), 0);
+  };
+
+  const saveInlineEdit = async () => {
+    if (!inlineEdit) return;
+    const { id, field, value } = inlineEdit;
+    const original = equipment.find((e) => e.id === id);
+    if (!original || (original as unknown as Record<string, unknown>)[field] === value) {
+      setInlineEdit(null);
+      return;
+    }
+    // Optimistic
+    setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, [field]: value } : e));
+    setInlineEdit(null);
+    try {
+      const res = await fetch(`/api/equipment/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (!res.ok) {
+        setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, [field]: (original as unknown as Record<string, unknown>)[field] } : e));
+        toast.error("Ошибка сохранения");
+      } else {
+        toast.success("Сохранено");
+      }
+    } catch {
+      setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, [field]: (original as unknown as Record<string, unknown>)[field] } : e));
+      toast.error("Ошибка сети");
+    }
+  };
+
+  const cancelInlineEdit = () => setInlineEdit(null);
+
   // Verification history
   const [historyEquipmentId, setHistoryEquipmentId] = useState<number | null>(null);
   const [historyEquipmentName, setHistoryEquipmentName] = useState("");
@@ -347,20 +390,23 @@ export default function EquipmentList({
   };
 
   const handleIgnore = async (id: number, ignore: boolean) => {
+    // Optimistic update
+    setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, ignored: ignore } : e));
+    toast.success(ignore ? "Перемещено в архив" : "Восстановлено из архива");
     try {
       const res = await fetch(`/api/equipment/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ignored: ignore }),
       });
-      if (res.ok) {
-        toast.success(ignore ? "Перемещено в архив" : "Восстановлено из архива");
-        fetchEquipment();
-      } else {
-        toast.error("Ошибка");
+      if (!res.ok) {
+        // Revert on error
+        setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, ignored: !ignore } : e));
+        toast.error("Ошибка — изменение отменено");
       }
     } catch {
-      toast.error("Ошибка сети");
+      setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, ignored: !ignore } : e));
+      toast.error("Ошибка сети — изменение отменено");
     }
   };
 
@@ -677,19 +723,56 @@ export default function EquipmentList({
     }
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input/textarea/select
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      // Ctrl+A — select all
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
+        e.preventDefault();
+        setSelected(new Set(equipment.map((eq) => eq.id)));
+      }
+      // Delete — delete selected
+      if (e.key === "Delete" && selected.size === 1) {
+        const id = Array.from(selected)[0];
+        const eq = equipment.find((e) => e.id === id);
+        if (eq) handleDelete(id, eq.name);
+      }
+      // E — edit selected (single)
+      if (e.key === "e" && !e.ctrlKey && !e.metaKey && selected.size === 1) {
+        const id = Array.from(selected)[0];
+        const eq = equipment.find((e) => e.id === id);
+        if (eq) handleEdit(eq);
+      }
+      // Escape — deselect all
+      if (e.key === "Escape") {
+        setSelected(new Set());
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [equipment, selected]);
+
   const handlePin = async (id: number, pin: boolean) => {
+    // Optimistic update
+    setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, pinned: pin } : e));
+    toast.success(pin ? "Закреплено" : "Откреплено");
     try {
       const res = await fetch(`/api/equipment/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pinned: pin }),
       });
-      if (res.ok) {
-        toast.success(pin ? "Закреплено" : "Откреплено");
-        setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, pinned: pin } : e));
+      if (!res.ok) {
+        setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, pinned: !pin } : e));
+        toast.error("Ошибка — изменение отменено");
       }
     } catch {
-      toast.error("Ошибка");
+      setEquipment((prev) => prev.map((e) => e.id === id ? { ...e, pinned: !pin } : e));
+      toast.error("Ошибка сети — изменение отменено");
     }
   };
 
@@ -939,6 +1022,15 @@ export default function EquipmentList({
             ))}
           </select>
         )}
+        <select
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value as "" | "category" | "status")}
+          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-light text-sm text-dark dark:text-white"
+        >
+          <option value="">Без группировки</option>
+          <option value="category">По категории</option>
+          <option value="status">По статусу</option>
+        </select>
       </div>
 
       {/* Bulk actions */}
@@ -1245,7 +1337,45 @@ export default function EquipmentList({
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            {/* Templates */}
+            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-white/10">
+              <select
+                onChange={(e) => {
+                  const templates = JSON.parse(localStorage.getItem("equipment_templates") || "[]");
+                  const tpl = templates[Number(e.target.value)];
+                  if (tpl) setForm({ ...emptyForm, ...tpl, category: tpl.category || defaultCategory });
+                  e.target.value = "";
+                }}
+                className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-xs text-dark dark:text-white"
+                defaultValue=""
+              >
+                <option value="" disabled>Загрузить из шаблона...</option>
+                {(() => {
+                  try {
+                    const templates = JSON.parse(localStorage.getItem("equipment_templates") || "[]");
+                    return templates.map((t: { name: string; type?: string }, i: number) => (
+                      <option key={i} value={i}>{t.name}{t.type ? ` (${t.type})` : ""}</option>
+                    ));
+                  } catch { return null; }
+                })()}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!form.name.trim()) { toast.error("Заполните наименование"); return; }
+                  const templates = JSON.parse(localStorage.getItem("equipment_templates") || "[]");
+                  const { arshinUrl, ...tpl } = form;
+                  void arshinUrl;
+                  templates.push(tpl);
+                  localStorage.setItem("equipment_templates", JSON.stringify(templates));
+                  toast.success("Шаблон сохранён");
+                }}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-primary border border-primary/20 hover:bg-primary/5 transition-colors whitespace-nowrap"
+              >
+                Сохранить как шаблон
+              </button>
+            </div>
+            <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={() => setShowForm(false)}
                 className="px-4 py-2 rounded-xl text-sm font-medium text-neutral hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
@@ -1558,9 +1688,62 @@ export default function EquipmentList({
 
       {/* Table */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-        </div>
+        <>
+          {/* Mobile skeleton */}
+          <div className="md:hidden space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-4 animate-pulse">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 mt-1 rounded bg-gray-200 dark:bg-white/10" />
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-3/4" />
+                        <div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-1/2" />
+                      </div>
+                      <div className="h-5 w-16 bg-gray-200 dark:bg-white/10 rounded-full shrink-0" />
+                    </div>
+                    <div className="flex gap-3 mt-2">
+                      <div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-12" />
+                      <div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-20" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Desktop skeleton */}
+          <div className="hidden md:block bg-white dark:bg-dark-light rounded-2xl shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+                  <th className="px-4 py-3 w-10"><div className="w-4 h-4 rounded bg-gray-200 dark:bg-white/10" /></th>
+                  <th className="px-4 py-3 text-left"><div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-24" /></th>
+                  <th className="px-4 py-3 text-left"><div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-16" /></th>
+                  <th className="px-4 py-3 text-left"><div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-14" /></th>
+                  <th className="px-4 py-3 text-left"><div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-14" /></th>
+                  <th className="px-4 py-3 text-left"><div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-20" /></th>
+                  <th className="px-4 py-3 text-left"><div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-14" /></th>
+                  <th className="px-4 py-3 w-40" />
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={i} className="border-b border-gray-100 dark:border-white/5 animate-pulse">
+                    <td className="px-4 py-3"><div className="w-4 h-4 rounded bg-gray-200 dark:bg-white/10" /></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-32" /></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-20" /></td>
+                    <td className="px-4 py-3"><div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-16" /></td>
+                    <td className="px-4 py-3"><div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-16" /></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-20" /></td>
+                    <td className="px-4 py-3"><div className="h-5 bg-gray-200 dark:bg-white/10 rounded-full w-16" /></td>
+                    <td className="px-4 py-3"><div className="flex gap-1">{Array.from({ length: 5 }).map((_, j) => <div key={j} className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-white/10" />)}</div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : equipment.length === 0 ? (
         <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm">
           <EmptyState
@@ -1590,6 +1773,76 @@ export default function EquipmentList({
         </div>
       ) : (
         <>
+          {/* Group headers helper */}
+          {groupBy && (() => {
+            const groups = new Map<string, Equipment[]>();
+            for (const eq of equipment) {
+              const key = groupBy === "category"
+                ? (categoryLabels[eq.category] || eq.category)
+                : (statusConfig[eq.status]?.label || eq.status);
+              if (!groups.has(key)) groups.set(key, []);
+              groups.get(key)!.push(eq);
+            }
+            return (
+              <div className="space-y-6">
+                {Array.from(groups.entries()).map(([groupLabel, items]) => (
+                  <div key={groupLabel}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h3 className="text-sm font-semibold text-dark dark:text-white">{groupLabel}</h3>
+                      <span className="text-xs text-neutral dark:text-white/40 bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">{items.length}</span>
+                    </div>
+                    {/* Mobile */}
+                    <div className="md:hidden space-y-3">
+                      {items.map((eq) => (
+                        <div
+                          key={eq.id}
+                          className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-4"
+                        >
+                          <div className="flex items-start gap-3">
+                            <input type="checkbox" checked={selected.has(eq.id)} onChange={() => toggleSelect(eq.id)} className="mt-1 rounded border-gray-300" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-dark dark:text-white truncate">{eq.name}</div>
+                              <div className="text-xs text-neutral dark:text-white/50">{eq.type || "\u2014"}{eq.serialNumber ? ` / ${eq.serialNumber}` : ""}</div>
+                              <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[eq.status]?.color || "bg-gray-100 text-gray-600"}`}>{statusConfig[eq.status]?.label || eq.status}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop */}
+                    <div className="hidden md:block bg-white dark:bg-dark-light rounded-2xl shadow-sm overflow-hidden">
+                      <table className="w-full text-sm">
+                        <tbody>
+                          {items.map((eq) => (
+                            <tr key={eq.id} className="border-b border-gray-100 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-white/[0.02]">
+                              <td className="px-4 py-3 w-10"><input type="checkbox" checked={selected.has(eq.id)} onChange={() => toggleSelect(eq.id)} className="rounded border-gray-300" /></td>
+                              <td className="px-4 py-3 font-medium text-dark dark:text-white">{eq.name}</td>
+                              <td className="px-4 py-3 text-neutral dark:text-white/60">{eq.type || "\u2014"}</td>
+                              <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">{eq.serialNumber || "\u2014"}</td>
+                              <td className="px-4 py-3 text-neutral dark:text-white/60 whitespace-nowrap">{eq.nextVerification ? new Date(eq.nextVerification).toLocaleDateString("ru-RU") : "\u2014"}</td>
+                              <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[eq.status]?.color || "bg-gray-100 text-gray-600"}`}>{statusConfig[eq.status]?.label || eq.status}</span></td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => handleEdit(eq)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-neutral transition-colors" title="Редактировать">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                  </button>
+                                  <button onClick={() => handleDelete(eq.id, eq.name)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-red-400 transition-colors" title="Удалить">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+          {/* Ungrouped view */}
+          {!groupBy && <>
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
             {equipment.map((eq) => (
@@ -1750,17 +2003,80 @@ export default function EquipmentList({
                           className="rounded border-gray-300"
                         />
                       </td>
-                      <td className="px-4 py-3 font-medium text-dark dark:text-white">
-                        {eq.name}
+                      <td className="px-4 py-3 font-medium text-dark dark:text-white max-w-[200px]" onDoubleClick={() => startInlineEdit(eq.id, "name", eq.name)}>
+                        {inlineEdit?.id === eq.id && inlineEdit.field === "name" ? (
+                          <input
+                            ref={inlineInputRef}
+                            value={inlineEdit.value}
+                            onChange={(e) => setInlineEdit({ ...inlineEdit, value: e.target.value })}
+                            onBlur={saveInlineEdit}
+                            onKeyDown={(e) => { if (e.key === "Enter") saveInlineEdit(); if (e.key === "Escape") cancelInlineEdit(); }}
+                            className="w-full px-1 py-0.5 rounded border border-primary/40 bg-white dark:bg-dark text-sm text-dark dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                        ) : (
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="block truncate cursor-default">{eq.name}</span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <div className="max-w-xs">
+                                  <p className="font-medium">{eq.name}</p>
+                                  {eq.type && <p className="text-xs opacity-70">{eq.type}</p>}
+                                  {eq.serialNumber && <p className="text-xs opacity-70">Зав. № {eq.serialNumber}</p>}
+                                  <p className="text-xs opacity-50 mt-1">Двойной клик для редактирования</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </td>
-                      <td className="px-4 py-3 text-neutral dark:text-white/60">
-                        {eq.type || "\u2014"}
+                      <td className="px-4 py-3 text-neutral dark:text-white/60" onDoubleClick={() => startInlineEdit(eq.id, "type", eq.type || "")}>
+                        {inlineEdit?.id === eq.id && inlineEdit.field === "type" ? (
+                          <input
+                            ref={inlineInputRef}
+                            value={inlineEdit.value}
+                            onChange={(e) => setInlineEdit({ ...inlineEdit, value: e.target.value })}
+                            onBlur={saveInlineEdit}
+                            onKeyDown={(e) => { if (e.key === "Enter") saveInlineEdit(); if (e.key === "Escape") cancelInlineEdit(); }}
+                            className="w-full px-1 py-0.5 rounded border border-primary/40 bg-white dark:bg-dark text-sm text-dark dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                        ) : (eq.type || "\u2014")}
+                      </td>
+                      <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs" onDoubleClick={() => startInlineEdit(eq.id, "serialNumber", eq.serialNumber || "")}>
+                        {inlineEdit?.id === eq.id && inlineEdit.field === "serialNumber" ? (
+                          <input
+                            ref={inlineInputRef}
+                            value={inlineEdit.value}
+                            onChange={(e) => setInlineEdit({ ...inlineEdit, value: e.target.value })}
+                            onBlur={saveInlineEdit}
+                            onKeyDown={(e) => { if (e.key === "Enter") saveInlineEdit(); if (e.key === "Escape") cancelInlineEdit(); }}
+                            className="w-full px-1 py-0.5 rounded border border-primary/40 bg-white dark:bg-dark text-xs font-mono text-dark dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                        ) : eq.serialNumber ? (
+                          <span className="group inline-flex items-center gap-1">
+                            {eq.serialNumber}
+                            <button
+                              onClick={() => { navigator.clipboard.writeText(eq.serialNumber!); toast.success("Скопировано"); }}
+                              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-opacity"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            </button>
+                          </span>
+                        ) : "\u2014"}
                       </td>
                       <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">
-                        {eq.serialNumber || "\u2014"}
-                      </td>
-                      <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">
-                        {eq.registryNumber || "\u2014"}
+                        {eq.registryNumber ? (
+                          <span className="group inline-flex items-center gap-1">
+                            {eq.registryNumber}
+                            <button
+                              onClick={() => { navigator.clipboard.writeText(eq.registryNumber!); toast.success("Скопировано"); }}
+                              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-opacity"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            </button>
+                          </span>
+                        ) : "\u2014"}
                         {/* ARSHIN_ENABLED: arshinUrl and arshinMismatch badges hidden */}
                       </td>
                       {categoryOptions.length > 1 && (
@@ -1771,104 +2087,136 @@ export default function EquipmentList({
                         </td>
                       )}
                       <td className="px-4 py-3 text-neutral dark:text-white/60 whitespace-nowrap">
-                        {eq.nextVerification
-                          ? new Date(eq.nextVerification).toLocaleDateString(
-                              "ru-RU",
-                            )
-                          : "\u2014"}
+                        {eq.nextVerification ? (() => {
+                          const next = new Date(eq.nextVerification);
+                          const now = new Date();
+                          const diffDays = Math.ceil((next.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                          const dateStr = next.toLocaleDateString("ru-RU");
+                          const daysLabel = diffDays < 0
+                            ? `Просрочено на ${Math.abs(diffDays)} дн.`
+                            : diffDays === 0 ? "Сегодня" : `Через ${diffDays} дн.`;
+                          return (
+                            <TooltipProvider delayDuration={300}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-default">{dateStr}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>{daysLabel}</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        })() : "\u2014"}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[eq.status]?.color || "bg-gray-100 text-gray-600"}`}
-                        >
-                          {statusConfig[eq.status]?.label || eq.status}
-                        </span>
+                        <TooltipProvider delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-xs font-medium cursor-default ${statusConfig[eq.status]?.color || "bg-gray-100 text-gray-600"}`}
+                              >
+                                {statusConfig[eq.status]?.label || eq.status}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {eq.status === "active" && "Поверка/аттестация актуальна"}
+                              {eq.status === "pending" && "Срок поверки истекает в ближайшее время"}
+                              {eq.status === "expired" && "Срок поверки/аттестации истёк"}
+                              {!["active", "pending", "expired"].includes(eq.status) && (statusConfig[eq.status]?.label || eq.status)}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </td>
                       {/* ARSHIN_ENABLED: mitApproved column hidden */}
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handlePin(eq.id, !eq.pinned)}
-                            className={`p-1.5 rounded-lg transition-colors ${eq.pinned ? "text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/10" : "text-gray-300 dark:text-white/20 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-yellow-500"}`}
-                            title={eq.pinned ? "Открепить" : "Закрепить"}
-                          >
-                            <svg className="w-4 h-4" fill={eq.pinned ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleEdit(eq)}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-neutral transition-colors"
-                            title="Редактировать"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => openHistory(eq)}
-                            className="p-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/10 text-purple-400 transition-colors"
-                            title="История поверок"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDuplicate(eq)}
-                            className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/10 text-blue-400 transition-colors"
-                            title="Дублировать"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleIgnore(eq.id, !eq.ignored)}
-                            className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/10 text-amber-400 transition-colors"
-                            title={eq.ignored ? "Из архива" : "В архив"}
-                          >
-                            {eq.ignored ? (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                              </svg>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(eq.id, eq.name)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-red-400 transition-colors"
-                            title="Удалить"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        </div>
+                        <TooltipProvider delayDuration={200}>
+                          <div className="flex items-center gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handlePin(eq.id, !eq.pinned)}
+                                  className={`p-1.5 rounded-lg transition-colors ${eq.pinned ? "text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/10" : "text-gray-300 dark:text-white/20 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-yellow-500"}`}
+                                >
+                                  <svg className="w-4 h-4" fill={eq.pinned ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                  </svg>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>{eq.pinned ? "Открепить" : "Закрепить"}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handleEdit(eq)}
+                                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-neutral transition-colors"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Редактировать</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => openHistory(eq)}
+                                  className="p-1.5 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/10 text-purple-400 transition-colors"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>История поверок</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handleDuplicate(eq)}
+                                  className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/10 text-blue-400 transition-colors"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                  </svg>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Дублировать</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handleIgnore(eq.id, !eq.ignored)}
+                                  className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/10 text-amber-400 transition-colors"
+                                >
+                                  {eq.ignored ? (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>{eq.ignored ? "Из архива" : "В архив"}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handleDelete(eq.id, eq.name)}
+                                  className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-red-400 transition-colors"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Удалить</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TooltipProvider>
                       </td>
                     </tr>
                   ))}
@@ -1960,6 +2308,7 @@ export default function EquipmentList({
               </div>
             </div>
           )}
+        </>}
         </>
       )}
 

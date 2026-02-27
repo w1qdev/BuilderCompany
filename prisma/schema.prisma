@@ -81,12 +81,13 @@ model Request {
   markup        Float?
   clientPrice   Float?
   needContract  Boolean  @default(false)
+  assignee      String?
   files         RequestFile[]
   items         RequestItem[]
-
   @@index([status])
   @@index([userId])
   @@index([createdAt])
+  @@index([assignee])
 }
 
 model RequestFile {

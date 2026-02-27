@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
   in30Days.setDate(in30Days.getDate() + 30);
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekAgo = new Date(todayStart);
+  weekAgo.setDate(weekAgo.getDate() - 7);
 
   try {
     const [
@@ -30,6 +32,9 @@ export async function GET(request: NextRequest) {
       doneRequests,
       recentRequests,
       activities,
+      weeklyEquipmentAdded,
+      weeklyRequestsCreated,
+      weeklyVerified,
     ] = await Promise.all([
       // totalEquipment
       prisma.equipment.count({
@@ -130,6 +135,18 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
         take: 10,
       }),
+      // weeklyEquipmentAdded
+      prisma.equipment.count({
+        where: { userId, createdAt: { gte: weekAgo } },
+      }),
+      // weeklyRequestsCreated
+      prisma.request.count({
+        where: { userId, createdAt: { gte: weekAgo } },
+      }),
+      // weeklyVerified — equipment verified (verificationDate updated) this week
+      prisma.equipment.count({
+        where: { userId, verificationDate: { gte: weekAgo } },
+      }),
     ]);
 
     return NextResponse.json({
@@ -148,6 +165,11 @@ export async function GET(request: NextRequest) {
       },
       recentRequests,
       activities,
+      weeklySummary: {
+        equipmentAdded: weeklyEquipmentAdded,
+        requestsCreated: weeklyRequestsCreated,
+        verified: weeklyVerified,
+      },
     });
   } catch (error) {
     console.error("Dashboard stats error:", error);

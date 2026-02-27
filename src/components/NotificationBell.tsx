@@ -107,10 +107,14 @@ export default function NotificationBell() {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  const [socketConnected, setSocketConnected] = useState(false);
+
   // Socket.IO live updates
   useEffect(() => {
     const socket: Socket = ioClient({ path: "/api/socketio" });
 
+    socket.on("connect", () => setSocketConnected(true));
+    socket.on("disconnect", () => setSocketConnected(false));
     socket.on("request-update", () => {
       fetchNotifications();
     });
@@ -142,7 +146,12 @@ export default function NotificationBell() {
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative flex items-center gap-1">
+      {/* Socket.IO connection indicator */}
+      <span
+        className={`w-2 h-2 rounded-full transition-colors ${socketConnected ? "bg-green-400" : "bg-red-400 animate-pulse"}`}
+        title={socketConnected ? "Подключено" : "Нет подключения"}
+      />
       <button
         onClick={() => {
           const next = !open;
