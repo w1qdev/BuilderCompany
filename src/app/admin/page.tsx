@@ -751,79 +751,13 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Search + Actions */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 mb-6">
-        <div className="relative flex-1 min-w-0 sm:min-w-[200px] sm:max-w-md">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral z-10"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <Input
-            type="text"
-            placeholder="Поиск по имени, телефону, email..."
-            value={searchInput}
-            onChange={(e) => handleSearchInput(e.target.value)}
-            className="pl-10 bg-white"
-          />
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Socket.IO indicator */}
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-gray-200">
-            <div
-              className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`}
-            />
-            <span className="text-xs text-neutral">
-              {connected ? "Онлайн" : "Оффлайн"}
-            </span>
-          </div>
-          {/* Sound toggle */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`px-3 py-2 rounded-xl border transition-colors ${soundEnabled ? "bg-white border-gray-200 text-neutral hover:bg-gray-50" : "bg-gray-100 border-gray-300 text-gray-400"}`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {soundEnabled ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                  )}
-                </svg>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>{soundEnabled ? "Звук включён" : "Звук выключен"}</TooltipContent>
-          </Tooltip>
-          {/* Browser notification permission */}
-          {typeof Notification !== "undefined" && Notification.permission !== "granted" && (
-            <button
-              onClick={() => Notification.requestPermission()}
-              className="px-3 py-2 rounded-xl text-xs font-medium bg-white text-neutral hover:bg-gray-50 transition-colors border border-gray-200"
-            >
-              Включить уведомления
-            </button>
-          )}
-          <button
-            onClick={fetchRequests}
-            className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-colors border border-gray-200"
-          >
-            Обновить
-          </button>
-          <button
-            onClick={exportCSV}
-            className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-colors border border-gray-200 flex items-center justify-center gap-1.5"
-          >
+      {/* Toolbar */}
+      <div className="space-y-3 mb-6">
+        {/* Row 1: Search + Status indicators */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 min-w-0">
             <svg
-              className="w-4 h-4"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral z-10"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -832,63 +766,61 @@ export default function AdminPage() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            <span className="hidden sm:inline">Экспорт</span> CSV
-          </button>
-          <button
-            onClick={async () => {
-              toast.loading("Формирование Excel...", { id: "bulk-excel" });
-              try {
-                const params = new URLSearchParams();
-                if (filter !== "all") params.set("status", filter);
-                if (search) params.set("search", search);
-                if (exportPeriod) {
-                  const now = new Date();
-                  let dateFrom: Date | null = null;
-                  if (exportPeriod === "week") dateFrom = new Date(now.getTime() - 7 * 86400000);
-                  else if (exportPeriod === "month") dateFrom = new Date(now.getTime() - 30 * 86400000);
-                  else if (exportPeriod === "quarter") dateFrom = new Date(now.getTime() - 90 * 86400000);
-                  if (dateFrom) params.set("dateFrom", dateFrom.toISOString());
-                }
-                const res = await fetch(`/api/admin/export/bulk?${params}`, {
-                  headers: { "x-admin-password": password },
-                });
-                if (!res.ok) throw new Error();
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                const cd = res.headers.get("Content-Disposition");
-                const match = cd?.match(/filename\*=UTF-8''(.+)/);
-                a.download = match ? decodeURIComponent(match[1]) : "export.xlsx";
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success("Excel скачан", { id: "bulk-excel" });
-              } catch {
-                toast.error("Ошибка экспорта", { id: "bulk-excel" });
-              }
-            }}
-            className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors border border-green-200 flex items-center justify-center gap-1.5"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span className="hidden sm:inline">Экспорт</span> Excel
-          </button>
-          <select
-            value={exportPeriod}
-            onChange={(e) => setExportPeriod(e.target.value)}
-            className="px-3 py-2 rounded-xl text-sm font-medium bg-white text-neutral border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            <option value="">Все время</option>
-            <option value="week">За неделю</option>
-            <option value="month">За месяц</option>
-            <option value="quarter">За квартал</option>
-          </select>
+            <Input
+              type="text"
+              placeholder="Поиск по имени, телефону, email..."
+              value={searchInput}
+              onChange={(e) => handleSearchInput(e.target.value)}
+              className="pl-10 bg-white"
+            />
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-gray-200 shrink-0">
+            <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`} />
+            <span className="text-xs text-neutral">{connected ? "Онлайн" : "Оффлайн"}</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-1 shrink-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className={`p-2 rounded-xl border transition-colors ${soundEnabled ? "bg-white border-gray-200 text-neutral hover:bg-gray-50" : "bg-gray-100 border-gray-300 text-gray-400"}`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {soundEnabled ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    )}
+                  </svg>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{soundEnabled ? "Звук включён" : "Звук выключен"}</TooltipContent>
+            </Tooltip>
+            {typeof Notification !== "undefined" && Notification.permission !== "granted" && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => Notification.requestPermission()}
+                    className="p-2 rounded-xl border border-gray-200 bg-white text-neutral hover:bg-gray-50 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Включить уведомления</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2: Actions */}
+        <div className="flex items-center gap-2 flex-wrap">
           {/* View mode toggle */}
-          <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden">
+          <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -911,6 +843,79 @@ export default function AdminPage() {
               </TooltipTrigger>
               <TooltipContent>Канбан</TooltipContent>
             </Tooltip>
+          </div>
+
+          <button
+            onClick={fetchRequests}
+            className="px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-colors border border-gray-200 flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            Обновить
+          </button>
+
+          <div className="w-px h-6 bg-gray-200 hidden sm:block" />
+
+          {/* Export group */}
+          <div className="flex items-center gap-2">
+            <select
+              value={exportPeriod}
+              onChange={(e) => setExportPeriod(e.target.value)}
+              className="px-3 py-2 rounded-xl text-sm font-medium bg-white text-neutral border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">Все время</option>
+              <option value="week">За неделю</option>
+              <option value="month">За месяц</option>
+              <option value="quarter">За квартал</option>
+            </select>
+            <button
+              onClick={exportCSV}
+              className="px-4 py-2 rounded-xl text-sm font-medium bg-white text-neutral hover:bg-gray-50 transition-colors border border-gray-200 flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              CSV
+            </button>
+            <button
+              onClick={async () => {
+                toast.loading("Формирование Excel...", { id: "bulk-excel" });
+                try {
+                  const params = new URLSearchParams();
+                  if (filter !== "all") params.set("status", filter);
+                  if (search) params.set("search", search);
+                  if (exportPeriod) {
+                    const now = new Date();
+                    let dateFrom: Date | null = null;
+                    if (exportPeriod === "week") dateFrom = new Date(now.getTime() - 7 * 86400000);
+                    else if (exportPeriod === "month") dateFrom = new Date(now.getTime() - 30 * 86400000);
+                    else if (exportPeriod === "quarter") dateFrom = new Date(now.getTime() - 90 * 86400000);
+                    if (dateFrom) params.set("dateFrom", dateFrom.toISOString());
+                  }
+                  const res = await fetch(`/api/admin/export/bulk?${params}`, {
+                    headers: { "x-admin-password": password },
+                  });
+                  if (!res.ok) throw new Error();
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  const cd = res.headers.get("Content-Disposition");
+                  const match = cd?.match(/filename\*=UTF-8''(.+)/);
+                  a.download = match ? decodeURIComponent(match[1]) : "export.xlsx";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success("Excel скачан", { id: "bulk-excel" });
+                } catch {
+                  toast.error("Ошибка экспорта", { id: "bulk-excel" });
+                }
+              }}
+              className="px-4 py-2 rounded-xl text-sm font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors border border-green-200 flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Excel
+            </button>
           </div>
         </div>
       </div>
