@@ -14,6 +14,7 @@ const navLinks = [
   { href: "#portfolio", label: "Портфолио" },
   { href: "#about", label: "О компании" },
   { href: "/contacts", label: "Контакты" },
+  { href: "/dashboard", label: "Личный кабинет" },
 ];
 
 interface HeaderProps {
