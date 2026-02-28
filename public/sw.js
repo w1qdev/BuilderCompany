@@ -1,4 +1,4 @@
-const CACHE_NAME = 'csm-center-v1';
+const CACHE_NAME = 'csm-center-v2';
 
 const PRECACHE_URLS = [
   '/',
