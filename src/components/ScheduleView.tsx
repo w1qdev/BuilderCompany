@@ -10,7 +10,6 @@ interface Equipment {
   name: string;
   type: string | null;
   serialNumber: string | null;
-  registryNumber: string | null;
   nextVerification: string | null;
   category: string;
   status: string;
@@ -400,7 +399,7 @@ export default function ScheduleView({
               </svg>
             }
             title="Нет запланированных событий"
-            description="Добавьте оборудование с датами поверки в разделе оборудования, чтобы увидеть график"
+            description={`Добавьте оборудование с датами ${categories.includes("attestation") ? "аттестации" : "поверки"} в разделе оборудования, чтобы увидеть график`}
             action={
               <Link
                 href="/dashboard/equipment/si"
@@ -439,7 +438,6 @@ export default function ScheduleView({
                         <div className="text-sm text-neutral dark:text-white/60">
                           {eq.type || "\u2014"}
                           {eq.serialNumber && <span className="ml-2">Зав.№ {eq.serialNumber}</span>}
-                          {eq.registryNumber && <span className="ml-2">Реестр {eq.registryNumber}</span>}
                         </div>
                       </div>
                       <div className="text-right shrink-0">

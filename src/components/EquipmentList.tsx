@@ -17,7 +17,6 @@ interface Equipment {
   name: string;
   type: string | null;
   serialNumber: string | null;
-  registryNumber: string | null;
   verificationDate: string | null;
   nextVerification: string | null;
   interval: number;
@@ -90,7 +89,6 @@ export default function EquipmentList({
     name: "",
     type: "",
     serialNumber: "",
-    registryNumber: "",
     verificationDate: "",
     nextVerification: "",
     interval: 12,
@@ -323,7 +321,6 @@ export default function EquipmentList({
       name: eq.name,
       type: eq.type || "",
       serialNumber: eq.serialNumber || "",
-      registryNumber: eq.registryNumber || "",
       verificationDate: eq.verificationDate
         ? eq.verificationDate.split("T")[0]
         : "",
@@ -376,7 +373,6 @@ export default function EquipmentList({
       name: eq.name + " (копия)",
       type: eq.type || "",
       serialNumber: "",
-      registryNumber: "",
       verificationDate: "",
       nextVerification: "",
       interval: eq.interval,
@@ -511,9 +507,9 @@ export default function EquipmentList({
   };
 
   const searchArshin = async () => {
-    const q = form.registryNumber.trim() || form.serialNumber.trim();
+    const q = form.serialNumber.trim();
     if (!q) {
-      toast.error("Введите номер реестра или серийный номер");
+      toast.error("Введите серийный номер");
       return;
     }
     setArshinLoading(true);
@@ -560,7 +556,6 @@ export default function EquipmentList({
       name: item.miName || prev.name,
       type: item.miType || prev.type,
       serialNumber: item.miSerialNumber || prev.serialNumber,
-      registryNumber: item.miRegestryNumber || prev.registryNumber,
       verificationDate: item.vriDate ? item.vriDate.split("T")[0] : prev.verificationDate,
       nextVerification: item.validDate ? item.validDate.split("T")[0] : prev.nextVerification,
       interval,
@@ -637,7 +632,6 @@ export default function EquipmentList({
             name: item.miName,
             type: item.miType,
             serialNumber: item.miSerialNumber,
-            registryNumber: item.miRegestryNumber,
             verificationDate: item.vriDate ? item.vriDate.split("T")[0] : "",
             nextVerification: item.validDate ? item.validDate.split("T")[0] : "",
             interval,
@@ -663,7 +657,7 @@ export default function EquipmentList({
     if (selected.size === 0) { toast.error("Выберите оборудование"); return; }
     // Check Arshin for selected items that have serial/registry
     const selectedEq = equipment.filter((e) => selected.has(e.id));
-    const checkable = selectedEq.filter((e) => e.serialNumber || e.registryNumber);
+    const checkable = selectedEq.filter((e) => e.serialNumber);
     if (checkable.length === 0) {
       await submitRequest();
       return;
@@ -1150,19 +1144,6 @@ export default function EquipmentList({
                     }
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral mb-1">
-                    Номер реестра ФГИС
-                  </label>
-                  <input
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
-                    value={form.registryNumber}
-                    placeholder="Номер из реестра СИ"
-                    onChange={(e) =>
-                      setForm({ ...form, registryNumber: e.target.value })
-                    }
-                  />
-                </div>
               </div>
               {/* ARSHIN_ENABLED: Аршин search hidden until integration is ready */}
               {ARSHIN_ENABLED && <div>
@@ -1182,7 +1163,7 @@ export default function EquipmentList({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                   )}
-                  {arshinLoading ? "Поиск в Аршин..." : "Найти в ФГИС Аршин по номеру реестра или заводскому номеру"}
+                  {arshinLoading ? "Поиск в Аршин..." : "Найти в ФГИС Аршин по заводскому номеру"}
                 </button>
                 {arshinResults && arshinResults.length > 0 && (
                   <div className="mt-2 border border-blue-200 dark:border-blue-400/30 rounded-lg overflow-hidden">
@@ -1970,9 +1951,6 @@ export default function EquipmentList({
                     <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
                       Зав. №
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
-                      Реестр
-                    </th>
                     {categoryOptions.length > 1 && (
                       <th className="px-4 py-3 text-left font-semibold text-dark dark:text-white">
                         Категория
@@ -2064,20 +2042,6 @@ export default function EquipmentList({
                             </button>
                           </span>
                         ) : "\u2014"}
-                      </td>
-                      <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">
-                        {eq.registryNumber ? (
-                          <span className="group inline-flex items-center gap-1">
-                            {eq.registryNumber}
-                            <button
-                              onClick={() => { navigator.clipboard.writeText(eq.registryNumber!); toast.success("Скопировано"); }}
-                              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-opacity"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                            </button>
-                          </span>
-                        ) : "\u2014"}
-                        {/* ARSHIN_ENABLED: arshinUrl and arshinMismatch badges hidden */}
                       </td>
                       {categoryOptions.length > 1 && (
                         <td className="px-4 py-3">
@@ -2339,7 +2303,6 @@ export default function EquipmentList({
                     {[
                       { label: "Тип/Модель", key: "type" },
                       { label: "Зав. номер", key: "serialNumber" },
-                      { label: "Реестр", key: "registryNumber" },
                       { label: "Категория", key: "category" },
                       { label: "Интервал (мес.)", key: "interval" },
                       { label: "Дата поверки", key: "verificationDate" },

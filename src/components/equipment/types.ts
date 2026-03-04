@@ -3,7 +3,6 @@ export interface Equipment {
   name: string;
   type: string | null;
   serialNumber: string | null;
-  registryNumber: string | null;
   verificationDate: string | null;
   nextVerification: string | null;
   interval: number;
@@ -50,7 +49,6 @@ export interface EquipmentFormData {
   name: string;
   type: string;
   serialNumber: string;
-  registryNumber: string;
   verificationDate: string;
   nextVerification: string;
   interval: number;

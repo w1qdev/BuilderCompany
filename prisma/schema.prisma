@@ -132,7 +132,6 @@ model Equipment {
   name              String
   type              String?
   serialNumber      String?
-  registryNumber    String?
   verificationDate  DateTime?
   nextVerification  DateTime?
   interval          Int       @default(12)

@@ -6,7 +6,6 @@ interface VriItem {
   equipmentId: number;
   equipmentName: string;
   serialNumber: string | null;
-  registryNumber: string | null;
   miName: string;
   miType: string;
   miSerialNumber: string;

@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
       service: categoryLabels[eq.category] || "Поверка СИ",
       object: eq.name + (eq.type ? ` (${eq.type})` : ""),
       fabricNumber: eq.serialNumber || undefined,
-      registry: eq.registryNumber || undefined,
       poverk: eq.category === "verification" ? "периодическая" : undefined,
     }));
 
@@ -63,7 +62,6 @@ export async function POST(request: NextRequest) {
             service: categoryLabels[eq.category] || "Поверка СИ",
             object: eq.name + (eq.type ? ` (${eq.type})` : ""),
             fabricNumber: eq.serialNumber || null,
-            registry: eq.registryNumber || null,
             poverk: eq.category === "verification" ? "периодическая" : null,
             equipmentId: eq.id,
           })),
@@ -83,7 +81,6 @@ export async function POST(request: NextRequest) {
       service: i.service,
       object: i.object,
       fabricNumber: i.fabricNumber,
-      registry: i.registry,
       poverk: i.poverk,
     }));
 

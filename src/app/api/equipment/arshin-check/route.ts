@@ -65,7 +65,7 @@ function extractVriItem(data: Record<string, unknown> | null) {
 
 // POST /api/equipment/arshin-check
 // Body: { ids: number[] }  — check specific equipment IDs
-// Body: { all: true }      — check all equipment with serialNumber/registryNumber
+// Body: { all: true }      — check all equipment with serialNumber
 export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId(request);
@@ -81,22 +81,13 @@ export async function POST(request: NextRequest) {
 
     const where: Record<string, unknown> = {
       userId,
-      OR: [
-        { serialNumber: { not: null } },
-        { registryNumber: { not: null } },
-      ],
+      serialNumber: { not: null },
     };
 
     if (ids?.length) {
       where.id = { in: ids };
     } else if (checkAll) {
       // Only recheck if never checked or stale
-      where.OR = [
-        { arshinCheckedAt: null },
-        { arshinCheckedAt: { lt: staleThreshold } },
-        { serialNumber: { not: null } },
-        { registryNumber: { not: null } },
-      ];
       where.AND = [
         {
           OR: [
@@ -104,14 +95,9 @@ export async function POST(request: NextRequest) {
             { arshinCheckedAt: { lt: staleThreshold } },
           ],
         },
-        {
-          OR: [
-            { serialNumber: { not: null } },
-            { registryNumber: { not: null } },
-          ],
-        },
+        { serialNumber: { not: null } },
       ];
-      delete where.OR;
+      delete where.serialNumber;
     } else {
       return NextResponse.json({ error: "Укажите ids или all:true" }, { status: 400 });
     }
@@ -129,7 +115,7 @@ export async function POST(request: NextRequest) {
 
     // Filter equipment that actually needs checking
     const toCheck = equipment.filter((eq) => {
-      if (!eq.serialNumber && !eq.registryNumber) return false;
+      if (!eq.serialNumber) return false;
       if (!ids?.length && eq.arshinCheckedAt && eq.arshinCheckedAt > staleThreshold) return false;
       return true;
     });
@@ -140,7 +126,7 @@ export async function POST(request: NextRequest) {
       const batch = toCheck.slice(i, i + BATCH_SIZE);
       const batchResults = await Promise.all(
         batch.map(async (eq) => {
-          const query = (eq.serialNumber || eq.registryNumber)!;
+          const query = eq.serialNumber!;
 
           // Fetch VRI and MIT in parallel
           const data = await fetchArshinVri(query);

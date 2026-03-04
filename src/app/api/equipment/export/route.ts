@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
       { header: "Наименование СИ", key: "name", width: 30 },
       { header: "Тип/Модель", key: "type", width: 20 },
       { header: "Заводской номер", key: "serialNumber", width: 18 },
-      { header: "Номер реестра", key: "registryNumber", width: 18 },
       { header: "Дата последней поверки", key: "verificationDate", width: 22 },
       { header: "Дата следующей поверки", key: "nextVerification", width: 22 },
       { header: "Интервал (мес.)", key: "interval", width: 15 },
@@ -74,7 +73,6 @@ export async function GET(request: NextRequest) {
         name: eq.name,
         type: eq.type || "",
         serialNumber: eq.serialNumber || "",
-        registryNumber: eq.registryNumber || "",
         verificationDate: eq.verificationDate
           ? new Date(eq.verificationDate).toLocaleDateString("ru-RU")
           : "",

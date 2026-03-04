@@ -121,17 +121,6 @@ export default function EquipmentFormModal({
                   onChange={(e) => setField("serialNumber", e.target.value)}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral mb-1">
-                  Номер реестра ФГИС
-                </label>
-                <input
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
-                  value={form.registryNumber}
-                  placeholder="Номер из реестра СИ"
-                  onChange={(e) => setField("registryNumber", e.target.value)}
-                />
-              </div>
             </div>
             {/* ARSHIN_ENABLED: Arshin search hidden until integration is ready */}
             {ARSHIN_ENABLED && <div>

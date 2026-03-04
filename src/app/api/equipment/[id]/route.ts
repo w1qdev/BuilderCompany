@@ -31,7 +31,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl, ignored, pinned } = body;
+    const { name, type, serialNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl, ignored, pinned } = body;
 
     // If only toggling ignored or pinned, do a quick update and return
     if (ignored !== undefined && Object.keys(body).length === 1) {
@@ -62,7 +62,6 @@ export async function PATCH(
         ...(name !== undefined && { name: name.trim() }),
         ...(type !== undefined && { type: type?.trim() || null }),
         ...(serialNumber !== undefined && { serialNumber: serialNumber?.trim() || null }),
-        ...(registryNumber !== undefined && { registryNumber: registryNumber?.trim() || null }),
         ...(verificationDate !== undefined && { verificationDate: verificationDate ? new Date(verificationDate) : null }),
         ...(nextVerification !== undefined && { nextVerification: nextVerification ? new Date(nextVerification) : null }),
         ...(interval !== undefined && { interval }),

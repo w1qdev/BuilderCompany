@@ -76,7 +76,6 @@ export async function POST(request: NextRequest) {
             name: eq.name,
             type: eq.type,
             serialNumber: eq.serialNumber,
-            registryNumber: eq.registryNumber,
             nextVerification: eq.nextVerification!,
             category: eq.category,
           })),

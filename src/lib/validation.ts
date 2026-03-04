@@ -20,7 +20,6 @@ export const equipmentCreateSchema = z.object({
   name: z.string().min(1, "Наименование обязательно").max(200),
   type: z.string().max(200).optional().nullable(),
   serialNumber: z.string().max(100).optional().nullable(),
-  registryNumber: z.string().max(100).optional().nullable(),
   verificationDate: z.string().optional().nullable(),
   nextVerification: z.string().optional().nullable(),
   interval: z.number().int().min(1).max(120).default(12),

@@ -58,10 +58,6 @@ export default function EquipmentTableRow({
       <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">
         {eq.serialNumber || "\u2014"}
       </td>
-      <td className="px-4 py-3 text-neutral dark:text-white/60 font-mono text-xs">
-        {eq.registryNumber || "\u2014"}
-        {/* ARSHIN_ENABLED: arshinUrl and arshinMismatch badges hidden */}
-      </td>
       {showCategory && (
         <td className="px-4 py-3">
           <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-white/10 text-dark dark:text-white">

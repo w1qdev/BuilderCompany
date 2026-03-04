@@ -43,7 +43,6 @@ export default function CompareModal({ show, items, onClose }: CompareModalProps
                 {[
                   { label: "Тип/Модель", key: "type" },
                   { label: "Зав. номер", key: "serialNumber" },
-                  { label: "Реестр", key: "registryNumber" },
                   { label: "Категория", key: "category" },
                   { label: "Интервал (мес.)", key: "interval" },
                   { label: "Дата поверки", key: "verificationDate" },

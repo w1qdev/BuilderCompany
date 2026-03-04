@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createRateLimiter } from "@/lib/rateLimit";
 import { registerSchema, validate } from "@/lib/validation";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export const dynamic = 'force-dynamic';
 
@@ -62,6 +63,9 @@ export async function POST(request: NextRequest) {
         company: company || null,
       },
     });
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail({ name: user.name, email: user.email }).catch(() => {});
 
     return NextResponse.json({
       success: true,

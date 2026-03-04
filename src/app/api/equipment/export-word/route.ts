@@ -119,18 +119,31 @@ export async function GET(request: NextRequest) {
       ],
     });
 
-    // Table header
-    const headers = [
-      "№ п/п",
-      "Наименование",
-      "Зав. номер",
-      "Дата последней поверки (аттестации)",
-      "Периодичность (мес.)",
-      "Дата следующей поверки (аттестации)",
-      "Примечание",
-    ];
+    // Table header — different for SI and IO per official templates
+    const headers =
+      type === "io"
+        ? [
+            "№ п/п",
+            "Наименование испытательного оборудования",
+            "Зав./инвент. номер",
+            "Дата последней аттестации",
+            "Периодичность проведения аттестации",
+            "Дата следующей аттестации",
+            "Примечание",
+          ]
+        : [
+            "№ п/п",
+            "Наименование, тип, заводской (серийный) номер",
+            "Периодичность поверки (межповерочный интервал)",
+            "Дата последней поверки",
+            "Дата следующей (очередной) поверки",
+            "Сведения о поверке (результат)",
+          ];
     // Wider columns for landscape A4 (usable width ~13800 DXA)
-    const colWidths = [700, 4000, 1500, 2000, 1300, 2000, 2300];
+    const colWidths =
+      type === "io"
+        ? [700, 4000, 1500, 2000, 1300, 2000, 2300]
+        : [700, 4500, 2000, 2200, 2200, 2200];
 
     const headerRow = new TableRow({
       tableHeader: true,
@@ -152,21 +165,34 @@ export async function GET(request: NextRequest) {
       ),
     });
 
-    // Data rows
-    const dataRows = equipment.map(
-      (eq, index) =>
-        new TableRow({
+    // Data rows — different structure for SI and IO
+    const dataRows = equipment.map((eq, index) => {
+      if (type === "io") {
+        return new TableRow({
           children: [
             cell(String(index + 1)),
             cell(eq.name, false, AlignmentType.LEFT),
             cell(eq.serialNumber || ""),
             cell(formatDate(eq.verificationDate)),
-            cell(String(eq.interval)),
+            cell(`${eq.interval} мес.`),
             cell(formatDate(eq.nextVerification)),
             cell(eq.notes || "", false, AlignmentType.LEFT),
           ],
-        })
-    );
+        });
+      }
+      // SI: combine name, type, serial into one column
+      const nameParts = [eq.name, eq.type, eq.serialNumber ? `зав. № ${eq.serialNumber}` : ""].filter(Boolean);
+      return new TableRow({
+        children: [
+          cell(String(index + 1)),
+          cell(nameParts.join(", "), false, AlignmentType.LEFT),
+          cell(`${eq.interval} мес.`),
+          cell(formatDate(eq.verificationDate)),
+          cell(formatDate(eq.nextVerification)),
+          cell("", false, AlignmentType.LEFT),
+        ],
+      });
+    });
 
     const table = new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },

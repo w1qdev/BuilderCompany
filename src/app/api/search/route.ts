@@ -50,7 +50,6 @@ export async function GET(request: NextRequest) {
           OR: [
             { name: { contains: q } },
             { serialNumber: { contains: q } },
-            { registryNumber: { contains: q } },
             { type: { contains: q } },
           ],
         },
@@ -58,7 +57,6 @@ export async function GET(request: NextRequest) {
           id: true,
           name: true,
           serialNumber: true,
-          registryNumber: true,
           type: true,
           category: true,
           status: true,

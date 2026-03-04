@@ -56,7 +56,6 @@ export async function GET(request: NextRequest) {
         { name: { contains: search } },
         { type: { contains: search } },
         { serialNumber: { contains: search } },
-        { registryNumber: { contains: search } },
       ];
     }
 
@@ -102,7 +101,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    const { name, type, serialNumber, registryNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl } = parsed.data;
+    const { name, type, serialNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl } = parsed.data;
 
     // Calculate status based on nextVerification date
     const status = calculateEquipmentStatus(nextVerification);
@@ -113,7 +112,6 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         type: type?.trim() || null,
         serialNumber: serialNumber?.trim() || null,
-        registryNumber: registryNumber?.trim() || null,
         verificationDate: verificationDate ? new Date(verificationDate) : null,
         nextVerification: nextVerification ? new Date(nextVerification) : null,
         interval: interval || 12,

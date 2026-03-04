@@ -151,7 +151,6 @@ export async function POST(req: NextRequest) {
           userId,
           name: item.object!.trim(),
           serialNumber: item.fabricNumber?.trim() || null,
-          registryNumber: item.registry?.trim() || null,
           category: serviceCategoryMap[item.service] || "verification",
           status: "active",
           interval: 12,

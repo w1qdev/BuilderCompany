@@ -104,7 +104,6 @@ describe("equipmentCreateSchema", () => {
       name: "Манометр МП-100",
       type: "Манометр",
       serialNumber: "123456",
-      registryNumber: "67890",
       verificationDate: "2024-01-15",
       nextVerification: "2025-01-15",
       interval: 12,

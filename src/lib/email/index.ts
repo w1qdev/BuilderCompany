@@ -13,6 +13,7 @@ import {
   buildPasswordResetHtml,
   buildConfirmationHtml,
   buildArshinVerificationHtml,
+  buildWelcomeHtml,
   buildStatusUpdateHtml,
 } from "./templates";
 import { COMPANY_NAME, COMPANY_SHORT } from "./constants";
@@ -89,7 +90,7 @@ export async function sendEmailNotification(data: AdminEmailData) {
 export async function sendVerificationReminderEmail(data: {
   userName: string;
   email: string;
-  equipment: { name: string; type: string | null; serialNumber: string | null; registryNumber: string | null; nextVerification: Date; category: string }[];
+  equipment: { name: string; type: string | null; serialNumber: string | null; nextVerification: Date; category: string }[];
 }) {
   const result = createTransporter();
   if (!result) return;
@@ -185,6 +186,30 @@ export async function sendArshinVerificationEmail(data: {
     });
   } catch (error) {
     console.error("Arshin verification email error:", error);
+  }
+}
+
+// ─── Welcome (registration) email ───
+
+export async function sendWelcomeEmail(data: { name: string; email: string }) {
+  const result = createTransporter();
+  if (!result) {
+    console.log("Email not configured, skipping welcome email");
+    return;
+  }
+  const { transporter, user } = result;
+
+  const html = buildWelcomeHtml(data);
+
+  try {
+    await transporter.sendMail({
+      from: `"${COMPANY_NAME}" <${user}>`,
+      to: data.email,
+      subject: `Добро пожаловать в ${COMPANY_SHORT}!`,
+      html,
+    });
+  } catch (error) {
+    console.error("Welcome email error:", error);
   }
 }
 

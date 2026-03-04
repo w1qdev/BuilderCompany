@@ -10,7 +10,6 @@ const EXPECTED_HEADERS = [
   "Наименование",
   "Тип",
   "Зав. номер",
-  "Реестр",
   "Дата последней поверки",
   "Дата следующей поверки",
   "Периодичность (мес.)",
@@ -159,7 +158,6 @@ export async function POST(request: NextRequest) {
       name: string;
       type: string | null;
       serialNumber: string | null;
-      registryNumber: string | null;
       verificationDate: Date | null;
       nextVerification: Date | null;
       interval: number;
@@ -176,18 +174,16 @@ export async function POST(request: NextRequest) {
       const name = getCellText(row.getCell(1)).trim();
       const type = getCellText(row.getCell(2)).trim();
       const serialNumber = getCellText(row.getCell(3)).trim();
-      const registryNumber = getCellText(row.getCell(4)).trim();
-      const verificationDateRaw = row.getCell(5).value;
-      const nextVerificationRaw = row.getCell(6).value;
-      const intervalRaw = getCellText(row.getCell(7)).trim();
-      const notes = getCellText(row.getCell(8)).trim();
+      const verificationDateRaw = row.getCell(4).value;
+      const nextVerificationRaw = row.getCell(5).value;
+      const intervalRaw = getCellText(row.getCell(6)).trim();
+      const notes = getCellText(row.getCell(7)).trim();
 
       // Skip completely empty rows
       if (
         !name &&
         !type &&
         !serialNumber &&
-        !registryNumber &&
         !verificationDateRaw &&
         !nextVerificationRaw &&
         !intervalRaw &&
@@ -225,7 +221,6 @@ export async function POST(request: NextRequest) {
         name,
         type: type || null,
         serialNumber: serialNumber || null,
-        registryNumber: registryNumber || null,
         verificationDate,
         nextVerification,
         interval: isNaN(interval) ? 12 : interval,

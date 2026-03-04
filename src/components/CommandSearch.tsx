@@ -14,7 +14,6 @@ interface EquipmentResult {
   id: number;
   name: string;
   serialNumber: string | null;
-  registryNumber: string | null;
   type: string | null;
   category: string;
   status: string;

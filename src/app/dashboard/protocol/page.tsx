@@ -8,7 +8,6 @@ interface ProtocolForm {
   equipmentName: string;
   equipmentType: string;
   serialNumber: string;
-  registryNumber: string;
   owner: string;
   verificationType: string;
   method: string;
@@ -25,7 +24,6 @@ const initialForm: ProtocolForm = {
   equipmentName: "",
   equipmentType: "",
   serialNumber: "",
-  registryNumber: "",
   owner: "",
   verificationType: "периодическая",
   method: "",
@@ -56,7 +54,6 @@ export default function ProtocolPage() {
    Наименование: ${form.equipmentName || "___________"}
    Тип (модель): ${form.equipmentType || "___________"}
    Заводской номер: ${form.serialNumber || "___________"}
-   Регистрационный номер: ${form.registryNumber || "___________"}
    Принадлежит: ${form.owner || "___________"}
 
 2. ВИД ПОВЕРКИ
@@ -118,7 +115,6 @@ export default function ProtocolPage() {
     <div class="field"><span class="field-label">Наименование:</span> ${form.equipmentName || "___________"}</div>
     <div class="field"><span class="field-label">Тип (модель):</span> ${form.equipmentType || "___________"}</div>
     <div class="field"><span class="field-label">Заводской номер:</span> ${form.serialNumber || "___________"}</div>
-    <div class="field"><span class="field-label">Регистрационный номер:</span> ${form.registryNumber || "___________"}</div>
     <div class="field"><span class="field-label">Принадлежит:</span> ${form.owner || "___________"}</div>
   </div>
 
@@ -203,10 +199,6 @@ export default function ProtocolPage() {
           <div>
             <label className="block text-xs font-medium text-neutral mb-1">Заводской номер</label>
             <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.serialNumber} onChange={(e) => updateField("serialNumber", e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Номер реестра</label>
-            <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.registryNumber} onChange={(e) => updateField("registryNumber", e.target.value)} />
           </div>
         </div>
 

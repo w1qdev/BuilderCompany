@@ -166,7 +166,7 @@ export function buildAdminNotificationHtml(data: AdminEmailTemplateData): string
 
 export interface VerificationReminderTemplateData {
   userName: string;
-  equipment: { name: string; type: string | null; serialNumber: string | null; registryNumber: string | null; nextVerification: Date; category: string }[];
+  equipment: { name: string; type: string | null; serialNumber: string | null; nextVerification: Date; category: string }[];
 }
 
 export function buildVerificationReminderHtml(data: VerificationReminderTemplateData): string {
@@ -473,6 +473,121 @@ export function buildArshinVerificationHtml(data: ArshinVerificationTemplateData
       <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">${COMPANY_SHORT} — ${COMPANY_NAME}</p>
       <p style="margin: 0; font-size: 11px; color: #ddd;">${COMPANY_EMAIL}</p>
     </div>
+  </div>
+</body>
+</html>`;
+}
+
+// ─── Welcome (registration) template ───
+
+export interface WelcomeTemplateData {
+  name: string;
+}
+
+export function buildWelcomeHtml(data: WelcomeTemplateData): string {
+  return `
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="utf-8"></head>
+<body style="margin: 0; padding: 0; background: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 24px 16px;">
+
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryDark} 100%); border-radius: 16px 16px 0 0; padding: 36px 32px; text-align: center;">
+      <h1 style="color: #fff; margin: 0 0 8px 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">${COMPANY_NAME}</h1>
+      <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 13px;">${COMPANY_TAGLINE}</p>
+    </div>
+
+    <!-- Body -->
+    <div style="background: #ffffff; padding: 0; border-left: 1px solid #eee; border-right: 1px solid #eee;">
+
+      <!-- Welcome card -->
+      <div style="padding: 0 32px; margin: 28px 0 20px;">
+        <div style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px 24px; text-align: center;">
+          <div style="font-size: 28px; margin-bottom: 8px;">&#127881;</div>
+          <div style="font-size: 15px; font-weight: 700; color: #166534; margin-bottom: 4px;">Добро пожаловать!</div>
+          <div style="font-size: 13px; color: #16a34a;">Ваш аккаунт успешно создан</div>
+        </div>
+      </div>
+
+      <!-- Greeting -->
+      <div style="padding: 0 32px;">
+        <p style="font-size: 16px; color: #333; margin: 0 0 16px 0; line-height: 1.5;">Уважаемый(-ая) <strong>${escapeHtml(data.name)}</strong>,</p>
+        <p style="font-size: 14px; color: #555; margin: 0 0 12px 0; line-height: 1.6;">Благодарим вас за регистрацию в личном кабинете ${COMPANY_SHORT}! Теперь вам доступны все возможности нашего сервиса.</p>
+      </div>
+
+      <!-- Features -->
+      <div style="padding: 0 32px;">
+        <h2 style="margin: 24px 0 16px 0; font-size: 15px; color: #333; text-transform: uppercase; letter-spacing: 0.5px;">Что доступно в личном кабинете</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 12px 0; vertical-align: top; width: 44px;">
+              <div style="width: 32px; height: 32px; background: #fef3c7; border-radius: 8px; text-align: center; line-height: 32px; font-size: 14px;">&#128203;</div>
+            </td>
+            <td style="padding: 12px 0; vertical-align: top;">
+              <div style="font-size: 14px; font-weight: 600; color: #333;">Учёт оборудования</div>
+              <div style="font-size: 13px; color: #888; margin-top: 2px;">Ведите учёт средств измерений и испытательного оборудования</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; vertical-align: top; width: 44px;">
+              <div style="width: 32px; height: 32px; background: #dbeafe; border-radius: 8px; text-align: center; line-height: 32px; font-size: 14px;">&#128197;</div>
+            </td>
+            <td style="padding: 12px 0; vertical-align: top;">
+              <div style="font-size: 14px; font-weight: 600; color: #333;">Графики поверки и аттестации</div>
+              <div style="font-size: 13px; color: #888; margin-top: 2px;">Контролируйте сроки поверки и аттестации с напоминаниями</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; vertical-align: top; width: 44px;">
+              <div style="width: 32px; height: 32px; background: #dcfce7; border-radius: 8px; text-align: center; line-height: 32px; font-size: 14px;">&#128233;</div>
+            </td>
+            <td style="padding: 12px 0; vertical-align: top;">
+              <div style="font-size: 14px; font-weight: 600; color: #333;">Подача заявок онлайн</div>
+              <div style="font-size: 13px; color: #888; margin-top: 2px;">Оформляйте заявки на поверку и аттестацию прямо из личного кабинета</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- CTA -->
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="${COMPANY_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryDark}); color: #fff; text-decoration: none; padding: 14px 40px; border-radius: 12px; font-size: 15px; font-weight: 600;">
+          Перейти в личный кабинет
+        </a>
+      </div>
+
+      <!-- Divider -->
+      <div style="padding: 0 32px;">
+        <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 0;" />
+      </div>
+
+      <!-- Contact info -->
+      <div style="padding: 20px 32px 28px;">
+        <p style="font-size: 13px; color: #888; margin: 0 0 12px 0;">Если у вас есть вопросы, мы всегда на связи:</p>
+        <table style="border-collapse: collapse;">
+          <tr>
+            <td style="padding: 4px 12px 4px 0; font-size: 13px; color: #aaa;">Телефон</td>
+            <td style="padding: 4px 0; font-size: 13px;"><a href="tel:${COMPANY_PHONE_RAW}" style="color: ${COLORS.primary}; text-decoration: none; font-weight: 600;">${COMPANY_PHONE}</a></td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 12px 4px 0; font-size: 13px; color: #aaa;">Email</td>
+            <td style="padding: 4px 0; font-size: 13px;"><a href="mailto:${COMPANY_EMAIL}" style="color: ${COLORS.primary}; text-decoration: none; font-weight: 600;">${COMPANY_EMAIL}</a></td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 12px 4px 0; font-size: 13px; color: #aaa;">Сайт</td>
+            <td style="padding: 4px 0; font-size: 13px;"><a href="${COMPANY_URL}" style="color: ${COLORS.primary}; text-decoration: none; font-weight: 600;">${COMPANY_SITE}</a></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #f9f9fb; border-radius: 0 0 16px 16px; padding: 20px 32px; border: 1px solid #eee; border-top: none; text-align: center;">
+      <p style="margin: 0 0 4px 0; font-size: 12px; color: #bbb;">${COMPANY_SHORT} — ${COMPANY_NAME}</p>
+      <p style="margin: 0; font-size: 11px; color: #ddd;">Вы получили это письмо, потому что зарегистрировались на ${COMPANY_SITE}</p>
+    </div>
+
   </div>
 </body>
 </html>`;

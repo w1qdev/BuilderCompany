@@ -98,7 +98,7 @@ function printScript() {
 }
 
 // ─── АКТ ВВОДА В ЭКСПЛУАТАЦИЮ ────────────────────────────────────────────────
-function generateActHtml(user: { name: string; company?: string | null }, eq: { name: string; type?: string | null; serialNumber?: string | null; registryNumber?: string | null; verificationDate?: Date | null; nextVerification?: Date | null; interval: number; notes?: string | null }) {
+function generateActHtml(user: { name: string; company?: string | null }, eq: { name: string; type?: string | null; serialNumber?: string | null; verificationDate?: Date | null; nextVerification?: Date | null; interval: number; notes?: string | null }) {
   const today = new Date().toLocaleDateString("ru-RU");
   const company = user.company || "_____________________";
 
@@ -116,7 +116,6 @@ ${printScript()}
     <tr><td class="label">Наименование</td><td>${eq.name}</td></tr>
     <tr><td class="label">Тип / Модель</td><td>${eq.type || "—"}</td></tr>
     <tr><td class="label">Серийный номер</td><td>${eq.serialNumber || "—"}</td></tr>
-    <tr><td class="label">Регистрационный номер ФГИС</td><td>${eq.registryNumber || "—"}</td></tr>
     <tr><td class="label">Дата поверки</td><td>${fmt(eq.verificationDate)}</td></tr>
     <tr><td class="label">Следующая поверка</td><td>${fmt(eq.nextVerification)}</td></tr>
     <tr><td class="label">Межповерочный интервал</td><td>${eq.interval} мес.</td></tr>
@@ -150,7 +149,7 @@ ${printScript()}
 }
 
 // ─── ПАСПОРТ СИ ──────────────────────────────────────────────────────────────
-function generatePassportHtml(user: { name: string; company?: string | null }, eq: { name: string; type?: string | null; serialNumber?: string | null; registryNumber?: string | null; verificationDate?: Date | null; nextVerification?: Date | null; interval: number; notes?: string | null }) {
+function generatePassportHtml(user: { name: string; company?: string | null }, eq: { name: string; type?: string | null; serialNumber?: string | null; verificationDate?: Date | null; nextVerification?: Date | null; interval: number; notes?: string | null }) {
   const company = user.company || "_____________________";
   return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Паспорт СИ — ${eq.name}</title>${style}</head><body>
 ${printScript()}
@@ -164,7 +163,6 @@ ${printScript()}
     <tr><td class="label">Наименование СИ</td><td>${eq.name}</td></tr>
     <tr><td class="label">Тип / Модель</td><td>${eq.type || "—"}</td></tr>
     <tr><td class="label">Серийный (заводской) номер</td><td>${eq.serialNumber || "—"}</td></tr>
-    <tr><td class="label">Регистрационный номер ФГИС «Аршин»</td><td>${eq.registryNumber || "—"}</td></tr>
   </table>
 
   <div class="section-title">Метрологические характеристики</div>
@@ -210,7 +208,7 @@ ${printScript()}
 }
 
 // ─── ЖУРНАЛ УЧЁТА СИ ─────────────────────────────────────────────────────────
-function generateJournalHtml(user: { name: string; company?: string | null }, equipment: Array<{ id: number; name: string; type?: string | null; serialNumber?: string | null; registryNumber?: string | null; verificationDate?: Date | null; nextVerification?: Date | null; interval: number; status: string }>) {
+function generateJournalHtml(user: { name: string; company?: string | null }, equipment: Array<{ id: number; name: string; type?: string | null; serialNumber?: string | null; verificationDate?: Date | null; nextVerification?: Date | null; interval: number; status: string }>) {
   const today = new Date().toLocaleDateString("ru-RU");
   const company = user.company || "_____________________";
   const rows = equipment.map((eq, i) => `
@@ -219,7 +217,6 @@ function generateJournalHtml(user: { name: string; company?: string | null }, eq
       <td>${eq.name}</td>
       <td>${eq.type || "—"}</td>
       <td>${eq.serialNumber || "—"}</td>
-      <td>${eq.registryNumber || "—"}</td>
       <td style="text-align:center">${eq.interval} мес.</td>
       <td style="text-align:center">${fmt(eq.verificationDate)}</td>
       <td style="text-align:center">${fmt(eq.nextVerification)}</td>
@@ -245,7 +242,6 @@ ${printScript()}
         <th>Наименование СИ</th>
         <th>Тип</th>
         <th>Серийный №</th>
-        <th>Рег. № ФГИС</th>
         <th style="width:8%">МПИ</th>
         <th style="width:10%">Дата поверки</th>
         <th style="width:10%">Следующая поверка</th>
