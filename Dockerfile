@@ -10,15 +10,15 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     apk add --no-cache wget
 
-# Copy pre-built artifacts
+# Copy pre-built artifacts (standalone includes its own node_modules)
 COPY .next/standalone ./
 COPY .next/static ./.next/static
 COPY public/robots.txt ./public/robots.txt
 COPY prisma ./prisma
 COPY server.js ./server.js
 
-# Copy full node_modules (built on host — no npm install inside Docker)
-COPY node_modules ./node_modules
+# Install only extra runtime deps not included in standalone
+RUN npm install --no-save socket.io@4 && rm -rf /root/.npm
 
 # Create directories (public/images is mounted as volume)
 RUN mkdir -p /app/uploads /app/data /app/public/images && \

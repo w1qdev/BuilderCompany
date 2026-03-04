@@ -73,7 +73,6 @@ app.prepare().then(() => {
               name: eq.name,
               type: eq.type,
               serialNumber: eq.serialNumber,
-              registryNumber: eq.registryNumber,
               nextVerification: eq.nextVerification,
               category: eq.category,
             })),
