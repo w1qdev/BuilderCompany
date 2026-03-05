@@ -173,7 +173,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme:dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})()`,
+            __html: `(function(){try{var d=["dark-chocolate","deep-ocean","night-forest","midnight","graphite","obsidian","aurora","crimson-night","cyber","plum","mocha","nord"];var isDash=location.pathname.startsWith("/dashboard");var t=isDash?(localStorage.getItem("theme")||"warm-orange"):"warm-orange";document.documentElement.setAttribute("data-theme",t);if(d.indexOf(t)!==-1){document.documentElement.classList.add("dark")}if(isDash){var fs={"small":"14px","medium":"16px","large":"18px"};var sz=localStorage.getItem("fontSize");if(sz&&fs[sz]){document.documentElement.style.setProperty("--font-size-base",fs[sz])}if(localStorage.getItem("compactMode")==="true"){document.documentElement.classList.add("compact")}}}catch(e){}})()`,
           }}
         />
         <script

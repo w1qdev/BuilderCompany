@@ -36,7 +36,7 @@ export default function Header({ onOpenModal }: HeaderProps) {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-dark/95 backdrop-blur-md shadow-xl" : "bg-dark"
+        scrolled ? "bg-[#2D1B0E]/80 backdrop-blur-lg shadow-xl" : "bg-[#2D1B0E]"
       }`}
     >
       {/* Top bar */}
@@ -102,7 +102,8 @@ export default function Header({ onOpenModal }: HeaderProps) {
       </div>
 
       {/* Main nav */}
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
+        {/* Logo — fixed left */}
         <Link href="/" className="flex items-center gap-2 shrink-0 text-white">
           <Logo size="md" />
           <span className="font-semibold text-sm whitespace-nowrap hidden xl:inline">
@@ -110,8 +111,8 @@ export default function Header({ onOpenModal }: HeaderProps) {
           </span>
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center lg:gap-4 xl:gap-6">
+        {/* Desktop nav — centered in remaining space */}
+        <nav className="hidden lg:flex items-center justify-center flex-1 lg:gap-5 xl:gap-7">
           {navLinks.map((link) =>
             link.href.startsWith("/") ? (
               <Link
@@ -133,7 +134,11 @@ export default function Header({ onOpenModal }: HeaderProps) {
           )}
         </nav>
 
-        <div className="flex items-center gap-3">
+        {/* Spacer for mobile (pushes right group to the end) */}
+        <div className="flex-1 lg:hidden" />
+
+        {/* Right group — fixed right */}
+        <div className="flex items-center gap-3 shrink-0">
           <ThemeToggle />
           <button
             onClick={onOpenModal}

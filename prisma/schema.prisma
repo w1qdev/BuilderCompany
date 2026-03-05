@@ -19,6 +19,10 @@ model User {
   kpp            String?
   legalName      String?
   legalAddress   String?
+  avatar         String?
+  coverImage     String?
+  position       String?
+  timezone       String?                @default("Europe/Moscow")
   notifyDays     String?                @default("14,7")
   telegramChatId String?
   createdAt      DateTime               @default(now())
@@ -26,6 +30,8 @@ model User {
   equipment      Equipment[]
   activityLogs   ActivityLog[]
   orgMemberships OrganizationMember[]
+  loginLogs      LoginLog[]
+  sessions       UserSession[]
 }
 
 model Organization {
@@ -207,6 +213,33 @@ model ActivityLog {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+model LoginLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model UserSession {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  ip         String?
+  userAgent  String?
+  revoked    Boolean  @default(false)
+  lastUsedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
 }
 
 model VerificationRecord {

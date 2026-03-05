@@ -1,17 +1,12 @@
 "use client";
 
+import { DEFAULT_THEME, DARK_CLASS_THEMES } from "@/lib/themes";
+import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 
-enum ThemeTypes {
-  LIGHT = "light",
-  DARK = "dark",
-}
-
-type Theme = ThemeTypes.LIGHT | ThemeTypes.DARK;
-
 interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
+  theme: string;
+  setTheme: (id: string) => void;
   mounted: boolean;
 }
 
@@ -25,47 +20,44 @@ export function useTheme() {
   return context;
 }
 
-interface ThemeProviderProps {
-  children: React.ReactNode;
+function applyTheme(id: string) {
+  const root = document.documentElement;
+  root.setAttribute("data-theme", id);
+  if (DARK_CLASS_THEMES.includes(id)) {
+    root.classList.add("dark");
+  } else {
+    root.classList.remove("dark");
+  }
 }
 
-export default function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(ThemeTypes.LIGHT);
+export default function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = useState(DEFAULT_THEME);
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const isDashboard = pathname.startsWith("/dashboard");
 
   useEffect(() => {
-    // Check localStorage or system preference
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle("dark", savedTheme === "dark");
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setTheme(ThemeTypes.DARK);
-      document.documentElement.classList.add("dark");
-    }
+    const saved = localStorage.getItem("theme") || DEFAULT_THEME;
+    setThemeState(saved);
     setMounted(true);
   }, []);
 
+  // Apply user theme in dashboard, default on other pages
   useEffect(() => {
     if (!mounted) return;
+    applyTheme(isDashboard ? theme : DEFAULT_THEME);
+  }, [isDashboard, theme, mounted]);
 
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
+  const setTheme = (id: string) => {
+    setThemeState(id);
+    localStorage.setItem("theme", id);
+    if (isDashboard) {
+      applyTheme(id);
     }
-    localStorage.setItem("theme", theme);
-  }, [theme, mounted]);
-
-  const toggleTheme = () => {
-    setTheme((prev) =>
-      prev === ThemeTypes.LIGHT ? ThemeTypes.DARK : ThemeTypes.LIGHT,
-    );
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, mounted }}>
+    <ThemeContext.Provider value={{ theme, setTheme, mounted }}>
       {children}
     </ThemeContext.Provider>
   );

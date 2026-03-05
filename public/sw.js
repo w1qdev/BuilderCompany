@@ -35,6 +35,9 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
+  // Skip cross-origin requests (Google Fonts, CDNs, etc.)
+  if (url.origin !== self.location.origin) return;
+
   // Skip Socket.IO and hot-reload requests
   if (url.pathname.startsWith('/api/socketio') || url.pathname.startsWith('/_next/webpack-hmr')) {
     return;

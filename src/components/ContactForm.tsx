@@ -149,6 +149,7 @@ export default function ContactForm({
   const [errorMsg, setErrorMsg] = useState("");
   const [needContract, setNeedContract] = useState(false);
   const [addEquipment, setAddEquipment] = useState(false);
+  const [consultOnly, setConsultOnly] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const validateContactField = (field: string, value: string) => {
@@ -232,17 +233,19 @@ export default function ContactForm({
     setSubmitStatus(SubmitStatusEnums.LOADING);
     setErrorMsg("");
 
-    // Validate registry for Поверка СИ items
-    for (let i = 0; i < serviceItems.length; i++) {
-      if (
-        serviceItems[i].service === "Поверка СИ" &&
-        !serviceItems[i].registry.trim()
-      ) {
-        setSubmitStatus(SubmitStatusEnums.ERROR);
-        setErrorMsg(
-          `Позиция ${i + 1}: номер реестра обязателен для поверки СИ`,
-        );
-        return;
+    // Validate registry for Поверка СИ items (skip if consultation only)
+    if (!consultOnly) {
+      for (let i = 0; i < serviceItems.length; i++) {
+        if (
+          serviceItems[i].service === "Поверка СИ" &&
+          !serviceItems[i].registry.trim()
+        ) {
+          setSubmitStatus(SubmitStatusEnums.ERROR);
+          setErrorMsg(
+            `Позиция ${i + 1}: номер реестра обязателен для поверки СИ`,
+          );
+          return;
+        }
       }
     }
 
@@ -305,15 +308,18 @@ export default function ContactForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          items: serviceItems.map(
-            ({ service, poverk, object, fabricNumber, registry }) => ({
-              service,
-              poverk: service === "Поверка СИ" ? poverk : undefined,
-              object,
-              fabricNumber,
-              registry: service === "Поверка СИ" ? registry : undefined,
-            }),
-          ),
+          consultOnly,
+          items: consultOnly
+            ? []
+            : serviceItems.map(
+                ({ service, poverk, object, fabricNumber, registry }) => ({
+                  service,
+                  poverk: service === "Поверка СИ" ? poverk : undefined,
+                  object,
+                  fabricNumber,
+                  registry: service === "Поверка СИ" ? registry : undefined,
+                }),
+              ),
           fileName: firstName,
           filePath: firstPath,
           files: uploadedFiles,
@@ -342,6 +348,7 @@ export default function ContactForm({
       setFileUploadPercents({});
       setNeedContract(false);
       setAddEquipment(false);
+      setConsultOnly(false);
 
       setTimeout(() => {
         onSuccess?.();
@@ -460,8 +467,34 @@ export default function ContactForm({
         </div>
       </div>
 
+      {/* Mode toggle */}
+      <div className="flex gap-2 p-1 bg-gray-100 dark:bg-white/5 rounded-xl">
+        <button
+          type="button"
+          onClick={() => setConsultOnly(false)}
+          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+            !consultOnly
+              ? "bg-white dark:bg-white/10 text-dark dark:text-white shadow-sm"
+              : "text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70"
+          }`}
+        >
+          Указать оборудование
+        </button>
+        <button
+          type="button"
+          onClick={() => setConsultOnly(true)}
+          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+            consultOnly
+              ? "bg-white dark:bg-white/10 text-dark dark:text-white shadow-sm"
+              : "text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/70"
+          }`}
+        >
+          Уточнить детали
+        </button>
+      </div>
+
       {/* Service Items */}
-      <div className="space-y-3">
+      {!consultOnly && <div className="space-y-3">
         {serviceItems.map((item, index) => (
           <div
             key={item.id}
@@ -608,13 +641,13 @@ export default function ContactForm({
           </svg>
           Добавить позицию
         </button>
-      </div>
+      </div>}
 
       <div className="space-y-1.5">
-        <Label htmlFor="contact-message">Комментарии</Label>
+        <Label htmlFor="contact-message">{consultOnly ? "Опишите ваш вопрос" : "Комментарии"}</Label>
         <Textarea
           id="contact-message"
-          placeholder="Сообщение (необязательно)"
+          placeholder={consultOnly ? "Расскажите, что вас интересует" : "Сообщение (необязательно)"}
           rows={3}
           value={form.message}
           onChange={(e) => setForm({ ...form, message: e.target.value })}

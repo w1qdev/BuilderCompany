@@ -52,6 +52,7 @@ export default function EquipmentToolbar({
           {title}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Primary action */}
           <button
             onClick={onAddClick}
             className="inline-flex items-center gap-2 gradient-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow"
@@ -71,6 +72,22 @@ export default function EquipmentToolbar({
             </svg>
             Добавить
           </button>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
+
+          {/* Export */}
+          <button
+            onClick={onExport}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Экспорт
+          </button>
+
+          {/* Import + Template group */}
           <label
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 cursor-pointer hover:bg-gray-50 transition-colors ${importing ? "opacity-50 pointer-events-none" : ""}`}
           >
@@ -87,8 +104,7 @@ export default function EquipmentToolbar({
                 d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
               />
             </svg>
-            {importing ? "Импорт..." : "Импорт "}
-            (.xlsx)
+            {importing ? "Импорт..." : "Импорт"}
             <input
               ref={fileInputRef}
               type="file"
@@ -106,15 +122,6 @@ export default function EquipmentToolbar({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Шаблон
-          </button>
-          <button
-            onClick={onExport}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Экспорт (.xlsx)
           </button>
           {/* ARSHIN_ENABLED: org import button hidden until integration is ready */}
           {ARSHIN_ENABLED && (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { createHash } from "crypto";
 import { SignJWT } from "jose";
 import { JWT_SECRET } from "@/lib/jwt";
 import { createRateLimiter } from "@/lib/rateLimit";
@@ -56,6 +57,20 @@ export async function POST(request: NextRequest) {
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime(expiresIn)
       .sign(JWT_SECRET);
+
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
+    const userAgent = request.headers.get("user-agent") || "unknown";
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+
+    // Log login + create session
+    try {
+      await Promise.all([
+        prisma.loginLog.create({ data: { userId: user.id, ip, userAgent } }),
+        prisma.userSession.create({ data: { userId: user.id, tokenHash, ip, userAgent } }),
+      ]);
+    } catch (err) {
+      console.error("Login log error:", err);
+    }
 
     const response = NextResponse.json({
       success: true,

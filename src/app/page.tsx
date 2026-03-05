@@ -1,6 +1,7 @@
 "use client";
 
 import About from "@/components/About";
+import DashboardShowcase from "@/components/DashboardShowcase";
 import BackToTop from "@/components/BackToTop";
 import Calculator from "@/components/Calculator";
 import Certificates from "@/components/Certificates";
@@ -43,6 +44,7 @@ export default function Home() {
         <Payment />
         {/* <EquipmentShowcase /> */}
         <Calculator onOpenModal={openModal} />
+        <DashboardShowcase />
         <About />
         <Certificates />
         <Portfolio />

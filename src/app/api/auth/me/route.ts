@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest) {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const userId = payload.userId as number;
     const body = await request.json();
-    const { name, phone, company, inn, kpp, legalName, legalAddress, notifyDays, telegramChatId } = body;
+    const { name, phone, company, inn, kpp, legalName, legalAddress, notifyDays, telegramChatId, position, timezone } = body;
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
@@ -25,8 +25,10 @@ export async function PATCH(request: NextRequest) {
         ...(legalAddress !== undefined && { legalAddress: legalAddress || null }),
         ...(notifyDays !== undefined && { notifyDays }),
         ...(telegramChatId !== undefined && { telegramChatId }),
+        ...(position !== undefined && { position: position || null }),
+        ...(timezone !== undefined && { timezone: timezone || null }),
       },
-      select: { id: true, email: true, name: true, phone: true, company: true, inn: true, kpp: true, legalName: true, legalAddress: true, notifyDays: true, telegramChatId: true },
+      select: { id: true, email: true, name: true, phone: true, company: true, inn: true, kpp: true, legalName: true, legalAddress: true, notifyDays: true, telegramChatId: true, avatar: true, coverImage: true, position: true, timezone: true },
     });
     return NextResponse.json({ user });
   } catch {
@@ -62,6 +64,10 @@ export async function GET(request: NextRequest) {
         legalAddress: true,
         notifyDays: true,
         telegramChatId: true,
+        avatar: true,
+        coverImage: true,
+        position: true,
+        timezone: true,
         createdAt: true,
       },
     });

@@ -12,21 +12,21 @@ const config: Config = {
       colors: {
         primary: {
           DEFAULT: "hsl(var(--primary))",
-          light: "#F5A623",
-          dark: "#D4601A",
+          light: "var(--primary-light)",
+          dark: "var(--primary-dark)",
           foreground: "hsl(var(--primary-foreground))",
         },
         dark: {
-          DEFAULT: "#2D1B0E",
-          light: "#3D2B1A",
+          DEFAULT: "var(--dark)",
+          light: "var(--dark-light)",
         },
         neutral: {
           DEFAULT: "#585858",
           light: "#808080",
         },
         warm: {
-          bg: "#FFF8F0",
-          light: "#FFFDF9",
+          bg: "var(--warm-bg)",
+          light: "var(--warm-light)",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

@@ -44,7 +44,12 @@ export async function GET(
     return serveFile(filePath, fileName);
   }
 
-  // 2) Authenticated owner via JWT cookie
+  // 2) Avatar/cover images are public (served by filename with userId)
+  if (fileName.startsWith("avatars/")) {
+    return serveFile(filePath, fileName);
+  }
+
+  // 3) Authenticated owner via JWT cookie
   const token = req.cookies.get("auth-token")?.value;
   if (token) {
     try {
@@ -68,11 +73,13 @@ export async function GET(
 async function serveFile(absolutePath: string, fileName: string) {
   const ext = path.extname(fileName).toLowerCase();
   const contentType = MIME_TYPES[ext] || "application/octet-stream";
+  const isImage = contentType.startsWith("image/");
   const buffer = await readFile(absolutePath);
   return new NextResponse(buffer, {
     headers: {
       "Content-Type": contentType,
       "Content-Disposition": `inline; filename="${path.basename(fileName)}"`,
+      ...(isImage && { "Cache-Control": "public, max-age=31536000, immutable" }),
     },
   });
 }
