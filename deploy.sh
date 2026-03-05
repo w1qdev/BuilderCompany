@@ -31,7 +31,7 @@ npx prisma generate
 
 # Step 2: Build Next.js
 echo "[2/5] Building Next.js..."
-NODE_OPTIONS="--max-old-space-size=512" NODE_ENV=production npm run build
+NODE_OPTIONS="--max-old-space-size=728" NODE_ENV=production npm run build
 
 # Step 3: Run database migrations on host
 echo "[3/5] Running database migrations..."

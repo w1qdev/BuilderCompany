@@ -196,7 +196,48 @@ export default function RootLayout({
             {children}
             <PageViewTracker />
             <CookieConsent />
-            <Toaster richColors position="top-center" />
+            <Toaster
+              position="top-center"
+              gap={8}
+              toastOptions={{
+                classNames: {
+                  success: "!border-emerald-200/50 dark:!border-emerald-800/20",
+                  error: "!border-red-200/50 dark:!border-red-800/20",
+                  warning: "!border-amber-200/50 dark:!border-amber-800/20",
+                  info: "!border-blue-200/50 dark:!border-blue-800/20",
+                },
+              }}
+              icons={{
+                success: (
+                  <div className="w-[22px] h-[22px] rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                    <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ),
+                error: (
+                  <div className="w-[22px] h-[22px] rounded-lg bg-red-50 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                    <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                ),
+                warning: (
+                  <div className="w-[22px] h-[22px] rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                    <svg className="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01" />
+                    </svg>
+                  </div>
+                ),
+                info: (
+                  <div className="w-[22px] h-[22px] rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                    <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                ),
+              }}
+            />
           </SiteSettingsProvider>
         </ThemeProvider>
       </body>

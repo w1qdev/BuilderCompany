@@ -776,8 +776,8 @@ export default function ContactForm({
         </div>
       )}
 
-      <div className="space-y-3">
-        <div className="flex items-start gap-3 p-4 bg-warm-bg dark:bg-neutral-900 rounded-xl">
+      <div className="bg-warm-bg dark:bg-neutral-900 rounded-xl p-4 space-y-2">
+        <div className="flex items-start gap-3">
           <Checkbox
             id="needContract"
             checked={needContract}
@@ -792,7 +792,7 @@ export default function ContactForm({
           </Label>
         </div>
         {showEquipmentCheckbox && (
-          <div className="flex items-start gap-3 p-4 bg-warm-bg dark:bg-neutral-900 rounded-xl">
+          <div className="flex items-start gap-3">
             <Checkbox
               id="addEquipment"
               checked={addEquipment}

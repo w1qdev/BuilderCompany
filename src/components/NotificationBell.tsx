@@ -148,10 +148,15 @@ export default function NotificationBell() {
   return (
     <div ref={ref} className="relative flex items-center gap-1">
       {/* Socket.IO connection indicator */}
-      <span
-        className={`w-2 h-2 rounded-full transition-colors ${socketConnected ? "bg-green-400" : "bg-red-400 animate-pulse"}`}
-        title={socketConnected ? "Подключено" : "Нет подключения"}
-      />
+      <div className="relative group">
+        <span
+          className={`block w-2 h-2 rounded-full transition-colors cursor-default ${socketConnected ? "bg-green-400" : "bg-red-400 animate-pulse"}`}
+        />
+        <div className="absolute right-0 top-full mt-2 px-2.5 py-1 rounded-lg bg-gray-800 text-white text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-lg z-50">
+          {socketConnected ? "Подключено к серверу" : "Нет подключения к серверу"}
+          <div className="absolute bottom-full right-0.5 border-4 border-transparent border-b-gray-800" />
+        </div>
+      </div>
       <button
         onClick={() => {
           const next = !open;
@@ -162,12 +167,13 @@ export default function NotificationBell() {
             setReadIds(new Set(allIds));
           }
         }}
-        className="relative p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+        className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
         aria-label="Уведомления"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
+        <span className="hidden sm:inline text-xs">Уведомления</span>
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
             {unreadCount}

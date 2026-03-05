@@ -278,8 +278,7 @@ export default function DashboardLayout({
               / Личный кабинет
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Search button */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
@@ -290,42 +289,7 @@ export default function DashboardLayout({
               </svg>
               <span className="hidden sm:inline text-xs text-white/40">Ctrl+K</span>
             </button>
-            {/* Theme indicator — links to profile/appearance */}
-            <Link
-              href="/dashboard/profile"
-              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              title="Настройки темы"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-              </svg>
-            </Link>
             <NotificationBell />
-            <div className="hidden sm:flex items-center gap-2 text-sm text-white/70">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-              <span>{user.name}</span>
-              {user.company && (
-                <span className="text-white/40">({user.company})</span>
-              )}
-            </div>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-white/60 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded"
-            >
-              Выйти
-            </button>
           </div>
         </div>
       </header>

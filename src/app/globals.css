@@ -769,81 +769,108 @@ body {
   }
 }
 
-/* Custom Toast Styles */
+/* Checkbox check-draw animation (left to right) */
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-check-draw path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: check-draw 0.25s ease-out forwards;
+}
+
+/* Auto-fix: primary bg + text-white → use theme-aware foreground color */
+.bg-primary.text-white,
+.bg-primary .text-white,
+.gradient-primary.text-white,
+.gradient-primary .text-white {
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+/* Toast Styles — Clean, minimal, professional */
+[data-sonner-toaster] {
+  --normal-bg: rgba(255, 255, 255, 0.97);
+  --normal-border: rgba(0, 0, 0, 0.06);
+  --normal-text: #1f2937;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
 [data-sonner-toast] {
-  background: white !important;
-  border: 1px solid #f5e6d3 !important;
-  border-radius: 1rem !important;
-  box-shadow: 0 10px 40px rgba(232, 122, 46, 0.15) !important;
-  padding: 1rem 1.25rem !important;
-  font-family: 'Inter', system-ui, sans-serif !important;
-}
-
-[data-sonner-toast][data-type="success"] {
-  background: white !important;
-  border-color: var(--primary-hex) !important;
-}
-
-[data-sonner-toast][data-type="error"] {
-  background: white !important;
-  border-color: #ff6b6b !important;
+  --toast-svg-margin-start: 0 !important;
+  padding: 12px 14px !important;
+  gap: 10px !important;
+  border-radius: 12px !important;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  transition: transform 0.2s ease, opacity 0.2s ease !important;
 }
 
 [data-sonner-toast] [data-title] {
-  color: var(--dark) !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   font-size: 0.9375rem !important;
-  line-height: 1.4 !important;
+  line-height: 1.5 !important;
+  letter-spacing: -0.01em !important;
 }
 
 [data-sonner-toast] [data-description] {
-  color: #6B5544 !important;
-  font-size: 0.875rem !important;
+  font-size: 0.8125rem !important;
   line-height: 1.4 !important;
-}
-
-[data-sonner-toast] [data-icon] {
-  width: 1.25rem !important;
-  height: 1.25rem !important;
-}
-
-[data-sonner-toast][data-type="success"] [data-icon] {
-  color: var(--primary-hex) !important;
-}
-
-[data-sonner-toast][data-type="error"] [data-icon] {
-  color: #ff6b6b !important;
+  opacity: 0.65 !important;
 }
 
 [data-sonner-toast] [data-close-button] {
+  top: 6px !important;
+  right: 6px !important;
   background: transparent !important;
   border: none !important;
-  color: #9B8374 !important;
-  transition: color 0.2s ease !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 6px !important;
+  color: #9ca3af !important;
+  transition: all 0.15s ease !important;
 }
 
 [data-sonner-toast] [data-close-button]:hover {
-  color: var(--dark) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #4b5563 !important;
+}
+
+/* Dark mode */
+.dark [data-sonner-toaster] {
+  --normal-bg: rgba(30, 30, 35, 0.97);
+  --normal-border: rgba(255, 255, 255, 0.08);
+  --normal-text: #e5e7eb;
 }
 
 .dark [data-sonner-toast] {
-  background: var(--dark-light) !important;
-  border-color: hsl(var(--border)) !important;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
+  background: rgba(30, 30, 35, 0.97) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e5e7eb !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 1px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
 .dark [data-sonner-toast] [data-title] {
-  color: #f0f0f0 !important;
+  color: #f3f4f6 !important;
 }
 
 .dark [data-sonner-toast] [data-description] {
-  color: #aaa !important;
+  color: #9ca3af !important;
 }
 
 .dark [data-sonner-toast] [data-close-button] {
-  color: #888 !important;
+  color: #6b7280 !important;
 }
 
 .dark [data-sonner-toast] [data-close-button]:hover {
-  color: #ddd !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #d1d5db !important;
 }

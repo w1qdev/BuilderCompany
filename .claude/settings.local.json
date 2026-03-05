@@ -52,7 +52,21 @@
       "WebFetch(domain:fgis.gost.ru)",
       "Bash(npx prisma migrate diff:*)",
       "Bash(npx prisma migrate deploy:*)",
-      "Bash(cd /h/Coding/Project && npx vitest run 2>&1)"
+      "Bash(cd /h/Coding/Project && npx vitest run 2>&1)",
+      "Bash(find:*)",
+      "Bash(cd \"H:/Coding/Project\" && npx prisma db push 2>&1)",
+      "WebFetch(domain:unsplash.com)",
+      "WebFetch(domain:csm-center.ru)",
+      "Bash(echo python-docx not available, trying alternative:*)",
+      "Bash(cd \"H:/Coding/Project\" && pip install python-docx 2>&1 | tail -3 && python3 -c \"\nfrom docx import Document\ndoc = Document\\('График ИО на 2026.docx'\\)\nfor i, table in enumerate\\(doc.tables\\):\n    print\\(f'Table {i}:'\\)\n    for j, row in enumerate\\(table.rows\\):\n        cells = [cell.text for cell in row.cells]\n        print\\(f'  Row {j}: {cells}'\\)\n    print\\(\\)\n\" 2>&1)",
+      "Bash(cd \"H:/Coding/Project\" && python -c \"\nfrom docx import Document\ndoc = Document\\('График ИО на 2026.docx'\\)\nfor i, table in enumerate\\(doc.tables\\):\n    print\\(f'Table {i}:'\\)\n    for j, row in enumerate\\(table.rows\\):\n        cells = [cell.text for cell in row.cells]\n        print\\(f'  Row {j}: {cells}'\\)\n    print\\(\\)\n\" 2>&1)",
+      "Bash(cd \"H:/Coding/Project\" && python -c \"\nimport sys\nsys.stdout.reconfigure\\(encoding='utf-8'\\)\nfrom docx import Document\ndoc = Document\\('График ИО на 2026.docx'\\)\nfor i, table in enumerate\\(doc.tables\\):\n    print\\(f'Table {i}:'\\)\n    for j, row in enumerate\\(table.rows[:2]\\):\n        cells = [cell.text for cell in row.cells]\n        print\\(f'  Row {j}: {cells}'\\)\n    print\\(\\)\nfor p in doc.paragraphs[:10]:\n    if p.text.strip\\(\\):\n        print\\(f'Para: {p.text}'\\)\n\" 2>&1)",
+      "Bash(echo olefile not available:*)",
+      "Bash(echo failed:*)",
+      "Bash(head:*)",
+      "Bash(start chrome:*)",
+      "Bash(kill %1:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

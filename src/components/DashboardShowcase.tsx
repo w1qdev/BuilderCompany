@@ -526,11 +526,11 @@ export default function DashboardShowcase() {
   const [active, setActive] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const resetTimer = () => {
+  const resetTimer = (delay = 5000) => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setActive((prev) => (prev + 1) % features.length);
-    }, 5000);
+    }, delay);
   };
 
   useEffect(() => {
@@ -541,7 +541,11 @@ export default function DashboardShowcase() {
 
   const handleTabClick = (i: number) => {
     setActive(i);
-    resetTimer();
+    resetTimer(12000);
+  };
+
+  const handlePreviewInteraction = () => {
+    resetTimer(12000);
   };
 
   const feature = features[active];
@@ -549,7 +553,7 @@ export default function DashboardShowcase() {
 
   return (
     <section className="py-20 bg-warm-bg dark:bg-dark relative overflow-hidden" id="dashboard">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -572,9 +576,9 @@ export default function DashboardShowcase() {
         </motion.div>
 
         {/* Content */}
-        <div className="grid lg:grid-cols-5 gap-8 items-start">
+        <div className="grid lg:grid-cols-7 gap-8 items-start">
           {/* Feature tabs — left */}
-          <div className="lg:col-span-2 space-y-2">
+          <div className="lg:col-span-3 space-y-2">
             {features.map((f, i) => (
               <motion.button
                 key={f.id}
@@ -612,8 +616,8 @@ export default function DashboardShowcase() {
           </div>
 
           {/* Preview — right */}
-          <div className="lg:col-span-3">
-            <div className="bg-gray-50 dark:bg-dark-light rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-white/10 min-h-[340px]">
+          <div className="lg:col-span-4">
+            <div className="bg-gray-50 dark:bg-dark-light rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-white/10 min-h-[400px]">
               {/* Address bar */}
               <div className="flex items-center gap-2 mb-5">
                 <div className="flex-1 h-7 bg-white dark:bg-dark rounded-lg px-3 flex items-center gap-2 border border-gray-200 dark:border-white/10">
@@ -625,17 +629,20 @@ export default function DashboardShowcase() {
               </div>
 
               {/* Preview content */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={feature.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  {PreviewComponent && <PreviewComponent data={feature.preview} />}
-                </motion.div>
-              </AnimatePresence>
+              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+              <div onClick={handlePreviewInteraction}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={feature.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    {PreviewComponent && <PreviewComponent data={feature.preview} />}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </div>
 
             {/* CTA */}
