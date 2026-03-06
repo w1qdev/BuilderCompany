@@ -32,6 +32,8 @@ model User {
   orgMemberships OrganizationMember[]
   loginLogs      LoginLog[]
   sessions       UserSession[]
+  maxAccounts    MaxUser[]
+  maxLinkCodes   MaxLinkCode[]
 }
 
 model Organization {
@@ -255,4 +257,27 @@ model VerificationRecord {
   createdAt   DateTime  @default(now())
 
   @@index([equipmentId])
+}
+
+model MaxUser {
+  id        Int      @id @default(autoincrement())
+  maxUserId Int      @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model MaxLinkCode {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([code])
 }
