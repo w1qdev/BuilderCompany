@@ -67,3 +67,8 @@ next-env.d.ts
 
 # Docker volumes
 docker-compose.override.yml
+
+# Bot
+/bot/node_modules
+/bot/dist
+/bot/.env

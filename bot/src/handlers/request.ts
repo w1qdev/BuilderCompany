@@ -8,7 +8,7 @@ export function registerRequestHandlers(bot: any) {
     const userId = ctx.user?.user_id;
     if (!userId) return;
     setSession(userId, { step: "awaiting_service" });
-    ctx.reply("Выберите услугу:", { attachments: [servicesMenu()] });
+    ctx.editMessage({ text: "🔧 Выберите услугу:", attachments: [servicesMenu()] });
   });
 
   bot.action(/^service:(.+)$/, (ctx: Context) => {
@@ -21,9 +21,9 @@ export function registerRequestHandlers(bot: any) {
     const service = match?.[1] || "";
 
     setSession(userId, { ...session, step: "awaiting_contact", service });
-    ctx.reply(
-      `Услуга: ${service}\n\nВведите ваш телефон и email через пробел.\nПример: +79001234567 mail@example.com`
-    );
+    ctx.editMessage({
+      text: `✅ Услуга: ${service}\n\n📱 Введите ваш телефон и email через пробел.\nПример: +79001234567 mail@example.com`,
+    });
   });
 
   bot.action("confirm_request", async (ctx: Context) => {
@@ -49,7 +49,8 @@ export function registerRequestHandlers(bot: any) {
     });
 
     clearSession(userId);
-    ctx.reply("Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.", {
+    ctx.editMessage({
+      text: "🎉 Заявка успешно отправлена!\nМы свяжемся с вами в ближайшее время.",
       attachments: [backMenu()],
     });
   });
@@ -57,7 +58,7 @@ export function registerRequestHandlers(bot: any) {
   bot.action("cancel", (ctx: Context) => {
     const userId = ctx.user?.user_id;
     if (userId) clearSession(userId);
-    ctx.reply("Действие отменено.", { attachments: [backMenu()] });
+    ctx.editMessage({ text: "🚫 Действие отменено.", attachments: [backMenu()] });
   });
 }
 
@@ -75,13 +76,13 @@ export function handleRequestMessage(ctx: Context): boolean {
   const email = parts.find((p) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p));
 
   if (!phone || !email) {
-    ctx.reply("Не удалось распознать телефон или email. Попробуйте снова.\nПример: +79001234567 mail@example.com");
+    ctx.reply("⚠️ Не удалось распознать телефон или email.\nПример: +79001234567 mail@example.com");
     return true;
   }
 
   setSession(userId, { ...session, step: "awaiting_confirm", phone, email });
   ctx.reply(
-    `Проверьте данные:\n\nУслуга: ${session.service}\nТелефон: ${phone}\nEmail: ${email}`,
+    `📋 Проверьте данные:\n\n🔧 Услуга: ${session.service}\n📱 Телефон: ${phone}\n📧 Email: ${email}`,
     { attachments: [confirmMenu()] }
   );
   return true;

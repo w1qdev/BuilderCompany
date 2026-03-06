@@ -3,12 +3,12 @@ import { prisma } from "../prisma";
 import { backMenu } from "../keyboards";
 
 const STATUS_LABELS: Record<string, string> = {
-  new: "Новая",
-  in_progress: "В работе",
-  pending_payment: "Ожидает оплаты",
-  review: "На проверке",
-  done: "Выполнена",
-  cancelled: "Отменена",
+  new: "🆕 Новая",
+  in_progress: "🔄 В работе",
+  pending_payment: "💳 Ожидает оплаты",
+  review: "🔎 На проверке",
+  done: "✅ Выполнена",
+  cancelled: "❌ Отменена",
 };
 
 export function registerRequestsListHandlers(bot: any) {
@@ -18,7 +18,8 @@ export function registerRequestsListHandlers(bot: any) {
 
     const maxUser = await prisma.maxUser.findUnique({ where: { maxUserId } });
     if (!maxUser) {
-      ctx.reply("Сначала привяжите аккаунт, чтобы видеть свои заявки.", {
+      ctx.editMessage({
+        text: "⚠️ Сначала привяжите аккаунт, чтобы видеть свои заявки.",
         attachments: [backMenu()],
       });
       return;
@@ -31,7 +32,7 @@ export function registerRequestsListHandlers(bot: any) {
     });
 
     if (requests.length === 0) {
-      ctx.reply("У вас пока нет заявок.", { attachments: [backMenu()] });
+      ctx.editMessage({ text: "📭 У вас пока нет заявок.", attachments: [backMenu()] });
       return;
     }
 
@@ -41,7 +42,8 @@ export function registerRequestsListHandlers(bot: any) {
       return `#${r.id} | ${r.service} | ${status} | ${date}`;
     });
 
-    ctx.reply(`Ваши последние заявки:\n\n${lines.join("\n")}`, {
+    ctx.editMessage({
+      text: `📋 Ваши последние заявки:\n\n${lines.join("\n")}`,
       attachments: [backMenu()],
     });
   });

@@ -24,27 +24,35 @@ if [ ! -f .env.production ]; then
 fi
 
 # Step 1: Install all deps (dev + prod needed for next build)
-echo "[1/5] Installing dependencies..."
+echo "[1/6] Installing dependencies..."
 cp .env.production .env
 npm install --no-audit --no-fund
 npx prisma generate
 
 # Step 2: Build Next.js
-echo "[2/5] Building Next.js..."
+echo "[2/6] Building Next.js..."
 NODE_OPTIONS="--max-old-space-size=728" NODE_ENV=production npm run build
 
-# Step 3: Run database migrations on host
-echo "[3/5] Running database migrations..."
+# Step 3: Build Max bot
+echo "[3/6] Building Max bot..."
+cd bot
+npm install --no-audit --no-fund
+npx prisma generate --schema=../prisma/schema.prisma
+npx tsc
+cd ..
+
+# Step 4: Run database migrations on host
+echo "[4/6] Running database migrations..."
 DATABASE_URL="file:$(pwd)/data/prod.db" npx prisma migrate deploy
 
-# Step 4: Stop old container, clean Docker cache, build minimal image
-echo "[4/5] Building Docker image..."
+# Step 5: Stop old containers, clean Docker cache, build minimal images
+echo "[5/6] Building Docker images..."
 $COMPOSE down || true
 docker system prune -f
 DOCKER_BUILDKIT=1 $COMPOSE build
 
-# Step 5: Start new container
-echo "[5/5] Starting container..."
+# Step 6: Start new containers
+echo "[6/6] Starting containers..."
 $COMPOSE up -d --force-recreate --no-build
 
 # Wait for health check

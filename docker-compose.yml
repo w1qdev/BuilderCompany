@@ -28,6 +28,26 @@ services:
     networks:
       - app-network
 
+  bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    container_name: csm-bot
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=file:/app/data/prod.db
+    env_file:
+      - .env.production
+    volumes:
+      - ./data:/app/data
+    mem_limit: 128m
+    cpus: 0.3
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

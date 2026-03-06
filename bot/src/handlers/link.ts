@@ -10,12 +10,14 @@ export function registerLinkHandlers(bot: any) {
 
     const existing = await prisma.maxUser.findUnique({ where: { maxUserId } });
     if (existing) {
-      ctx.reply("Ваш аккаунт уже привязан.", { attachments: [backMenu()] });
+      ctx.editMessage({ text: "✅ Ваш аккаунт уже привязан.", attachments: [backMenu()] });
       return;
     }
 
     setAwaitingLink(maxUserId);
-    ctx.reply("Введите 6-значный код из личного кабинета на сайте (Профиль → Уведомления → Привязать Max):");
+    ctx.editMessage({
+      text: "🔗 Введите 6-значный код из личного кабинета на сайте\n(Профиль → Уведомления → Привязать Max):",
+    });
   });
 }
 
@@ -25,7 +27,7 @@ export function handleLinkMessage(ctx: Context): boolean {
 
   const text = ctx.message?.body?.text?.trim();
   if (!text || !/^\d{6}$/.test(text)) {
-    ctx.reply("Введите 6-значный числовой код:");
+    ctx.reply("⚠️ Введите 6-значный числовой код:");
     return true;
   }
 
@@ -35,7 +37,7 @@ export function handleLinkMessage(ctx: Context): boolean {
     });
 
     if (!linkCode) {
-      ctx.reply("Код неверный или истёк. Получите новый код на сайте.", {
+      ctx.reply("❌ Код неверный или истёк. Получите новый код на сайте.", {
         attachments: [backMenu()],
       });
       clearAwaitingLink(maxUserId);
@@ -46,7 +48,7 @@ export function handleLinkMessage(ctx: Context): boolean {
     await prisma.maxUser.create({ data: { maxUserId, userId: linkCode.userId } });
 
     clearAwaitingLink(maxUserId);
-    ctx.reply("Аккаунт успешно привязан! Теперь вы будете получать уведомления.", {
+    ctx.reply("🎉 Аккаунт успешно привязан! Теперь вы будете получать уведомления.", {
       attachments: [backMenu()],
     });
   })();
