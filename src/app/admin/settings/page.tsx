@@ -96,6 +96,10 @@ export default function AdminSettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordConfirming, setPasswordConfirming] = useState(false);
 
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState("");
+
   useEffect(() => {
     fetch("/api/admin/settings", { headers: { "x-admin-password": password } })
       .then((res) => {
@@ -294,6 +298,60 @@ export default function AdminSettingsPage() {
               <p className="text-xs text-amber-700">
                 Для работы уведомлений задайте переменные окружения <code className="bg-amber-100 px-1 rounded">MAX_BOT_TOKEN</code> и <code className="bg-amber-100 px-1 rounded">MAX_CHAT_ID</code> на сервере.
               </p>
+            </div>
+
+            {/* Max Broadcast */}
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6 mt-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Рассылка в Max</h3>
+              <p className="text-sm text-gray-500 dark:text-white/40 mb-4">
+                Отправить сообщение всем пользователям, привязавшим аккаунт Max.
+              </p>
+              <textarea
+                value={broadcastMessage}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm resize-none focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                rows={4}
+                maxLength={2000}
+                placeholder="Текст сообщения (поддерживается Markdown)"
+              />
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-xs text-gray-400 dark:text-white/30">{broadcastMessage.length}/2000</span>
+                <button
+                  onClick={async () => {
+                    if (!broadcastMessage.trim()) return;
+                    setBroadcastSending(true);
+                    try {
+                      const res = await fetch("/api/admin/broadcast", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          "x-admin-password": password,
+                        },
+                        body: JSON.stringify({ message: broadcastMessage }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        setBroadcastResult(`Отправлено: ${data.sent} из ${data.total}`);
+                        setBroadcastMessage("");
+                      } else {
+                        setBroadcastResult(data.error || "Ошибка отправки");
+                      }
+                    } catch {
+                      setBroadcastResult("Ошибка сети");
+                    } finally {
+                      setBroadcastSending(false);
+                      setTimeout(() => setBroadcastResult(""), 5000);
+                    }
+                  }}
+                  disabled={broadcastSending || !broadcastMessage.trim()}
+                  className="bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {broadcastSending ? "Отправка..." : "Отправить всем"}
+                </button>
+              </div>
+              {broadcastResult && (
+                <p className="text-sm text-green-600 dark:text-green-400 mt-2">{broadcastResult}</p>
+              )}
             </div>
           </div>
         );
