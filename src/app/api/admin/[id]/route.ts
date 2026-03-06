@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendStatusUpdateEmail } from "@/lib/email";
 import { getIO } from "@/lib/socket";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { notifyMaxUserStatusChange } from "@/lib/maxUserNotify";
 
 export const dynamic = 'force-dynamic';
 
@@ -112,6 +113,16 @@ export async function PATCH(
       status: updateData.status,
       adminNotes: updated.adminNotes,
     }).catch(console.error);
+
+    // Notify via Max messenger
+    if (updated.userId) {
+      notifyMaxUserStatusChange({
+        userId: updated.userId,
+        requestId: updated.id,
+        status: updateData.status,
+        service: updated.service,
+      }).catch(console.error);
+    }
   }
 
   return NextResponse.json(updated);
