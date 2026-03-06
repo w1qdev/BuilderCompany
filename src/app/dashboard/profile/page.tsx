@@ -823,6 +823,10 @@ function NotificationsTab() {
   const [telegramChatId, setTelegramChatId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [maxLinked, setMaxLinked] = useState(false);
+  const [maxCode, setMaxCode] = useState<string | null>(null);
+  const [maxCodeExpiry, setMaxCodeExpiry] = useState<Date | null>(null);
+  const [maxLoading, setMaxLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -832,6 +836,12 @@ function NotificationsTab() {
         if (data.user?.telegramChatId) setTelegramChatId(data.user.telegramChatId);
       })
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/user/max-link").then(r => r.json()).then(data => {
+      if (data.linked) setMaxLinked(true);
+    });
   }, []);
 
   const toggle = (value: string) => {
@@ -890,6 +900,62 @@ function NotificationsTab() {
           className={inputClass}
           placeholder="Telegram Chat ID"
         />
+      </div>
+
+      <div className="border-t border-gray-100 dark:border-white/10" />
+
+      <div>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Max Messenger</h3>
+        <p className="text-sm text-gray-500 dark:text-white/40 mb-3">
+          Привяжите аккаунт Max для получения уведомлений о статусе заявок.
+        </p>
+        {maxLinked ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-green-600 dark:text-green-400 font-medium">Аккаунт привязан</span>
+            <button
+              onClick={async () => {
+                await fetch("/api/user/max-link", { method: "DELETE" });
+                setMaxLinked(false);
+                toast.success("Аккаунт Max отвязан");
+              }}
+              className="text-sm text-red-500 hover:text-red-600 transition-colors"
+            >
+              Отвязать
+            </button>
+          </div>
+        ) : maxCode ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <code className="bg-gray-100 dark:bg-white/10 px-4 py-2 rounded-lg text-lg font-mono font-bold tracking-widest text-gray-900 dark:text-white">
+                {maxCode}
+              </code>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-white/40">
+              Отправьте этот код боту в Max Messenger. Код действителен 5 минут.
+            </p>
+          </div>
+        ) : (
+          <button
+            onClick={async () => {
+              setMaxLoading(true);
+              try {
+                const res = await fetch("/api/user/max-link", { method: "POST" });
+                const data = await res.json();
+                if (data.code) {
+                  setMaxCode(data.code);
+                  setMaxCodeExpiry(new Date(data.expiresAt));
+                  // Auto-clear code after 5 minutes
+                  setTimeout(() => setMaxCode(null), 5 * 60 * 1000);
+                }
+              } catch { toast.error("Ошибка получения кода"); }
+              finally { setMaxLoading(false); }
+            }}
+            disabled={maxLoading}
+            className="bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {maxLoading ? "Загрузка..." : "Получить код привязки"}
+          </button>
+        )}
       </div>
 
       <button
