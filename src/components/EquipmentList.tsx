@@ -121,6 +121,7 @@ export default function EquipmentList({
   // Organization switcher
   const [userOrgs, setUserOrgs] = useState<{ id: number; name: string }[]>([]);
   const [activeOrgId, setActiveOrgId] = useState<number | null>(null);
+  const [noOrg, setNoOrg] = useState(false);
   // Org import state
   const [showOrgImport, setShowOrgImport] = useState(false);
   const [orgQuery, setOrgQuery] = useState("");
@@ -219,14 +220,18 @@ export default function EquipmentList({
   useEffect(() => {
     fetch("/api/organizations")
       .then((r) => (r.ok ? r.json() : { organizations: [] }))
-      .then((data) =>
-        setUserOrgs(
-          (data.organizations || []).map((o: { id: number; name: string }) => ({
-            id: o.id,
-            name: o.name,
-          }))
-        )
-      )
+      .then((data) => {
+        const orgs = (data.organizations || []).map((o: { id: number; name: string }) => ({
+          id: o.id,
+          name: o.name,
+        }));
+        setUserOrgs(orgs);
+        if (orgs.length === 1) {
+          setActiveOrgId(orgs[0].id);
+        } else if (orgs.length === 0) {
+          setNoOrg(true);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -273,6 +278,7 @@ export default function EquipmentList({
   };
 
   useEffect(() => {
+    if (!activeOrgId) return;
     setPage(1);
     fetchEquipment(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -860,6 +866,28 @@ export default function EquipmentList({
 
   const compareItems = equipment.filter((e) => selected.has(e.id));
 
+  if (noOrg) {
+    return (
+      <div className="text-center py-20">
+        <div className="w-16 h-16 bg-amber-100 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <h2 className="text-lg font-bold text-dark dark:text-white mb-2">Нет организации</h2>
+        <p className="text-sm text-neutral dark:text-white/50 mb-4 max-w-sm mx-auto">
+          Для работы с оборудованием создайте организацию или попросите администратора добавить вас.
+        </p>
+        <a
+          href="/dashboard/organization"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          Перейти к организациям
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -879,19 +907,9 @@ export default function EquipmentList({
         </div>
       )}
 
-      {/* Organization switcher */}
-      {userOrgs.length > 0 && (
+      {/* Organization switcher — only when multiple orgs */}
+      {userOrgs.length > 1 && (
         <div className="flex items-center gap-2 mb-4 flex-wrap">
-          <button
-            onClick={() => setActiveOrgId(null)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-              activeOrgId === null
-                ? "bg-primary text-white shadow-sm"
-                : "bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5"
-            }`}
-          >
-            Личное
-          </button>
           {userOrgs.map((org) => (
             <button
               key={org.id}

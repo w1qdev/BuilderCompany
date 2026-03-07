@@ -23,6 +23,20 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
+    socket.on("join-rooms", (data) => {
+      if (data.userId) {
+        socket.join(`user:${data.userId}`);
+      }
+      if (data.orgIds && Array.isArray(data.orgIds)) {
+        data.orgIds.forEach((orgId) => {
+          socket.join(`org:${orgId}`);
+        });
+      }
+      if (data.isAdmin) {
+        socket.join("admin");
+      }
+    });
+
     socket.on("disconnect", () => {
       console.log("Socket disconnected:", socket.id);
     });
