@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { createRateLimiter } from "@/lib/rateLimit";
+
+// Лимитируем операции бана/разбана пользователя
+const adminBanLimiter = createRateLimiter({ max: 30, windowMs: 60 * 1000 });
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!adminBanLimiter(request)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const headerPassword = request.headers.get("x-admin-password") || "";
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

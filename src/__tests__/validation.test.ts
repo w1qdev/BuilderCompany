@@ -14,7 +14,7 @@ describe("registerSchema", () => {
   it("accepts valid registration data", () => {
     const result = validate(registerSchema, {
       email: "test@example.com",
-      password: "123456",
+      password: "12345678",
       name: "Test User",
     });
     expect(result.success).toBe(true);
@@ -49,7 +49,7 @@ describe("registerSchema", () => {
   it("accepts optional fields", () => {
     const result = validate(registerSchema, {
       email: "test@example.com",
-      password: "123456",
+      password: "12345678",
       name: "Test",
       phone: "+79991234567",
       company: "Test Co",

@@ -9,8 +9,7 @@ const bulkLimiter = createRateLimiter({ max: 10, windowMs: 60 * 1000 });
 export const dynamic = "force-dynamic";
 
 const MAX_BATCH_SIZE = 100;
-const VALID_ACTIONS = ["delete", "archive", "unarchive"] as const;
-type BulkAction = (typeof VALID_ACTIONS)[number];
+type BulkAction = "delete" | "archive" | "unarchive";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +18,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
     if (!bulkLimiter(request, userId)) {
-      return NextResponse.json({ error: "Слишком много запросов" }, { status: 429 });
+      return NextResponse.json(
+        { error: "Слишком много запросов" },
+        { status: 429 }
+      );
     }
 
     const body = await request.json();
@@ -36,7 +38,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const numericIds = ids.map(Number).filter((id) => Number.isFinite(id) && id > 0);
+    const numericIds = ids
+      .map(Number)
+      .filter((id) => Number.isFinite(id) && id > 0);
     if (numericIds.length !== ids.length) {
       return NextResponse.json(
         { error: "Все идентификаторы должны быть положительными числами" },
@@ -95,7 +99,10 @@ export async function POST(request: NextRequest) {
     if (io) {
       for (const eq of affectedOrgs) {
         if (eq.organizationId) {
-          io.to(`org:${eq.organizationId}`).emit("equipment-changed", { action, ids: numericIds });
+          io.to(`org:${eq.organizationId}`).emit("equipment-changed", {
+            action,
+            ids: numericIds,
+          });
         }
       }
     }

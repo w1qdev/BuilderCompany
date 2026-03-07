@@ -6,7 +6,10 @@ import { createRateLimiter } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
-const verifyCodeLimiter = createRateLimiter({ max: 10, windowMs: 15 * 60 * 1000 });
+const verifyCodeLimiter = createRateLimiter({
+  max: 10,
+  windowMs: 15 * 60 * 1000,
+});
 
 function normalizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
@@ -109,6 +112,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: "Пользователь с таким телефоном не найден" },
           { status: 404 }
+        );
+      }
+
+      if (user.banned) {
+        return NextResponse.json(
+          { error: "Ваш аккаунт заблокирован. Обратитесь к администратору." },
+          { status: 403 }
         );
       }
     }

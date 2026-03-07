@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
+const adminAnalyticsLimiter = createRateLimiter({ max: 60, windowMs: 60 * 1000 });
+
 export async function GET(request: NextRequest) {
+  if (!adminAnalyticsLimiter(request)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const password = request.headers.get("x-admin-password") || "";
   const isValid = await verifyAdminPassword(password);
   if (!isValid) {

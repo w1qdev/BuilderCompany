@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
+// Ограничиваем частоту запросов к admin/users, чтобы усложнить перебор пароля
+const adminUsersLimiter = createRateLimiter({ max: 60, windowMs: 60 * 1000 });
+
 export async function GET(request: NextRequest) {
+  if (!adminUsersLimiter(request)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const headerPassword = request.headers.get("x-admin-password") || "";
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,8 +40,13 @@ export async function GET(request: NextRequest) {
     prisma.user.findMany({
       where,
       select: {
-        id: true, name: true, email: true, phone: true, company: true,
-        banned: true, createdAt: true,
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        company: true,
+        banned: true,
+        createdAt: true,
         _count: { select: { requests: true, equipment: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -47,6 +60,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  if (!adminUsersLimiter(request)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const patchPassword = request.headers.get("x-admin-password") || "";
   if (!patchPassword || !(await verifyAdminPassword(patchPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -59,7 +76,14 @@ export async function PATCH(request: NextRequest) {
     const user = await prisma.user.update({
       where: { id },
       data: { name, email, phone: phone || null, company: company || null },
-      select: { id: true, name: true, email: true, phone: true, company: true, banned: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        company: true,
+        banned: true,
+      },
     });
     return NextResponse.json({ user });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 function escapeHtml(str: string): string {
   return str
@@ -13,10 +14,16 @@ function escapeHtml(str: string): string {
 
 export const dynamic = "force-dynamic";
 
+const adminKpLimiter = createRateLimiter({ max: 30, windowMs: 60 * 1000 });
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!adminKpLimiter(req)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const headerPassword = req.headers.get("x-admin-password");
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,14 +46,19 @@ export async function GET(
     year: "numeric",
   });
 
-  const validUntil = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString("ru-RU", {
+  const validUntil = new Date(
+    Date.now() + 14 * 24 * 60 * 60 * 1000
+  ).toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
 
-  const itemsHtml = request.items && request.items.length > 0
-    ? request.items.map((item, i) => `
+  const itemsHtml =
+    request.items && request.items.length > 0
+      ? request.items
+          .map(
+            (item, i) => `
         <tr>
           <td>${i + 1}</td>
           <td>${item.service || "—"}</td>
@@ -54,16 +66,26 @@ export async function GET(
           <td>${item.fabricNumber || "—"}</td>
           <td>${item.registry || "—"}</td>
           <td>${item.poverk || "—"}</td>
-          <td style="text-align:right;">${request.clientPrice ? `${Number(request.clientPrice).toLocaleString("ru-RU")} ₽` : "По запросу"}</td>
-        </tr>`).join("")
-    : `<tr>
+          <td style="text-align:right;">${
+            request.clientPrice
+              ? `${Number(request.clientPrice).toLocaleString("ru-RU")} ₽`
+              : "По запросу"
+          }</td>
+        </tr>`
+          )
+          .join("")
+      : `<tr>
         <td>1</td>
         <td>${request.service || "—"}</td>
         <td>${request.object || "—"}</td>
         <td>${request.fabricNumber || "—"}</td>
         <td>${request.registry || "—"}</td>
         <td>${request.poverk || "—"}</td>
-        <td style="text-align:right;">${request.clientPrice ? `${Number(request.clientPrice).toLocaleString("ru-RU")} ₽` : "По запросу"}</td>
+        <td style="text-align:right;">${
+          request.clientPrice
+            ? `${Number(request.clientPrice).toLocaleString("ru-RU")} ₽`
+            : "По запросу"
+        }</td>
       </tr>`;
 
   const html = `<!DOCTYPE html>
@@ -138,7 +160,11 @@ export async function GET(
           <label>Наименование / ФИО</label>
           <span>${request.name}</span>
         </div>
-        ${request.company ? `<div class="info-item"><label>Организация</label><span>${request.company}</span></div>` : ""}
+        ${
+          request.company
+            ? `<div class="info-item"><label>Организация</label><span>${request.company}</span></div>`
+            : ""
+        }
         <div class="info-item">
           <label>Телефон</label>
           <span>${request.phone}</span>
@@ -147,7 +173,11 @@ export async function GET(
           <label>Email</label>
           <span>${request.email}</span>
         </div>
-        ${request.inn ? `<div class="info-item"><label>ИНН</label><span>${request.inn}</span></div>` : ""}
+        ${
+          request.inn
+            ? `<div class="info-item"><label>ИНН</label><span>${request.inn}</span></div>`
+            : ""
+        }
       </div>
     </div>
 
@@ -172,11 +202,21 @@ export async function GET(
         <tfoot>
           <tr class="total-row">
             <td colspan="6" style="text-align:right;font-size:13px;">Итого:</td>
-            <td style="text-align:right;font-size:13px;">${request.clientPrice ? `${Number(request.clientPrice).toLocaleString("ru-RU")} ₽` : "По запросу"}</td>
+            <td style="text-align:right;font-size:13px;">${
+              request.clientPrice
+                ? `${Number(request.clientPrice).toLocaleString("ru-RU")} ₽`
+                : "По запросу"
+            }</td>
           </tr>
         </tfoot>
       </table>
-      ${request.message ? `<p style="margin-top:10px;font-size:11px;color:#666;"><strong>Примечание:</strong> ${escapeHtml(request.message)}</p>` : ""}
+      ${
+        request.message
+          ? `<p style="margin-top:10px;font-size:11px;color:#666;"><strong>Примечание:</strong> ${escapeHtml(
+              request.message
+            )}</p>`
+          : ""
+      }
     </div>
 
     <!-- Conditions -->
@@ -202,7 +242,9 @@ export async function GET(
       </div>
       <div>
         <p style="font-size:11px;font-weight:700;">От заказчика:</p>
-        <p style="font-size:11px;margin-top:4px;color:#666;">${request.company || request.name}</p>
+        <p style="font-size:11px;margin-top:4px;color:#666;">${
+          request.company || request.name
+        }</p>
         <div class="sig-line">Подпись / М.П.</div>
       </div>
     </div>

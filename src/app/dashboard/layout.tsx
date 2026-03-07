@@ -8,6 +8,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { useTheme } from "@/components/ThemeProvider";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -133,7 +134,6 @@ const breadcrumbMap: Record<string, string> = {
   // "/dashboard/arshin-registry": "Реестр поверок (Аршин)", // ARSHIN_ENABLED
 };
 
-
 export default function DashboardLayout({
   children,
 }: {
@@ -141,7 +141,6 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme: currentTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -213,9 +212,15 @@ export default function DashboardLayout({
   if (loading) {
     return (
       <div className="min-h-screen bg-warm-bg dark:bg-dark flex items-center justify-center">
-        <div role="status" aria-label="Загрузка" className="flex flex-col items-center gap-2">
+        <div
+          role="status"
+          aria-label="Загрузка"
+          className="flex flex-col items-center gap-2"
+        >
           <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-          <span className="text-xs text-neutral dark:text-white/50">Загрузка...</span>
+          <span className="text-xs text-neutral dark:text-white/50">
+            Загрузка...
+          </span>
         </div>
       </div>
     );
@@ -311,10 +316,22 @@ export default function DashboardLayout({
               className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
               title="Поиск (Ctrl+K)"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
-              <span className="hidden sm:inline text-xs text-white/40">Ctrl+K</span>
+              <span className="hidden sm:inline text-xs text-white/40">
+                Ctrl+K
+              </span>
             </button>
             <NotificationBell />
           </div>
@@ -348,12 +365,28 @@ export default function DashboardLayout({
             className="hidden lg:flex absolute -right-3.5 top-5 z-40 w-7 h-7 rounded-full bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 shadow-md items-center justify-center text-neutral dark:text-white/60 hover:text-primary hover:border-primary/30 transition-colors"
             title={sidebarCollapsed ? "Развернуть" : "Свернуть"}
           >
-            <svg className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className={`w-4 h-4 transition-transform duration-300 ${
+                sidebarCollapsed ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
 
-          <nav className={`flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-1 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
+          <nav
+            className={`flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-1 ${
+              sidebarCollapsed ? "lg:px-2" : ""
+            }`}
+          >
             {navItems.map((item, index) => {
               if ("type" in item && item.type === "divider") {
                 return sidebarCollapsed ? (
@@ -380,13 +413,19 @@ export default function DashboardLayout({
           </nav>
 
           {/* Feedback button — fixed above profile, never scrolls */}
-          <div className={`shrink-0 py-2 ${sidebarCollapsed ? "lg:px-2 px-4" : "px-4"}`}>
+          <div
+            className={`shrink-0 py-2 ${
+              sidebarCollapsed ? "lg:px-2 px-4" : "px-4"
+            }`}
+          >
             <button
               onClick={() => {
                 setFeedbackOpen(true);
                 setSidebarOpen(false);
               }}
-              className={`group/nav relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${sidebarCollapsed ? "lg:justify-center" : ""}`}
+              className={`group/nav relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${
+                sidebarCollapsed ? "lg:justify-center" : ""
+              }`}
             >
               <svg
                 className="w-5 h-5 shrink-0"
@@ -413,10 +452,18 @@ export default function DashboardLayout({
           {/* Profile */}
           <div
             ref={profileRef}
-            className={`relative border-t border-gray-200 dark:border-white/10 p-3 ${sidebarCollapsed ? "lg:px-2" : ""}`}
+            className={`relative border-t border-gray-200 dark:border-white/10 p-3 ${
+              sidebarCollapsed ? "lg:px-2" : ""
+            }`}
           >
             {profileOpen && (
-              <div className={`absolute bottom-full mb-1 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-xl shadow-lg py-1 ${sidebarCollapsed ? "lg:left-full lg:bottom-0 lg:ml-2 lg:mb-0 lg:w-48 left-3 right-3" : "left-3 right-3"}`}>
+              <div
+                className={`absolute bottom-full mb-1 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-xl shadow-lg py-1 ${
+                  sidebarCollapsed
+                    ? "lg:left-full lg:bottom-0 lg:ml-2 lg:mb-0 lg:w-48 left-3 right-3"
+                    : "left-3 right-3"
+                }`}
+              >
                 <Link
                   href="/dashboard/profile"
                   onClick={() => {
@@ -435,18 +482,38 @@ export default function DashboardLayout({
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
                   Выйти
                 </button>
               </div>
             )}
             <button
               onClick={() => setProfileOpen(!profileOpen)}
-              className={`group/nav relative w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${sidebarCollapsed ? "lg:justify-center" : ""}`}
+              className={`group/nav relative w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${
+                sidebarCollapsed ? "lg:justify-center" : ""
+              }`}
             >
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0 overflow-hidden">
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                  <Image
+                    src={user.avatar}
+                    alt={user.name}
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   user.name.charAt(0).toUpperCase()
                 )}
@@ -464,7 +531,9 @@ export default function DashboardLayout({
                     )}
                   </div>
                   <svg
-                    className={`w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                    className={`w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200 ${
+                      profileOpen ? "rotate-180" : ""
+                    }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -490,7 +559,10 @@ export default function DashboardLayout({
         {/* Main content */}
         <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           {pathname !== "/dashboard" && breadcrumbMap[pathname] && (
-            <nav aria-label="Навигация" className="flex items-center gap-1.5 text-sm text-neutral dark:text-white/40 mb-4">
+            <nav
+              aria-label="Навигация"
+              className="flex items-center gap-1.5 text-sm text-neutral dark:text-white/40 mb-4"
+            >
               <ol className="flex items-center gap-1.5">
                 <li>
                   <Link
@@ -563,13 +635,28 @@ export default function DashboardLayout({
             <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0">
-                  <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  <svg
+                    className="w-5 h-5 text-red-600 dark:text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                    />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">Ваш аккаунт заблокирован</h3>
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">Вы не можете совершать действия. Обратитесь к администратору для разблокировки.</p>
+                  <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">
+                    Ваш аккаунт заблокирован
+                  </h3>
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                    Вы не можете совершать действия. Обратитесь к администратору
+                    для разблокировки.
+                  </p>
                 </div>
               </div>
             </div>
@@ -580,7 +667,9 @@ export default function DashboardLayout({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className={user.banned ? "opacity-50 pointer-events-none select-none" : ""}
+              className={
+                user.banned ? "opacity-50 pointer-events-none select-none" : ""
+              }
             >
               {children}
             </motion.div>
@@ -589,7 +678,10 @@ export default function DashboardLayout({
       </div>
 
       <CommandSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-      <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <FeedbackModal
+        isOpen={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+      />
       <BugReportButton />
     </div>
   );

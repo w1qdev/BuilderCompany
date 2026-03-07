@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const code = String(Math.floor(1000 + Math.random() * 9000));
+    // 6-значный код повышает стойкость к перебору по сравнению с 4-значным
+    const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await prisma.verificationCode.create({

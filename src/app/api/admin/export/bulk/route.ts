@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { createRateLimiter } from "@/lib/rateLimit";
 import * as ExcelJS from "exceljs";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+
+const adminExportBulkLimiter = createRateLimiter({
+  max: 20,
+  windowMs: 60 * 1000,
+});
 
 export async function GET(req: NextRequest) {
+  if (!adminExportBulkLimiter(req)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const headerPassword = req.headers.get("x-admin-password");
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -70,7 +80,11 @@ export async function GET(req: NextRequest) {
 
   headerRow.eachCell((cell) => {
     cell.font = { bold: true };
-    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+      wrapText: true,
+    };
     cell.fill = {
       type: "pattern",
       pattern: "solid",
@@ -95,8 +109,11 @@ export async function GET(req: NextRequest) {
 
   for (const r of requests) {
     const date = new Date(r.createdAt).toLocaleString("ru-RU", {
-      day: "2-digit", month: "2-digit", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
     const dataRow = worksheet.addRow([
@@ -115,7 +132,11 @@ export async function GET(req: NextRequest) {
     ]);
 
     dataRow.eachCell((cell) => {
-      cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "left",
+        wrapText: true,
+      };
       cell.border = {
         top: { style: "thin" },
         left: { style: "thin" },
@@ -132,8 +153,11 @@ export async function GET(req: NextRequest) {
   return new NextResponse(buffer, {
     status: 200,
     headers: {
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(
+        filename
+      )}`,
     },
   });
 }

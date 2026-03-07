@@ -5,7 +5,11 @@
  * here so that `import { ... } from "@/lib/email"` continues to work.
  */
 
-import { createTransporter, generateExcelBuffer, resolveAttachments } from "./transport";
+import {
+  createTransporter,
+  generateExcelBuffer,
+  resolveAttachments,
+} from "./transport";
 import type { NotificationItem, FileData } from "./transport";
 import {
   buildAdminNotificationHtml,
@@ -17,6 +21,7 @@ import {
   buildStatusUpdateHtml,
 } from "./templates";
 import { COMPANY_NAME, COMPANY_SHORT } from "./constants";
+import logger from "@/lib/logger";
 
 // ─── Admin notification email ───
 
@@ -39,7 +44,7 @@ interface AdminEmailData {
 export async function sendEmailNotification(data: AdminEmailData) {
   const result = createTransporter();
   if (!result) {
-    console.log("Email not configured, skipping notification");
+    logger.info("Email not configured, skipping notification");
     return;
   }
   const { transporter, user } = result;
@@ -55,19 +60,29 @@ export async function sendEmailNotification(data: AdminEmailData) {
 
   // 1. Excel file with all items
   try {
-    const excelBuffer = await generateExcelBuffer(data.items, orgName, data.inn, data.message);
+    const excelBuffer = await generateExcelBuffer(
+      data.items,
+      orgName,
+      data.inn,
+      data.message
+    );
     const dateStr = new Date().toISOString().split("T")[0];
     attachments.push({
       filename: `Заявка_${data.requestId || "new"}_${dateStr}.xlsx`,
       content: excelBuffer,
-      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
   } catch (err) {
-    console.error("Failed to generate Excel attachment:", err);
+    logger.error("Failed to generate Excel attachment:", err);
   }
 
   // 2. Client uploaded files
-  const clientAttachments = await resolveAttachments(data.files, data.fileName, data.filePath);
+  const clientAttachments = await resolveAttachments(
+    data.files,
+    data.fileName,
+    data.filePath
+  );
   if (clientAttachments) {
     attachments.push(...clientAttachments);
   }
@@ -76,12 +91,14 @@ export async function sendEmailNotification(data: AdminEmailData) {
     await transporter.sendMail({
       from: `"${COMPANY_SHORT} — Заявки" <${user}>`,
       to: data.toEmail || notifyEmail || user,
-      subject: `Заявка №${data.requestId || "—"}: ${servicesSummary} — ${orgName}`,
+      subject: `Заявка №${
+        data.requestId || "—"
+      }: ${servicesSummary} — ${orgName}`,
       html,
       attachments,
     });
   } catch (error) {
-    console.error("Email notification error:", error);
+    logger.error("Email notification error:", error);
   }
 }
 
@@ -90,7 +107,13 @@ export async function sendEmailNotification(data: AdminEmailData) {
 export async function sendVerificationReminderEmail(data: {
   userName: string;
   email: string;
-  equipment: { name: string; type: string | null; serialNumber: string | null; nextVerification: Date; category: string }[];
+  equipment: {
+    name: string;
+    type: string | null;
+    serialNumber: string | null;
+    nextVerification: Date;
+    category: string;
+  }[];
 }) {
   const result = createTransporter();
   if (!result) return;
@@ -106,7 +129,7 @@ export async function sendVerificationReminderEmail(data: {
       html,
     });
   } catch (error) {
-    console.error("Verification reminder email error:", error);
+    logger.error("Verification reminder email error:", error);
   }
 }
 
@@ -115,7 +138,7 @@ export async function sendVerificationReminderEmail(data: {
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   const result = createTransporter();
   if (!result) {
-    console.log("Email not configured, skipping password reset email");
+    logger.info("Email not configured, skipping password reset email");
     return;
   }
   const { transporter, user } = result;
@@ -130,7 +153,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
       html,
     });
   } catch (error) {
-    console.error("Password reset email error:", error);
+    logger.error("Password reset email error:", error);
   }
 }
 
@@ -144,7 +167,7 @@ export async function sendConfirmationEmail(data: {
 }) {
   const result = createTransporter();
   if (!result) {
-    console.log("Email not configured, skipping confirmation");
+    logger.info("Email not configured, skipping confirmation");
     return;
   }
   const { transporter, user } = result;
@@ -156,11 +179,13 @@ export async function sendConfirmationEmail(data: {
     await transporter.sendMail({
       from: `"${COMPANY_NAME}" <${user}>`,
       to: data.email,
-      subject: `Заявка ${data.requestId ? `№${data.requestId} ` : ""}принята — ${servicesSummary}`,
+      subject: `Заявка ${
+        data.requestId ? `№${data.requestId} ` : ""
+      }принята — ${servicesSummary}`,
       html,
     });
   } catch (error) {
-    console.error("Confirmation email error:", error);
+    logger.error("Confirmation email error:", error);
   }
 }
 
@@ -169,7 +194,13 @@ export async function sendConfirmationEmail(data: {
 export async function sendArshinVerificationEmail(data: {
   userName: string;
   email: string;
-  equipment: { name: string; type: string | null; serialNumber: string | null; validDate: string; arshinUrl: string | null }[];
+  equipment: {
+    name: string;
+    type: string | null;
+    serialNumber: string | null;
+    validDate: string;
+    arshinUrl: string | null;
+  }[];
 }) {
   const result = createTransporter();
   if (!result) return;
@@ -181,11 +212,13 @@ export async function sendArshinVerificationEmail(data: {
     await transporter.sendMail({
       from: `"${COMPANY_SHORT} — Уведомления" <${user}>`,
       to: data.email,
-      subject: `Поверка зарегистрирована в Аршин: ${data.equipment.map((e) => e.name).join(", ")}`,
+      subject: `Поверка зарегистрирована в Аршин: ${data.equipment
+        .map((e) => e.name)
+        .join(", ")}`,
       html,
     });
   } catch (error) {
-    console.error("Arshin verification email error:", error);
+    logger.error("Arshin verification email error:", error);
   }
 }
 
@@ -194,7 +227,7 @@ export async function sendArshinVerificationEmail(data: {
 export async function sendWelcomeEmail(data: { name: string; email: string }) {
   const result = createTransporter();
   if (!result) {
-    console.log("Email not configured, skipping welcome email");
+    logger.info("Email not configured, skipping welcome email");
     return;
   }
   const { transporter, user } = result;
@@ -209,7 +242,7 @@ export async function sendWelcomeEmail(data: { name: string; email: string }) {
       html,
     });
   } catch (error) {
-    console.error("Welcome email error:", error);
+    logger.error("Welcome email error:", error);
   }
 }
 
@@ -236,6 +269,6 @@ export async function sendStatusUpdateEmail(data: {
       html,
     });
   } catch (error) {
-    console.error("Status update email error:", error);
+    logger.error("Status update email error:", error);
   }
 }

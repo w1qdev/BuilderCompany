@@ -3,11 +3,22 @@ import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
 import { SignJWT } from "jose";
 import { JWT_SECRET } from "@/lib/jwt";
+import { createRateLimiter } from "@/lib/rateLimit";
+
+// Лимитируем операции "войти как"
+const adminImpersonateLimiter = createRateLimiter({
+  max: 20,
+  windowMs: 60 * 1000,
+});
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!adminImpersonateLimiter(request)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const headerPassword = request.headers.get("x-admin-password") || "";
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

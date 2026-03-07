@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { createRateLimiter } from "@/lib/rateLimit";
 import * as ExcelJS from "exceljs";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+
+const adminExportSingleLimiter = createRateLimiter({
+  max: 30,
+  windowMs: 60 * 1000,
+});
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!adminExportSingleLimiter(req)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   // Verify admin password
   const headerPassword = req.headers.get("x-admin-password");
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
@@ -26,7 +36,7 @@ export async function GET(
     where: { id: requestId },
     include: {
       items: true,
-      user: true
+      user: true,
     },
   });
 
@@ -35,7 +45,11 @@ export async function GET(
   }
 
   // Determine organization name: prefer request company, then user company, fallback to name
-  const organizationName = request.company || request.user?.company || request.user?.name || request.name;
+  const organizationName =
+    request.company ||
+    request.user?.company ||
+    request.user?.name ||
+    request.name;
   const innValue = request.inn || "";
 
   // Filter items by service type if filter parameter is provided
@@ -57,15 +71,15 @@ export async function GET(
 
   // Set column widths
   worksheet.columns = [
-    { width: 5 },   // №
-    { width: 25 },  // фирма-владелец
-    { width: 30 },  // Калибровка/поверка
-    { width: 40 },  // Полное название оборудования
-    { width: 15 },  // Заводской №
-    { width: 15 },  // реестр №
-    { width: 15 },  // Согласованная стоимость
-    { width: 25 },  // На какую фирму выставлять счёт
-    { width: 30 },  // Комментарии
+    { width: 5 }, // №
+    { width: 25 }, // фирма-владелец
+    { width: 30 }, // Калибровка/поверка
+    { width: 40 }, // Полное название оборудования
+    { width: 15 }, // Заводской №
+    { width: 15 }, // реестр №
+    { width: 15 }, // Согласованная стоимость
+    { width: 25 }, // На какую фирму выставлять счёт
+    { width: 30 }, // Комментарии
   ];
 
   // Add header row (row 2 to match example)
@@ -79,23 +93,27 @@ export async function GET(
     "реестр № (обязательно при поверке!)",
     "Согласованная стоимость",
     "На какую фирму выставлять счёт, наименование ИНН",
-    "Комментарии"
+    "Комментарии",
   ]);
 
   // Style header row
   headerRow.eachCell((cell) => {
     cell.font = { bold: true };
-    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+      wrapText: true,
+    };
     cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE0E0E0' }
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE0E0E0" },
     };
     cell.border = {
-      top: { style: 'thin' },
-      left: { style: 'thin' },
-      bottom: { style: 'thin' },
-      right: { style: 'thin' }
+      top: { style: "thin" },
+      left: { style: "thin" },
+      bottom: { style: "thin" },
+      right: { style: "thin" },
     };
   });
 
@@ -104,7 +122,8 @@ export async function GET(
 
   // Helper: resolve the "calibration/attestation/verification" column
   const resolveServiceType = (service: string, poverk: string | null) => {
-    if (service === "Поверка СИ" && poverk) return `Поверка ${poverk.toLowerCase()}`;
+    if (service === "Поверка СИ" && poverk)
+      return `Поверка ${poverk.toLowerCase()}`;
     if (service === "Поверка СИ") return "Поверка";
     return service; // "Калибровка", "Аттестация", "Другое", etc.
   };
@@ -121,17 +140,21 @@ export async function GET(
         item.registry || "", // реестр
         request.clientPrice || "", // согласованная стоимость
         innValue ? `${organizationName}, ИНН ${innValue}` : organizationName, // на какую фирму выставлять счёт
-        request.message || "" // комментарии
+        request.message || "", // комментарии
       ]);
 
       // Style data row
       dataRow.eachCell((cell) => {
-        cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "left",
+          wrapText: true,
+        };
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
         };
       });
     });
@@ -146,16 +169,20 @@ export async function GET(
       request.registry || "",
       request.clientPrice || "",
       innValue ? `${organizationName}, ИНН ${innValue}` : organizationName,
-      request.message || ""
+      request.message || "",
     ]);
 
     dataRow.eachCell((cell) => {
-      cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "left",
+        wrapText: true,
+      };
       cell.border = {
-        top: { style: 'thin' },
-        left: { style: 'thin' },
-        bottom: { style: 'thin' },
-        right: { style: 'thin' }
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
       };
     });
   }
@@ -165,7 +192,7 @@ export async function GET(
 
   // Create filename with request ID and date
   const date = new Date(request.createdAt);
-  const dateStr = date.toISOString().split('T')[0];
+  const dateStr = date.toISOString().split("T")[0];
   const filterSuffix = filter ? `_${filter}` : "";
   const filename = `Заявка_${request.id}_${dateStr}${filterSuffix}.xlsx`;
 
@@ -173,8 +200,11 @@ export async function GET(
   return new NextResponse(buffer, {
     status: 200,
     headers: {
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(
+        filename
+      )}`,
     },
   });
 }

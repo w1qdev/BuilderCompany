@@ -3,10 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 // Redirect to VK OAuth (VK ID / VK Connect)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const clientId = process.env.VK_CLIENT_ID;
   if (!clientId) {
-    return NextResponse.json({ error: "VK OAuth не настроен" }, { status: 503 });
+    return NextResponse.json(
+      { error: "VK OAuth не настроен" },
+      { status: 503 }
+    );
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://csm-center.ru";

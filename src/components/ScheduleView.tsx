@@ -34,24 +34,19 @@ const categoryDotColors: Record<string, string> = {
   attestation: "bg-amber-500",
 };
 
-const categoryBadgeStyles: Record<string, string> = {
-  verification: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  calibration: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  attestation: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-};
-
-const categoryBorderStyles: Record<string, string> = {
-  verification: "border-l-blue-500 bg-blue-50 dark:bg-blue-900/10",
-  calibration: "border-l-purple-500 bg-purple-50 dark:bg-purple-900/10",
-  attestation: "border-l-amber-500 bg-amber-50 dark:bg-amber-900/10",
-};
-
-const overdueBadge = "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-const overdueBorder = "border-l-red-500 bg-red-50 dark:bg-red-900/10";
-
 const monthNames = [
-  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+  "Январь",
+  "Февраль",
+  "Март",
+  "Апрель",
+  "Май",
+  "Июнь",
+  "Июль",
+  "Август",
+  "Сентябрь",
+  "Октябрь",
+  "Ноябрь",
+  "Декабрь",
 ];
 
 const weekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
@@ -88,7 +83,10 @@ export default function ScheduleView({
   // Close popover on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node)
+      ) {
         setSelectedDay(null);
       }
     };
@@ -142,38 +140,7 @@ export default function ScheduleView({
     }
   };
 
-  const handleExportWordWithArshin = async () => {
-    try {
-      setExportingArshin(true);
-      toast.info("Запрашиваем актуальные даты из Аршин...");
-
-      // First, run Arshin check to update dates in DB
-      await fetch("/api/equipment/arshin-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ all: true }),
-      });
-
-      // Then export
-      const params = new URLSearchParams();
-      categories.forEach((c) => params.append("category", c));
-      params.set("type", exportType);
-      const res = await fetch(`/api/equipment/export-word?${params}`);
-      if (!res.ok) throw new Error();
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${title}_Аршин_${new Date().getFullYear()}.docx`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("График с данными Аршин скачан");
-    } catch {
-      toast.error("Ошибка экспорта");
-    } finally {
-      setExportingArshin(false);
-    }
-  };
+  // Arshin export disabled
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -192,10 +159,16 @@ export default function ScheduleView({
         const now = new Date();
         const withDates = equipment.filter((e) => e.nextVerification);
 
-        const overdue = withDates.filter((e) => new Date(e.nextVerification!) < now);
+        const overdue = withDates.filter(
+          (e) => new Date(e.nextVerification!) < now
+        );
         const upcoming = withDates
           .filter((e) => new Date(e.nextVerification!) >= now)
-          .sort((a, b) => new Date(a.nextVerification!).getTime() - new Date(b.nextVerification!).getTime());
+          .sort(
+            (a, b) =>
+              new Date(a.nextVerification!).getTime() -
+              new Date(b.nextVerification!).getTime()
+          );
 
         const monthGroups: MonthGroup[] = [];
 
@@ -203,7 +176,11 @@ export default function ScheduleView({
           monthGroups.push({
             key: "overdue",
             label: "Просрочено",
-            items: overdue.sort((a, b) => new Date(a.nextVerification!).getTime() - new Date(b.nextVerification!).getTime()),
+            items: overdue.sort(
+              (a, b) =>
+                new Date(a.nextVerification!).getTime() -
+                new Date(b.nextVerification!).getTime()
+            ),
             isOverdue: true,
           });
         }
@@ -211,7 +188,10 @@ export default function ScheduleView({
         const monthMap = new Map<string, Equipment[]>();
         for (const eq of upcoming) {
           const d = new Date(eq.nextVerification!);
-          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+            2,
+            "0"
+          )}`;
           if (!monthMap.has(key)) monthMap.set(key, []);
           monthMap.get(key)!.push(eq);
         }
@@ -242,7 +222,10 @@ export default function ScheduleView({
     for (const eq of allEquipment) {
       if (!eq.nextVerification) continue;
       const d = new Date(eq.nextVerification);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(d.getDate()).padStart(2, "0")}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(eq);
     }
@@ -274,7 +257,10 @@ export default function ScheduleView({
     const remaining = 7 - (days.length % 7);
     if (remaining < 7) {
       for (let d = 1; d <= remaining; d++) {
-        days.push({ date: new Date(calYear, calMonth + 1, d), isCurrentMonth: false });
+        days.push({
+          date: new Date(calYear, calMonth + 1, d),
+          isCurrentMonth: false,
+        });
       }
     }
 
@@ -285,8 +271,14 @@ export default function ScheduleView({
     setSelectedDay(null);
     let newMonth = calMonth + delta;
     let newYear = calYear;
-    if (newMonth > 11) { newMonth = 0; newYear++; }
-    if (newMonth < 0) { newMonth = 11; newYear--; }
+    if (newMonth > 11) {
+      newMonth = 0;
+      newYear++;
+    }
+    if (newMonth < 0) {
+      newMonth = 11;
+      newYear--;
+    }
     setCalMonth(newMonth);
     setCalYear(newYear);
   };
@@ -305,16 +297,23 @@ export default function ScheduleView({
     const days = diff / (1000 * 60 * 60 * 24);
 
     if (days < 0) return "border-l-red-500 bg-red-50 dark:bg-red-900/10";
-    if (days < 14) return "border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/10";
+    if (days < 14)
+      return "border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/10";
     return "border-l-blue-500 bg-blue-50/50 dark:bg-blue-900/10";
   };
 
   const getDayKey = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
 
   const isToday = (d: Date) => {
     const now = new Date();
-    return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return (
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear()
+    );
   };
 
   if (loading) {
@@ -329,7 +328,9 @@ export default function ScheduleView({
     <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-dark dark:text-white">{title}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-dark dark:text-white">
+          {title}
+        </h1>
         <div className="flex items-center gap-3 flex-wrap">
           {/* View mode toggle */}
           <div className="inline-flex rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
@@ -341,8 +342,18 @@ export default function ScheduleView({
                   : "bg-white dark:bg-dark-light text-neutral dark:text-white/70 hover:bg-gray-50 dark:hover:bg-dark"
               }`}
             >
-              <svg className="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              <svg
+                className="w-4 h-4 inline-block mr-1 -mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                />
               </svg>
               Список
             </button>
@@ -354,8 +365,18 @@ export default function ScheduleView({
                   : "bg-white dark:bg-dark-light text-neutral dark:text-white/70 hover:bg-gray-50 dark:hover:bg-dark"
               }`}
             >
-              <svg className="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg
+                className="w-4 h-4 inline-block mr-1 -mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
               Календарь
             </button>
@@ -365,8 +386,18 @@ export default function ScheduleView({
             disabled={exporting || exportingArshin || exportingExcel}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark transition-colors disabled:opacity-50"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
             {exporting ? "Скачивание..." : "Word (.docx)"}
           </button>
@@ -375,8 +406,18 @@ export default function ScheduleView({
             disabled={exporting || exportingArshin || exportingExcel}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark transition-colors disabled:opacity-50"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
             {exportingExcel ? "Скачивание..." : "Excel (.xlsx)"}
           </button>
@@ -394,12 +435,24 @@ export default function ScheduleView({
         <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm">
           <EmptyState
             icon={
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg
+                className="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
             }
             title="Нет запланированных событий"
-            description={`Добавьте оборудование с датами ${categories.includes("attestation") ? "аттестации" : "поверки"} в разделе оборудования, чтобы увидеть график`}
+            description={`Добавьте оборудование с датами ${
+              categories.includes("attestation") ? "аттестации" : "поверки"
+            } в разделе оборудования, чтобы увидеть график`}
             action={
               <Link
                 href="/dashboard/equipment/si"
@@ -417,36 +470,63 @@ export default function ScheduleView({
         <div className="space-y-8">
           {groups.map((group) => (
             <div key={group.key}>
-              <h2 className={`text-lg font-bold mb-4 ${group.isOverdue ? "text-red-600" : "text-dark dark:text-white"}`}>
+              <h2
+                className={`text-lg font-bold mb-4 ${
+                  group.isOverdue ? "text-red-600" : "text-dark dark:text-white"
+                }`}
+              >
                 {group.isOverdue && (
-                  <svg className="w-5 h-5 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  <svg
+                    className="w-5 h-5 inline-block mr-2 -mt-0.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    />
                   </svg>
                 )}
                 {group.label}
-                <span className="text-sm font-normal text-neutral ml-2">({group.items.length})</span>
+                <span className="text-sm font-normal text-neutral ml-2">
+                  ({group.items.length})
+                </span>
               </h2>
               <div className="space-y-2">
                 {group.items.map((eq) => (
                   <div
                     key={eq.id}
-                    className={`border-l-4 rounded-xl p-4 ${getUrgencyColor(eq.nextVerification!)}`}
+                    className={`border-l-4 rounded-xl p-4 ${getUrgencyColor(
+                      eq.nextVerification!
+                    )}`}
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="font-medium text-dark dark:text-white">{eq.name}</div>
+                        <div className="font-medium text-dark dark:text-white">
+                          {eq.name}
+                        </div>
                         <div className="text-sm text-neutral dark:text-white/60">
                           {eq.type || "\u2014"}
-                          {eq.serialNumber && <span className="ml-2">Зав.№ {eq.serialNumber}</span>}
+                          {eq.serialNumber && (
+                            <span className="ml-2">
+                              Зав.№ {eq.serialNumber}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-sm font-semibold text-dark dark:text-white">
-                          {new Date(eq.nextVerification!).toLocaleDateString("ru-RU", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
+                          {new Date(eq.nextVerification!).toLocaleDateString(
+                            "ru-RU",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            }
+                          )}
                         </div>
                         <span className="text-xs text-neutral">
                           {categoryLabels[eq.category] || eq.category}
@@ -470,8 +550,18 @@ export default function ScheduleView({
               onClick={() => navigateMonth(-1)}
               className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
             >
-              <svg className="w-5 h-5 text-dark dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-5 h-5 text-dark dark:text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
             <div className="flex items-center gap-3">
@@ -489,8 +579,18 @@ export default function ScheduleView({
               onClick={() => navigateMonth(1)}
               className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
             >
-              <svg className="w-5 h-5 text-dark dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="w-5 h-5 text-dark dark:text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </button>
           </div>
@@ -539,7 +639,9 @@ export default function ScheduleView({
               const dayKey = getDayKey(date);
               const events = dateMap.get(dayKey) || [];
               const today = isToday(date);
-              const hasOverdue = events.some((e) => new Date(e.nextVerification!) < new Date());
+              const hasOverdue = events.some(
+                (e) => new Date(e.nextVerification!) < new Date()
+              );
               const isSelected = selectedDay === dayKey;
 
               return (
@@ -549,7 +651,11 @@ export default function ScheduleView({
                     isCurrentMonth
                       ? "bg-white dark:bg-dark-light"
                       : "bg-gray-50/50 dark:bg-dark/50"
-                  } ${events.length > 0 ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5" : ""}`}
+                  } ${
+                    events.length > 0
+                      ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5"
+                      : ""
+                  }`}
                   onClick={() => {
                     if (events.length > 0) {
                       setSelectedDay(isSelected ? null : dayKey);
@@ -557,16 +663,20 @@ export default function ScheduleView({
                   }}
                 >
                   {/* Day number */}
-                  <div className={`text-sm font-medium mb-1 ${
-                    !isCurrentMonth
-                      ? "text-gray-300 dark:text-white/20"
-                      : today
+                  <div
+                    className={`text-sm font-medium mb-1 ${
+                      !isCurrentMonth
+                        ? "text-gray-300 dark:text-white/20"
+                        : today
                         ? "text-white"
                         : "text-dark dark:text-white"
-                  }`}>
-                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full ${
-                      today ? "gradient-primary" : ""
-                    }`}>
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex items-center justify-center w-7 h-7 rounded-full ${
+                        today ? "gradient-primary" : ""
+                      }`}
+                    >
                       {date.getDate()}
                     </span>
                   </div>
@@ -576,14 +686,30 @@ export default function ScheduleView({
                     <div className="space-y-0.5">
                       {events.length <= 3 ? (
                         events.map((eq) => {
-                          const isOverdue = new Date(eq.nextVerification!) < new Date();
+                          const isOverdue =
+                            new Date(eq.nextVerification!) < new Date();
                           return (
                             <div
                               key={eq.id}
                               className={`text-[10px] sm:text-xs leading-tight px-1.5 py-0.5 rounded truncate ${
                                 isOverdue
                                   ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                  : `${categoryDotColors[eq.category] === "bg-blue-500" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : ""} ${categoryDotColors[eq.category] === "bg-purple-500" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" : ""} ${categoryDotColors[eq.category] === "bg-amber-500" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : ""}`
+                                  : `${
+                                      categoryDotColors[eq.category] ===
+                                      "bg-blue-500"
+                                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                        : ""
+                                    } ${
+                                      categoryDotColors[eq.category] ===
+                                      "bg-purple-500"
+                                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                                        : ""
+                                    } ${
+                                      categoryDotColors[eq.category] ===
+                                      "bg-amber-500"
+                                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                        : ""
+                                    }`
                               }`}
                             >
                               {eq.name}
@@ -593,25 +719,43 @@ export default function ScheduleView({
                       ) : (
                         <>
                           {events.slice(0, 2).map((eq) => {
-                            const isOverdue = new Date(eq.nextVerification!) < new Date();
+                            const isOverdue =
+                              new Date(eq.nextVerification!) < new Date();
                             return (
                               <div
                                 key={eq.id}
                                 className={`text-[10px] sm:text-xs leading-tight px-1.5 py-0.5 rounded truncate ${
                                   isOverdue
                                     ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                    : `${categoryDotColors[eq.category] === "bg-blue-500" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : ""} ${categoryDotColors[eq.category] === "bg-purple-500" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" : ""} ${categoryDotColors[eq.category] === "bg-amber-500" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : ""}`
+                                    : `${
+                                        categoryDotColors[eq.category] ===
+                                        "bg-blue-500"
+                                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                          : ""
+                                      } ${
+                                        categoryDotColors[eq.category] ===
+                                        "bg-purple-500"
+                                          ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                                          : ""
+                                      } ${
+                                        categoryDotColors[eq.category] ===
+                                        "bg-amber-500"
+                                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                          : ""
+                                      }`
                                 }`}
                               >
                                 {eq.name}
                               </div>
                             );
                           })}
-                          <div className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-medium ${
-                            hasOverdue
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-primary"
-                          }`}>
+                          <div
+                            className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-medium ${
+                              hasOverdue
+                                ? "text-red-600 dark:text-red-400"
+                                : "text-primary"
+                            }`}
+                          >
                             +{events.length - 2} ещё
                           </div>
                         </>
@@ -643,25 +787,51 @@ export default function ScheduleView({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="text-sm font-semibold text-dark dark:text-white mb-2">
-                        {date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
-                        <span className="text-neutral font-normal ml-1">({events.length})</span>
+                        {date.toLocaleDateString("ru-RU", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                        <span className="text-neutral font-normal ml-1">
+                          ({events.length})
+                        </span>
                       </div>
                       <div className="max-h-48 overflow-y-auto space-y-1.5">
                         {events.map((eq) => {
-                          const isOverdue = new Date(eq.nextVerification!) < new Date();
+                          const isOverdue =
+                            new Date(eq.nextVerification!) < new Date();
                           return (
                             <div
                               key={eq.id}
                               className={`border-l-3 rounded-lg p-2 text-xs ${
                                 isOverdue
                                   ? "border-l-red-500 bg-red-50 dark:bg-red-900/10"
-                                  : `border-l-2 ${categoryDotColors[eq.category] === "bg-blue-500" ? "border-l-blue-500 bg-blue-50 dark:bg-blue-900/10" : ""} ${categoryDotColors[eq.category] === "bg-purple-500" ? "border-l-purple-500 bg-purple-50 dark:bg-purple-900/10" : ""} ${categoryDotColors[eq.category] === "bg-amber-500" ? "border-l-amber-500 bg-amber-50 dark:bg-amber-900/10" : ""}`
+                                  : `border-l-2 ${
+                                      categoryDotColors[eq.category] ===
+                                      "bg-blue-500"
+                                        ? "border-l-blue-500 bg-blue-50 dark:bg-blue-900/10"
+                                        : ""
+                                    } ${
+                                      categoryDotColors[eq.category] ===
+                                      "bg-purple-500"
+                                        ? "border-l-purple-500 bg-purple-50 dark:bg-purple-900/10"
+                                        : ""
+                                    } ${
+                                      categoryDotColors[eq.category] ===
+                                      "bg-amber-500"
+                                        ? "border-l-amber-500 bg-amber-50 dark:bg-amber-900/10"
+                                        : ""
+                                    }`
                               }`}
                             >
-                              <div className="font-medium text-dark dark:text-white">{eq.name}</div>
+                              <div className="font-medium text-dark dark:text-white">
+                                {eq.name}
+                              </div>
                               <div className="text-neutral dark:text-white/50 mt-0.5">
                                 {categoryLabels[eq.category]}
-                                {eq.serialNumber && <span> · Зав.№ {eq.serialNumber}</span>}
+                                {eq.serialNumber && (
+                                  <span> · Зав.№ {eq.serialNumber}</span>
+                                )}
                               </div>
                             </div>
                           );

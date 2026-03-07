@@ -5,11 +5,18 @@ import { logActivity } from "@/lib/activityLog";
 import { createRateLimiter } from "@/lib/rateLimit";
 import { equipmentCreateSchema, validate } from "@/lib/validation";
 import { calculateEquipmentStatus } from "@/lib/equipmentStatus";
+import logger from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
-const equipmentReadLimiter = createRateLimiter({ max: 120, windowMs: 60 * 1000 });
-const equipmentWriteLimiter = createRateLimiter({ max: 30, windowMs: 60 * 1000 });
+const equipmentReadLimiter = createRateLimiter({
+  max: 120,
+  windowMs: 60 * 1000,
+});
+const equipmentWriteLimiter = createRateLimiter({
+  max: 30,
+  windowMs: 60 * 1000,
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +25,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
     if (!equipmentReadLimiter(request, userId)) {
-      return NextResponse.json({ error: "Слишком много запросов" }, { status: 429 });
+      return NextResponse.json(
+        { error: "Слишком много запросов" },
+        { status: 429 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -32,17 +42,28 @@ export async function GET(request: NextRequest) {
     const showIgnored = searchParams.get("ignored") === "true";
     const orgId = searchParams.get("organizationId");
     if (!orgId) {
-      return NextResponse.json({ error: "organizationId обязателен" }, { status: 400 });
+      return NextResponse.json(
+        { error: "organizationId обязателен" },
+        { status: 400 }
+      );
     }
 
     const membership = await prisma.organizationMember.findUnique({
-      where: { userId_organizationId: { userId, organizationId: Number(orgId) } },
+      where: {
+        userId_organizationId: { userId, organizationId: Number(orgId) },
+      },
     });
     if (!membership) {
-      return NextResponse.json({ error: "Нет доступа к организации" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Нет доступа к организации" },
+        { status: 403 }
+      );
     }
 
-    const where: Record<string, unknown> = { organizationId: Number(orgId), ignored: showIgnored };
+    const where: Record<string, unknown> = {
+      organizationId: Number(orgId),
+      ignored: showIgnored,
+    };
     if (status) where.status = status;
     if (categoryParams.length === 1) {
       where.category = categoryParams[0];
@@ -79,8 +100,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ equipment, total, page, limit });
   } catch (error) {
-    console.error("Get equipment error:", error);
-    return NextResponse.json({ error: "Ошибка при получении оборудования" }, { status: 500 });
+    logger.error("Get equipment error:", error);
+    return NextResponse.json(
+      { error: "Ошибка при получении оборудования" },
+      { status: 500 }
+    );
   }
 }
 
@@ -91,7 +115,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
     if (!equipmentWriteLimiter(request, userId)) {
-      return NextResponse.json({ error: "Слишком много запросов" }, { status: 429 });
+      return NextResponse.json(
+        { error: "Слишком много запросов" },
+        { status: 429 }
+      );
     }
 
     const body = await request.json();
@@ -99,15 +126,34 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    const { name, type, serialNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl, organizationId } = parsed.data;
+    const {
+      name,
+      type,
+      serialNumber,
+      verificationDate,
+      nextVerification,
+      interval,
+      category,
+      company,
+      contactEmail,
+      notes,
+      arshinUrl,
+      organizationId,
+    } = parsed.data;
 
     if (!organizationId) {
-      return NextResponse.json({ error: "organizationId обязателен" }, { status: 400 });
+      return NextResponse.json(
+        { error: "organizationId обязателен" },
+        { status: 400 }
+      );
     }
 
     const { isOrgMember } = await import("@/lib/orgAccess");
     if (!(await isOrgMember(userId, organizationId))) {
-      return NextResponse.json({ error: "Нет доступа к организации" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Нет доступа к организации" },
+        { status: 403 }
+      );
     }
 
     // Calculate status based on nextVerification date
@@ -132,17 +178,36 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    logActivity({ userId, action: "equipment_added", entityType: "equipment", entityId: equipment.id, details: JSON.stringify({ name: equipment.name }) });
+    logActivity({
+      userId,
+      action: "equipment_added",
+      entityType: "equipment",
+      entityId: equipment.id,
+      details: JSON.stringify({ name: equipment.name }),
+    });
 
     const { getIO } = await import("@/lib/socket");
     const io = getIO();
     if (io) {
-      io.to(`org:${organizationId}`).emit("equipment-changed", { action: "created", equipmentId: equipment.id });
+      const room = `org:${organizationId}`;
+      const sockets = await io.in(room).fetchSockets();
+      logger.debug(
+        `[equipment POST] emitting equipment-changed to ${room}, ${sockets.length} socket(s) in room`
+      );
+      io.to(room).emit("equipment-changed", {
+        action: "created",
+        equipmentId: equipment.id,
+      });
+    } else {
+      logger.warn("[equipment POST] io is null, cannot emit");
     }
 
     return NextResponse.json(equipment, { status: 201 });
   } catch (error) {
-    console.error("Create equipment error:", error);
-    return NextResponse.json({ error: "Ошибка при создании записи" }, { status: 500 });
+    logger.error("Create equipment error:", error);
+    return NextResponse.json(
+      { error: "Ошибка при создании записи" },
+      { status: 500 }
+    );
   }
 }

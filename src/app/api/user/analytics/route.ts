@@ -8,13 +8,13 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get("auth-token")?.value;
-    if (!token) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    if (!token)
+      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const userId = payload.userId as number;
 
     const now = new Date();
-    const startOf12MonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
     const [equipment, requests, verificationRecords] = await Promise.all([
       prisma.equipment.findMany({
@@ -43,12 +43,17 @@ export async function GET(request: NextRequest) {
 
     // Equipment stats
     const totalEquipment = equipment.filter((e) => !e.ignored).length;
-    const siCount = equipment.filter((e) => e.category !== "attestation" && !e.ignored).length;
-    const ioCount = equipment.filter((e) => e.category === "attestation" && !e.ignored).length;
+    const siCount = equipment.filter(
+      (e) => e.category !== "attestation" && !e.ignored
+    ).length;
+    const ioCount = equipment.filter(
+      (e) => e.category === "attestation" && !e.ignored
+    ).length;
     const archivedCount = equipment.filter((e) => e.ignored).length;
 
     const overdueCount = equipment.filter(
-      (e) => !e.ignored && e.nextVerification && new Date(e.nextVerification) < now
+      (e) =>
+        !e.ignored && e.nextVerification && new Date(e.nextVerification) < now
     ).length;
 
     const in30Days = new Date(now);

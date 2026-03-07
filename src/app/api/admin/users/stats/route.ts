@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { createRateLimiter } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
+const adminUsersStatsLimiter = createRateLimiter({
+  max: 60,
+  windowMs: 60 * 1000,
+});
+
 export async function GET(request: NextRequest) {
+  if (!adminUsersStatsLimiter(request)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const headerPassword = request.headers.get("x-admin-password") || "";
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,12 +32,16 @@ export async function GET(request: NextRequest) {
   const registrationsByMonth: { month: string; count: number }[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const count = registrations.filter((r) => {
       const rd = new Date(r.createdAt);
-      return rd.getFullYear() === d.getFullYear() && rd.getMonth() === d.getMonth();
+      return (
+        rd.getFullYear() === d.getFullYear() && rd.getMonth() === d.getMonth()
+      );
     }).length;
-    const label = d.toLocaleDateString("ru-RU", { month: "short", year: "2-digit" });
+    const label = d.toLocaleDateString("ru-RU", {
+      month: "short",
+      year: "2-digit",
+    });
     registrationsByMonth.push({ month: label, count });
   }
 

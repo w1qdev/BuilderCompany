@@ -20,8 +20,15 @@ export interface Equipment {
 }
 
 /** Lightweight version used in schedule/calendar views */
-export interface EquipmentScheduleItem
-  extends Pick<Equipment, "id" | "name" | "type" | "serialNumber" | "nextVerification" | "category" | "status"> {}
+export interface EquipmentScheduleItem {
+  id: number;
+  name: string;
+  type: string | null;
+  serialNumber: string | null;
+  nextVerification: string | null;
+  category: string;
+  status: string;
+}
 
 // ─── Service Items / Request Items ─────────────────────────────────────────────
 

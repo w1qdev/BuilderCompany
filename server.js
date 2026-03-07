@@ -24,6 +24,7 @@ app.prepare().then(() => {
     console.log("Socket connected:", socket.id);
 
     socket.on("join-rooms", (data) => {
+      console.log(`[Socket ${socket.id}] join-rooms:`, JSON.stringify(data));
       if (data.userId) {
         socket.join(`user:${data.userId}`);
       }
@@ -35,6 +36,7 @@ app.prepare().then(() => {
       if (data.isAdmin) {
         socket.join("admin");
       }
+      console.log(`[Socket ${socket.id}] rooms:`, [...socket.rooms]);
     });
 
     socket.on("disconnect", () => {

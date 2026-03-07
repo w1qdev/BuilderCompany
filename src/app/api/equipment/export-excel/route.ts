@@ -13,19 +13,6 @@ function formatDate(date: Date | null | undefined): string {
   });
 }
 
-function statusLabel(status: string): string {
-  switch (status) {
-    case "active":
-      return "Активно";
-    case "pending":
-      return "Скоро поверка";
-    case "expired":
-      return "Просрочено";
-    default:
-      return status;
-  }
-}
-
 export async function GET(request: NextRequest) {
   try {
     const userId = await getUserId(request);
@@ -62,20 +49,52 @@ export async function GET(request: NextRequest) {
     if (type === "io") {
       worksheet.columns = [
         { header: "№ п/п", key: "num", width: 6 },
-        { header: "Наименование испытательного оборудования", key: "name", width: 40 },
+        {
+          header: "Наименование испытательного оборудования",
+          key: "name",
+          width: 40,
+        },
         { header: "Зав./инвент. номер", key: "serialNumber", width: 18 },
-        { header: "Дата последней аттестации", key: "verificationDate", width: 22 },
-        { header: "Периодичность проведения аттестации", key: "interval", width: 22 },
-        { header: "Дата следующей аттестации", key: "nextVerification", width: 22 },
+        {
+          header: "Дата последней аттестации",
+          key: "verificationDate",
+          width: 22,
+        },
+        {
+          header: "Периодичность проведения аттестации",
+          key: "interval",
+          width: 22,
+        },
+        {
+          header: "Дата следующей аттестации",
+          key: "nextVerification",
+          width: 22,
+        },
         { header: "Примечание", key: "notes", width: 25 },
       ];
     } else {
       worksheet.columns = [
         { header: "№ п/п", key: "num", width: 6 },
-        { header: "Наименование, тип, заводской (серийный) номер", key: "nameTypeSN", width: 50 },
-        { header: "Периодичность поверки (межповерочный интервал)", key: "interval", width: 25 },
-        { header: "Дата последней поверки", key: "verificationDate", width: 22 },
-        { header: "Дата следующей (очередной) поверки", key: "nextVerification", width: 25 },
+        {
+          header: "Наименование, тип, заводской (серийный) номер",
+          key: "nameTypeSN",
+          width: 50,
+        },
+        {
+          header: "Периодичность поверки (межповерочный интервал)",
+          key: "interval",
+          width: 25,
+        },
+        {
+          header: "Дата последней поверки",
+          key: "verificationDate",
+          width: 22,
+        },
+        {
+          header: "Дата следующей (очередной) поверки",
+          key: "nextVerification",
+          width: 25,
+        },
         { header: "Сведения о поверке (результат)", key: "result", width: 25 },
       ];
     }
@@ -83,7 +102,11 @@ export async function GET(request: NextRequest) {
     // Style header row
     const headerRow = worksheet.getRow(1);
     headerRow.font = { bold: true };
-    headerRow.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    headerRow.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+      wrapText: true,
+    };
 
     // Add data rows
     equipment.forEach((eq, index) => {
@@ -98,7 +121,11 @@ export async function GET(request: NextRequest) {
           notes: eq.notes || "",
         });
       } else {
-        const nameParts = [eq.name, eq.type, eq.serialNumber ? `зав. № ${eq.serialNumber}` : ""].filter(Boolean);
+        const nameParts = [
+          eq.name,
+          eq.type,
+          eq.serialNumber ? `зав. № ${eq.serialNumber}` : "",
+        ].filter(Boolean);
         worksheet.addRow({
           num: index + 1,
           nameTypeSN: nameParts.join(", "),
@@ -129,7 +156,9 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(`${fileName}.xlsx`)}`,
+        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(
+          `${fileName}.xlsx`
+        )}`,
       },
     });
   } catch (error) {

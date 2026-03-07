@@ -1,16 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminPassword } from "@/lib/adminAuth";
+import { createRateLimiter } from "@/lib/rateLimit";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+
+const adminStatsLimiter = createRateLimiter({ max: 60, windowMs: 60 * 1000 });
 
 export async function GET(req: NextRequest) {
+  if (!adminStatsLimiter(req)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const headerPassword = req.headers.get("x-admin-password");
   if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [total, newCount, inProgressCount, pendingPaymentCount, reviewCount, doneCount, cancelledCount] = await Promise.all([
+  const [
+    total,
+    newCount,
+    inProgressCount,
+    pendingPaymentCount,
+    reviewCount,
+    doneCount,
+    cancelledCount,
+  ] = await Promise.all([
     prisma.request.count(),
     prisma.request.count({ where: { status: "new" } }),
     prisma.request.count({ where: { status: "in_progress" } }),
