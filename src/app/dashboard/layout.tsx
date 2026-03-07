@@ -137,10 +137,24 @@ export default function DashboardLayout({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebar-collapsed") === "true";
+    }
+    return false;
+  });
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  const toggleCollapsed = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", String(next));
+      return next;
+    });
+  };
 
   // Ctrl+K / Cmd+K global shortcut
   useEffect(() => {
@@ -213,11 +227,11 @@ export default function DashboardLayout({
         key={item.href}
         href={item.href}
         onClick={() => setSidebarOpen(false)}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+        className={`group/nav relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
           active
             ? "bg-primary text-white shadow-md shadow-primary/20"
             : "text-neutral dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/5"
-        } ${nested ? "pl-5" : ""}`}
+        } ${nested ? "pl-5" : ""} ${sidebarCollapsed ? "justify-center" : ""}`}
       >
         <svg
           className="w-5 h-5 shrink-0"
@@ -232,7 +246,12 @@ export default function DashboardLayout({
             d={item.icon}
           />
         </svg>
-        {item.label}
+        {!sidebarCollapsed && <span>{item.label}</span>}
+        {sidebarCollapsed && (
+          <div className="absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-dark dark:bg-white text-white dark:text-dark text-xs font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover/nav:opacity-100 transition-opacity z-50 shadow-lg">
+            {item.label}
+          </div>
+        )}
       </Link>
     );
   };
@@ -311,14 +330,29 @@ export default function DashboardLayout({
 
         {/* Sidebar */}
         <aside
-          className={`fixed lg:sticky top-[52px] lg:top-[52px] left-0 z-30 h-[calc(100vh-52px)] w-64 bg-white dark:bg-dark-light border-r border-gray-200 dark:border-white/10 flex flex-col transition-transform lg:translate-x-0 ${
+          className={`fixed lg:sticky top-[52px] lg:top-[52px] left-0 z-30 h-[calc(100vh-52px)] bg-white dark:bg-dark-light border-r border-gray-200 dark:border-white/10 flex flex-col transition-all duration-300 lg:translate-x-0 lg:overflow-visible overflow-x-hidden ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+          } ${sidebarCollapsed ? "lg:w-[68px] w-64" : "w-64"}`}
         >
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+          {/* Collapse toggle button — desktop only */}
+          <button
+            onClick={toggleCollapsed}
+            className="hidden lg:flex absolute -right-3.5 top-5 z-40 w-7 h-7 rounded-full bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 shadow-md items-center justify-center text-neutral dark:text-white/60 hover:text-primary hover:border-primary/30 transition-colors"
+            title={sidebarCollapsed ? "Развернуть" : "Свернуть"}
+          >
+            <svg className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <nav className={`flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-1 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
             {navItems.map((item, index) => {
               if ("type" in item && item.type === "divider") {
-                return (
+                return sidebarCollapsed ? (
+                  <div key={index} className="hidden lg:block pt-4 pb-2 px-3">
+                    <div className="border-t border-gray-200 dark:border-white/10" />
+                  </div>
+                ) : (
                   <div key={index} className="pt-4 pb-2 px-3">
                     <span className="text-xs font-semibold text-neutral dark:text-white/40 uppercase tracking-wider">
                       {item.label}
@@ -338,13 +372,13 @@ export default function DashboardLayout({
           </nav>
 
           {/* Feedback button — fixed above profile, never scrolls */}
-          <div className="shrink-0 px-4 py-2">
+          <div className={`shrink-0 py-2 ${sidebarCollapsed ? "lg:px-2 px-4" : "px-4"}`}>
             <button
               onClick={() => {
                 setFeedbackOpen(true);
                 setSidebarOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+              className={`group/nav relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${sidebarCollapsed ? "lg:justify-center" : ""}`}
             >
               <svg
                 className="w-5 h-5 shrink-0"
@@ -359,17 +393,22 @@ export default function DashboardLayout({
                   d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                 />
               </svg>
-              Замечания
+              {!sidebarCollapsed && <span>Замечания</span>}
+              {sidebarCollapsed && (
+                <div className="hidden lg:block absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-dark dark:bg-white text-white dark:text-dark text-xs font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover/nav:opacity-100 transition-opacity z-50 shadow-lg">
+                  Замечания
+                </div>
+              )}
             </button>
           </div>
 
           {/* Profile */}
           <div
             ref={profileRef}
-            className="relative border-t border-gray-200 dark:border-white/10 p-3"
+            className={`relative border-t border-gray-200 dark:border-white/10 p-3 ${sidebarCollapsed ? "lg:px-2" : ""}`}
           >
             {profileOpen && (
-              <div className="absolute bottom-full left-3 right-3 mb-1 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-xl shadow-lg py-1">
+              <div className={`absolute bottom-full mb-1 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-xl shadow-lg py-1 ${sidebarCollapsed ? "lg:left-full lg:bottom-0 lg:ml-2 lg:mb-0 lg:w-48 left-3 right-3" : "left-3 right-3"}`}>
                 <Link
                   href="/dashboard/profile"
                   onClick={() => {
@@ -386,15 +425,16 @@ export default function DashboardLayout({
                     setProfileOpen(false);
                     handleLogout();
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                   Выйти
                 </button>
               </div>
             )}
             <button
               onClick={() => setProfileOpen(!profileOpen)}
-              className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              className={`group/nav relative w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${sidebarCollapsed ? "lg:justify-center" : ""}`}
             >
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0 overflow-hidden">
                 {user.avatar ? (
@@ -403,29 +443,38 @@ export default function DashboardLayout({
                   user.name.charAt(0).toUpperCase()
                 )}
               </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm font-medium text-dark dark:text-white truncate">
+              {!sidebarCollapsed && (
+                <>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="text-sm font-medium text-dark dark:text-white truncate">
+                      {user.name}
+                    </div>
+                    {user.company && (
+                      <div className="text-xs text-neutral dark:text-white/40 truncate">
+                        {user.company}
+                      </div>
+                    )}
+                  </div>
+                  <svg
+                    className={`w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 15l7-7 7 7"
+                    />
+                  </svg>
+                </>
+              )}
+              {sidebarCollapsed && (
+                <div className="hidden lg:block absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-dark dark:bg-white text-white dark:text-dark text-xs font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover/nav:opacity-100 transition-opacity z-50 shadow-lg">
                   {user.name}
                 </div>
-                {user.company && (
-                  <div className="text-xs text-neutral dark:text-white/40 truncate">
-                    {user.company}
-                  </div>
-                )}
-              </div>
-              <svg
-                className={`w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 15l7-7 7 7"
-                />
-              </svg>
+              )}
             </button>
           </div>
         </aside>
