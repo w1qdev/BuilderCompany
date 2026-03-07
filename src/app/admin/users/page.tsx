@@ -335,7 +335,7 @@ export default function AdminUsersPage() {
                     <div className="text-center hidden lg:block">
                       {user.banned ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
-                          Бан
+                          Заблокирован
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400">

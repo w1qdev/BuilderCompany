@@ -18,6 +18,7 @@ const PAGES = [
   { title: "Конвертер единиц", href: "/dashboard/converter", keywords: "конвертер единицы перевод" },
   { title: "Классы точности", href: "/dashboard/accuracy", keywords: "классы точности" },
   { title: "Справочник ГОСТов", href: "/dashboard/gosts", keywords: "гост стандарт" },
+  { title: "Руководство пользователя", href: "/dashboard/guide", keywords: "руководство помощь инструкция гайд guide" },
 ];
 
 export async function GET(request: NextRequest) {
