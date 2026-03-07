@@ -6,9 +6,10 @@ const ARSHIN_ENABLED = false;
 import { EmptyState } from "@/components/ui/empty-state";
 import { Portal } from "@/components/ui/Portal";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { statusConfig as _statusConfig } from "@/lib/equipmentStatus";
+import { useSocket } from "@/lib/useSocket";
 
 const statusConfig: Record<string, { label: string; color: string }> = _statusConfig;
 
@@ -261,6 +262,15 @@ export default function EquipmentList({
       }
     } catch { /* ignore */ }
   };
+
+  // Realtime: refetch when other org members change equipment
+  const socket = useSocket({ orgIds: userOrgs.map((o) => o.id) });
+  useEffect(() => {
+    if (!socket || !activeOrgId) return;
+    const handler = () => fetchEquipmentSilent();
+    socket.on("equipment-changed", handler);
+    return () => { socket.off("equipment-changed", handler); };
+  }, [socket, activeOrgId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchEquipment = async (targetPage = page) => {
     try {

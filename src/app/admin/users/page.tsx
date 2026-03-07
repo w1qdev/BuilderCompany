@@ -5,6 +5,7 @@ import { useAdminAuth } from "@/lib/AdminAuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSocket } from "@/lib/useSocket";
 
 interface AdminUser {
   id: number;
@@ -75,6 +76,15 @@ export default function AdminUsersPage() {
     fetchUsers();
     fetchStats();
   }, [fetchUsers, fetchStats]);
+
+  // Realtime: refetch when new user registers
+  const socket = useSocket({ isAdmin: true });
+  useEffect(() => {
+    if (!socket) return;
+    const handler = () => { fetchUsers(); fetchStats(); };
+    socket.on("new-user-registered", handler);
+    return () => { socket.off("new-user-registered", handler); };
+  }, [socket]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced search
   useEffect(() => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSocket } from "@/lib/useSocket";
 
 interface OrgMember {
   id: number;
@@ -48,6 +49,15 @@ export default function OrganizationPage() {
   useEffect(() => {
     fetchOrgs();
   }, []);
+
+  // Realtime: refetch when members change
+  const socket = useSocket({ orgIds: organizations.map((o) => o.id) });
+  useEffect(() => {
+    if (!socket) return;
+    const handler = () => fetchOrgs();
+    socket.on("org-member-changed", handler);
+    return () => { socket.off("org-member-changed", handler); };
+  }, [socket]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async () => {
     if (!createForm.name.trim()) {

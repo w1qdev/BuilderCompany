@@ -4,6 +4,7 @@ import Modal from "@/components/Modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
+import { useSocket } from "@/lib/useSocket";
 
 interface RequestItem {
   id: number;
@@ -82,7 +83,7 @@ function RequestsContent() {
   const [repeatValues, setRepeatValues] = useState<{ name?: string; phone?: string; email?: string } | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [user, setUser] = useState<{ name: string; phone: string | null; email: string } | null>(null);
+  const [user, setUser] = useState<{ id: number; name: string; phone: string | null; email: string } | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -129,6 +130,20 @@ function RequestsContent() {
     };
     fetchUser();
   }, []);
+
+  // Realtime: refetch when admin changes request status
+  const socket = useSocket({ userId: user?.id });
+  useEffect(() => {
+    if (!socket) return;
+    const handler = () => {
+      fetch(buildRequestUrl(page))
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => { if (data) { setRequests(data.requests); setTotalPages(data.pages || 1); setTotalCount(data.total || data.requests.length); } })
+        .catch(() => {});
+    };
+    socket.on("request-status-changed", handler);
+    return () => { socket.off("request-status-changed", handler); };
+  }, [socket, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch requests when filters change
   useEffect(() => {
