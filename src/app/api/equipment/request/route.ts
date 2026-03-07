@@ -23,8 +23,15 @@ export async function POST(request: NextRequest) {
     }
 
     const equipment = await prisma.equipment.findMany({
-      where: { id: { in: equipmentIds }, userId },
+      where: { id: { in: equipmentIds } },
     });
+
+    const { canAccessOrgEquipment } = await import("@/lib/orgAccess");
+    for (const eq of equipment) {
+      if (!(await canAccessOrgEquipment(userId, eq.id))) {
+        return NextResponse.json({ error: "Нет доступа к оборудованию" }, { status: 403 });
+      }
+    }
 
     if (equipment.length === 0) {
       return NextResponse.json({ error: "Оборудование не найдено" }, { status: 404 });

@@ -23,8 +23,12 @@ export async function PATCH(
     const { id } = await params;
     const equipmentId = parseInt(id);
 
-    const existing = await prisma.equipment.findFirst({
-      where: { id: equipmentId, userId },
+    const { canAccessOrgEquipment } = await import("@/lib/orgAccess");
+    if (!(await canAccessOrgEquipment(userId, equipmentId))) {
+      return NextResponse.json({ error: "Оборудование не найдено" }, { status: 404 });
+    }
+    const existing = await prisma.equipment.findUnique({
+      where: { id: equipmentId },
     });
     if (!existing) {
       return NextResponse.json({ error: "Оборудование не найдено" }, { status: 404 });
@@ -110,8 +114,12 @@ export async function DELETE(
     const { id } = await params;
     const equipmentId = parseInt(id);
 
-    const existing = await prisma.equipment.findFirst({
-      where: { id: equipmentId, userId },
+    const { canAccessOrgEquipment } = await import("@/lib/orgAccess");
+    if (!(await canAccessOrgEquipment(userId, equipmentId))) {
+      return NextResponse.json({ error: "Оборудование не найдено" }, { status: 404 });
+    }
+    const existing = await prisma.equipment.findUnique({
+      where: { id: equipmentId },
     });
     if (!existing) {
       return NextResponse.json({ error: "Оборудование не найдено" }, { status: 404 });

@@ -101,7 +101,14 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    const { name, type, serialNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl } = parsed.data;
+    const { name, type, serialNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl, organizationId } = parsed.data;
+
+    if (organizationId) {
+      const { isOrgMember } = await import("@/lib/orgAccess");
+      if (!(await isOrgMember(userId, organizationId))) {
+        return NextResponse.json({ error: "Нет доступа к организации" }, { status: 403 });
+      }
+    }
 
     // Calculate status based on nextVerification date
     const status = calculateEquipmentStatus(nextVerification);
@@ -109,6 +116,7 @@ export async function POST(request: NextRequest) {
     const equipment = await prisma.equipment.create({
       data: {
         userId,
+        organizationId: organizationId || null,
         name: name.trim(),
         type: type?.trim() || null,
         serialNumber: serialNumber?.trim() || null,

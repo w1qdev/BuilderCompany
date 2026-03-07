@@ -28,6 +28,7 @@ export const equipmentCreateSchema = z.object({
   contactEmail: z.string().email().optional().nullable().or(z.literal("")),
   notes: z.string().max(1000).optional().nullable(),
   arshinUrl: z.string().url().optional().nullable().or(z.literal("")),
+  organizationId: z.number().int().positive().optional().nullable(),
 });
 
 export const equipmentUpdateSchema = equipmentCreateSchema.partial();

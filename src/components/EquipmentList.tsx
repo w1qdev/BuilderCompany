@@ -118,6 +118,9 @@ export default function EquipmentList({
   const [arshinLoading, setArshinLoading] = useState(false);
   const [arshinResults, setArshinResults] = useState<ArshinItem[] | null>(null);
   const [arshinChecking, setArshinChecking] = useState(false);
+  // Organization switcher
+  const [userOrgs, setUserOrgs] = useState<{ id: number; name: string }[]>([]);
+  const [activeOrgId, setActiveOrgId] = useState<number | null>(null);
   // Org import state
   const [showOrgImport, setShowOrgImport] = useState(false);
   const [orgQuery, setOrgQuery] = useState("");
@@ -213,6 +216,20 @@ export default function EquipmentList({
     }
   };
 
+  useEffect(() => {
+    fetch("/api/organizations")
+      .then((r) => (r.ok ? r.json() : { organizations: [] }))
+      .then((data) =>
+        setUserOrgs(
+          (data.organizations || []).map((o: { id: number; name: string }) => ({
+            id: o.id,
+            name: o.name,
+          }))
+        )
+      )
+      .catch(() => {});
+  }, []);
+
   const buildEquipmentParams = (overridePage?: number) => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
@@ -225,6 +242,7 @@ export default function EquipmentList({
     }
     params.set("page", String(overridePage ?? page));
     params.set("limit", String(PAGE_SIZE));
+    if (activeOrgId) params.set("organizationId", String(activeOrgId));
     return params;
   };
 
@@ -258,7 +276,7 @@ export default function EquipmentList({
     setPage(1);
     fetchEquipment(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, filterStatus, filterCategory, showIgnored]);
+  }, [search, filterStatus, filterCategory, showIgnored, activeOrgId]);
 
   useEffect(() => {
     if (!loading) fetchEquipment(page);
@@ -291,7 +309,7 @@ export default function EquipmentList({
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(editingId ? form : { ...form, organizationId: activeOrgId }),
       });
 
       if (res.ok) {
@@ -858,6 +876,35 @@ export default function EquipmentList({
             </svg>
             <p className="text-sm font-medium text-primary">Перетащите файл (.xlsx, .csv) для импорта</p>
           </div>
+        </div>
+      )}
+
+      {/* Organization switcher */}
+      {userOrgs.length > 0 && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <button
+            onClick={() => setActiveOrgId(null)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+              activeOrgId === null
+                ? "bg-primary text-white shadow-sm"
+                : "bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5"
+            }`}
+          >
+            Личное
+          </button>
+          {userOrgs.map((org) => (
+            <button
+              key={org.id}
+              onClick={() => setActiveOrgId(org.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                activeOrgId === org.id
+                  ? "bg-primary text-white shadow-sm"
+                  : "bg-white dark:bg-dark-light text-dark dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5"
+              }`}
+            >
+              {org.name}
+            </button>
+          ))}
         </div>
       )}
 

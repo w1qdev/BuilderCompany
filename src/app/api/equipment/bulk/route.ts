@@ -44,16 +44,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify all IDs belong to the authenticated user
-    const ownedCount = await prisma.equipment.count({
-      where: { id: { in: numericIds }, userId },
-    });
-
-    if (ownedCount !== numericIds.length) {
-      return NextResponse.json(
-        { error: "Некоторые записи не найдены или не принадлежат вам" },
-        { status: 403 }
-      );
+    // Verify all IDs are accessible (owned or org member)
+    const { canAccessOrgEquipment } = await import("@/lib/orgAccess");
+    for (const eqId of numericIds) {
+      if (!(await canAccessOrgEquipment(userId, eqId))) {
+        return NextResponse.json(
+          { error: "Некоторые записи не найдены или не принадлежат вам" },
+          { status: 403 }
+        );
+      }
     }
 
     let count = 0;
@@ -61,14 +60,14 @@ export async function POST(request: NextRequest) {
     switch (action as BulkAction) {
       case "delete": {
         const result = await prisma.equipment.deleteMany({
-          where: { id: { in: numericIds }, userId },
+          where: { id: { in: numericIds } },
         });
         count = result.count;
         break;
       }
       case "archive": {
         const result = await prisma.equipment.updateMany({
-          where: { id: { in: numericIds }, userId },
+          where: { id: { in: numericIds } },
           data: { ignored: true },
         });
         count = result.count;
@@ -76,7 +75,7 @@ export async function POST(request: NextRequest) {
       }
       case "unarchive": {
         const result = await prisma.equipment.updateMany({
-          where: { id: { in: numericIds }, userId },
+          where: { id: { in: numericIds } },
           data: { ignored: false },
         });
         count = result.count;
