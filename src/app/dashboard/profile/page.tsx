@@ -472,8 +472,8 @@ function ProfileTab({
       </div>
 
       <div className="flex items-center gap-3 flex-wrap pt-2">
-        <button type="submit" disabled={savingCompany} className="bg-primary text-primary-foreground py-2 px-4 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50">
-          {savingCompany ? "Сохранение..." : "Сохранить данные"}
+        <button type="submit" disabled={savingCompany} className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground py-2 px-4 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50">
+          {savingCompany ? "Сохранение..." : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Сохранить данные</>}
         </button>
         <button
           type="button"
@@ -487,11 +487,13 @@ function ProfileTab({
             a.click();
             URL.revokeObjectURL(url);
           }}
-          className="py-2 px-3.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+          className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
         >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           Экспорт
         </button>
-        <label className="py-2 px-3.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+        <label className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
           Импорт
           <input
             type="file"
@@ -769,8 +771,8 @@ function SecurityTab({
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={submitting} className="bg-primary text-primary-foreground py-2 px-4 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50">
-              {submitting ? "Сохранение..." : "Сменить пароль"}
+            <button type="submit" disabled={submitting} className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground py-2 px-4 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50">
+              {submitting ? "Сохранение..." : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>Сменить пароль</>}
             </button>
           </form>
         )}
@@ -961,9 +963,9 @@ function NotificationsTab() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="bg-primary text-primary-foreground py-2 px-4 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground py-2 px-4 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
       >
-        {saving ? "Сохранение..." : "Сохранить настройки"}
+        {saving ? "Сохранение..." : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Сохранить настройки</>}
       </button>
     </div>
   );
@@ -1143,10 +1145,11 @@ function DeleteAccountSection() {
             placeholder="Ваш текущий пароль"
           />
           <div className="flex gap-3">
-            <button onClick={handleDelete} disabled={deleting} className="bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50">
-              {deleting ? "Удаление..." : "Удалить аккаунт"}
+            <button onClick={handleDelete} disabled={deleting} className="inline-flex items-center gap-1.5 bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50">
+              {deleting ? "Удаление..." : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>Удалить аккаунт</>}
             </button>
-            <button onClick={() => { setShowConfirm(false); setPassword(""); }} className="py-2 px-4 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+            <button onClick={() => { setShowConfirm(false); setPassword(""); }} className="inline-flex items-center gap-1.5 py-2 px-4 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               Отмена
             </button>
           </div>
@@ -1154,8 +1157,9 @@ function DeleteAccountSection() {
       ) : (
         <button
           onClick={() => setShowConfirm(true)}
-          className="py-2 px-4 rounded-lg text-sm font-medium border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+          className="inline-flex items-center gap-1.5 py-2 px-4 rounded-lg text-sm font-medium border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
         >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
           Удалить аккаунт
         </button>
       )}

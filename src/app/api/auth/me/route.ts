@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
         position: true,
         timezone: true,
         createdAt: true,
+        banned: true,
       },
     });
 

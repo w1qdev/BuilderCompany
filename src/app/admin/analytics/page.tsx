@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   PieChart,
   Pie,
   Cell,
@@ -15,6 +17,14 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+
+interface UserStats {
+  registrationsByMonth: { month: string; count: number }[];
+  topUsers: { id: number; name: string; email: string; requests: number; equipment: number }[];
+  totalUsers: number;
+  bannedUsers: number;
+  activeUsers: number;
+}
 
 interface AnalyticsData {
   viewsTimeline: { date: string; views: number }[];
@@ -72,18 +82,20 @@ const PERIOD_OPTIONS = [
 export default function AdminAnalyticsPage() {
   const { password } = useAdminAuth();
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
 
   const fetchAnalytics = useCallback(async (period: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/analytics?days=${period}`, {
-        headers: { "x-admin-password": password },
-      });
-      if (res.ok) {
-        setData(await res.json());
-      }
+      const headers = { "x-admin-password": password };
+      const [analyticsRes, userStatsRes] = await Promise.all([
+        fetch(`/api/admin/analytics?days=${period}`, { headers }),
+        fetch("/api/admin/users/stats", { headers }),
+      ]);
+      if (analyticsRes.ok) setData(await analyticsRes.json());
+      if (userStatsRes.ok) setUserStats(await userStatsRes.json());
     } catch {
       // Analytics are non-critical
     } finally {
@@ -376,7 +388,7 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Top pages */}
-      <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-5">
+      <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-5 mb-6">
         <h3 className="text-sm font-semibold text-dark dark:text-white mb-4">Популярные страницы</h3>
         <div className="space-y-3">
           {data.topPages.length > 0 ? (
@@ -409,6 +421,105 @@ export default function AdminAnalyticsPage() {
           )}
         </div>
       </div>
+
+      {/* User metrics section */}
+      {userStats && (
+        <>
+          <h2 className="text-lg font-bold text-dark dark:text-white mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Пользователи
+          </h2>
+
+          <div className="grid lg:grid-cols-5 gap-4 mb-6">
+            {/* Registration trend */}
+            <div className="lg:col-span-3 bg-white dark:bg-dark-light rounded-2xl shadow-sm p-5">
+              <h3 className="text-sm font-semibold text-dark dark:text-white mb-4">Регистрации по месяцам</h3>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={userStats.registrationsByMonth}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 11, fill: "#9ca3af" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "#9ca3af" }}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "rgba(255,255,255,0.95)",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "12px",
+                        boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                        fontSize: "13px",
+                      }}
+                      formatter={(value) => [Number(value || 0), "Регистрации"]}
+                    />
+                    <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* User summary */}
+            <div className="lg:col-span-2 bg-white dark:bg-dark-light rounded-2xl shadow-sm p-5">
+              <h3 className="text-sm font-semibold text-dark dark:text-white mb-4">Сводка</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral dark:text-white/60">Всего пользователей</span>
+                  <span className="text-lg font-bold text-dark dark:text-white">{userStats.totalUsers}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral dark:text-white/60">Активные</span>
+                  <span className="text-lg font-bold text-green-500">{userStats.activeUsers}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral dark:text-white/60">Заблокированные</span>
+                  <span className="text-lg font-bold text-red-500">{userStats.bannedUsers}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Top users table */}
+          {userStats.topUsers.length > 0 && (
+            <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-5">
+              <h3 className="text-sm font-semibold text-dark dark:text-white mb-4">Топ пользователей</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-white/10">
+                      <th className="text-left py-2 pr-4 text-xs font-semibold text-neutral dark:text-white/50 uppercase tracking-wider">#</th>
+                      <th className="text-left py-2 pr-4 text-xs font-semibold text-neutral dark:text-white/50 uppercase tracking-wider">Имя</th>
+                      <th className="text-left py-2 pr-4 text-xs font-semibold text-neutral dark:text-white/50 uppercase tracking-wider">Email</th>
+                      <th className="text-center py-2 pr-4 text-xs font-semibold text-neutral dark:text-white/50 uppercase tracking-wider">Заявки</th>
+                      <th className="text-center py-2 text-xs font-semibold text-neutral dark:text-white/50 uppercase tracking-wider">Оборудование</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userStats.topUsers.map((user, idx) => (
+                      <tr key={user.id} className="border-b border-gray-50 dark:border-white/5 last:border-0">
+                        <td className="py-2.5 pr-4 text-neutral-light dark:text-white/30 font-mono text-xs">{idx + 1}</td>
+                        <td className="py-2.5 pr-4 font-medium text-dark dark:text-white">{user.name}</td>
+                        <td className="py-2.5 pr-4 text-neutral dark:text-white/60">{user.email}</td>
+                        <td className="py-2.5 pr-4 text-center font-semibold text-dark dark:text-white">{user.requests}</td>
+                        <td className="py-2.5 text-center font-semibold text-dark dark:text-white">{user.equipment}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

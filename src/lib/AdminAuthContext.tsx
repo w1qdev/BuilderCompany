@@ -65,7 +65,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   if (initializing) {
     return (
-      <div className="min-h-screen bg-warm-bg flex items-center justify-center">
+      <div className="min-h-screen bg-warm-bg dark:bg-dark flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
@@ -73,14 +73,14 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-warm-bg flex items-center justify-center p-4">
+      <div className="min-h-screen bg-warm-bg dark:bg-dark flex items-center justify-center p-4">
         <div className="w-full" style={{ maxWidth: 384 }}>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void login(inputPassword);
           }}
-          className="bg-white rounded-3xl shadow-xl p-8"
+          className="bg-white dark:bg-dark-light rounded-3xl shadow-xl p-8"
         >
           <div className="text-center mb-6">
             <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -98,14 +98,14 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-extrabold text-dark">Админ-панель</h1>
-            <p className="text-neutral text-sm mt-1">
+            <h1 className="text-2xl font-extrabold text-dark dark:text-white">Админ-панель</h1>
+            <p className="text-neutral dark:text-white/50 text-sm mt-1">
               Введите пароль для входа
             </p>
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3 mb-4">
+            <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3 mb-4">
               {error}
             </div>
           )}
@@ -115,7 +115,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             placeholder="Пароль"
             value={inputPassword}
             onChange={(e) => setInputPassword(e.target.value)}
-            className="mb-4"
+            className="mb-4 dark:bg-dark dark:border-white/10 dark:text-white"
           />
           <button
             type="submit"

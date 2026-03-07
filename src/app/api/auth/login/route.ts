@@ -51,6 +51,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (user.banned) {
+      return NextResponse.json(
+        { error: "Ваш аккаунт заблокирован. Обратитесь к администратору." },
+        { status: 403 }
+      );
+    }
+
     // Create JWT token (30 days if rememberMe, else 7 days)
     const expiresIn = rememberMe ? "30d" : "7d";
     const token = await new SignJWT({ userId: user.id, email: user.email })

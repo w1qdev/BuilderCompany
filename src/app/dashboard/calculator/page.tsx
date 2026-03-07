@@ -276,9 +276,10 @@ export default function CalculatorPage() {
                 {errors.length < 6 && (
                   <button
                     onClick={addErrorInput}
-                    className="text-primary hover:underline text-sm font-medium"
+                    className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm font-medium"
                   >
-                    + Добавить погрешность
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    Добавить погрешность
                   </button>
                 )}
 

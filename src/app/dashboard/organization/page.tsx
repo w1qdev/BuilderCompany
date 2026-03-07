@@ -191,12 +191,17 @@ export default function OrganizationPage() {
               disabled={creating}
               className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
-              {creating ? "Создание..." : "Создать"}
+              {creating ? (
+                "Создание..."
+              ) : (
+                <><svg className="w-4 h-4 inline-block mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Создать</>
+              )}
             </button>
             <button
               onClick={() => setShowCreate(false)}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 dark:border-white/10 text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 dark:border-white/10 text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               Отмена
             </button>
           </div>
@@ -250,8 +255,9 @@ export default function OrganizationPage() {
                         {org.role === "admin" && m.userId !== org.members.find((x) => x.role === "admin")?.userId && (
                           <button
                             onClick={() => handleRemoveMember(org.id, m.userId)}
-                            className="text-xs text-red-500 hover:underline"
+                            className="inline-flex items-center gap-1 text-xs text-red-500 hover:underline"
                           >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                             Удалить
                           </button>
                         )}
@@ -276,14 +282,15 @@ export default function OrganizationPage() {
                         <button
                           onClick={() => handleInvite(org.id)}
                           disabled={inviting}
-                          className="bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
                         >
-                          {inviting ? "..." : "Добавить"}
+                          {inviting ? "..." : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Добавить</>}
                         </button>
                         <button
                           onClick={() => { setInviteOrgId(null); setInviteEmail(""); }}
-                          className="px-3 py-2 rounded-xl text-sm border border-gray-200 dark:border-white/10 text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border border-gray-200 dark:border-white/10 text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
                         >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                           Отмена
                         </button>
                       </div>

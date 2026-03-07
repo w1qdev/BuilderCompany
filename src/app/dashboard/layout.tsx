@@ -18,6 +18,7 @@ interface User {
   phone: string | null;
   company: string | null;
   avatar: string | null;
+  banned?: boolean;
 }
 
 type NavLink = {
@@ -551,12 +552,28 @@ export default function DashboardLayout({
               </ol>
             </nav>
           )}
+          {user.banned && (
+            <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">Ваш аккаунт заблокирован</h3>
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">Вы не можете совершать действия. Обратитесь к администратору для разблокировки.</p>
+                </div>
+              </div>
+            </div>
+          )}
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
+              className={user.banned ? "opacity-50 pointer-events-none select-none" : ""}
             >
               {children}
             </motion.div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAdminAuth } from "@/lib/AdminAuthContext";
 import { Input } from "@/components/ui/input";
 
@@ -191,34 +192,35 @@ export default function AdminSettingsPage() {
       case "email":
         return (
           <div className="max-w-lg">
-            <h2 className="text-xl font-bold text-dark mb-1">Email уведомления</h2>
-            <p className="text-sm text-neutral mb-8">
+            <h2 className="text-xl font-bold text-dark dark:text-white mb-1">Email уведомления</h2>
+            <p className="text-sm text-neutral dark:text-white/50 mb-8">
               Настройте получение уведомлений по электронной почте о новых заявках от клиентов.
             </p>
-            <div className="bg-warm-bg rounded-2xl p-5">
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-sm font-semibold text-dark">Уведомления по email</div>
-                  <div className="text-xs text-neutral mt-0.5">Получать письма о новых заявках</div>
+                  <div className="text-sm font-semibold text-dark dark:text-white">Уведомления по email</div>
+                  <div className="text-xs text-neutral dark:text-white/50 mt-0.5">Получать письма о новых заявках</div>
                 </div>
                 <button
                   onClick={() => toggleSetting("emailNotifyAdmin")}
-                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.emailNotifyAdmin ? "bg-primary" : "bg-gray-300"}`}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.emailNotifyAdmin ? "bg-primary" : "bg-gray-300 dark:bg-white/20"}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.emailNotifyAdmin ? "translate-x-5" : "translate-x-0"}`} />
                 </button>
               </div>
               {settings.emailNotifyAdmin && (
-                <div className="mt-5 pt-4 border-t border-gray-200">
-                  <label className="text-xs text-neutral mb-1.5 block font-medium">Адрес для уведомлений</label>
+                <div className="mt-5 pt-4 border-t border-gray-200 dark:border-white/10">
+                  <label className="text-xs text-neutral dark:text-white/50 mb-1.5 block font-medium">Адрес для уведомлений</label>
                   <Input
                     type="email"
                     placeholder="admin@company.com"
                     value={settings.notifyEmail}
                     onChange={(e) => setSettings((prev) => ({ ...prev, notifyEmail: e.target.value }))}
                     onBlur={(e) => saveSettings({ ...settings, notifyEmail: e.target.value })}
+                    className="dark:bg-dark dark:border-white/10 dark:text-white"
                   />
-                  <p className="text-xs text-neutral/60 mt-1.5">Если пусто — используется NOTIFY_EMAIL из окружения</p>
+                  <p className="text-xs text-neutral/60 dark:text-white/30 mt-1.5">Если пусто — используется NOTIFY_EMAIL из окружения</p>
                 </div>
               )}
             </div>
@@ -228,19 +230,19 @@ export default function AdminSettingsPage() {
       case "confirmation":
         return (
           <div className="max-w-lg">
-            <h2 className="text-xl font-bold text-dark mb-1">Подтверждение заявки</h2>
-            <p className="text-sm text-neutral mb-8">
+            <h2 className="text-xl font-bold text-dark dark:text-white mb-1">Подтверждение заявки</h2>
+            <p className="text-sm text-neutral dark:text-white/50 mb-8">
               Автоматическое уведомление клиентов о принятии их заявки.
             </p>
-            <div className="bg-warm-bg rounded-2xl p-5">
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-sm font-semibold text-dark">Подтверждение заявки</div>
-                  <div className="text-xs text-neutral mt-0.5">Отправлять клиенту письмо о принятии заявки</div>
+                  <div className="text-sm font-semibold text-dark dark:text-white">Подтверждение заявки</div>
+                  <div className="text-xs text-neutral dark:text-white/50 mt-0.5">Отправлять клиенту письмо о принятии заявки</div>
                 </div>
                 <button
                   onClick={() => toggleSetting("emailNotifyCustomer")}
-                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.emailNotifyCustomer ? "bg-primary" : "bg-gray-300"}`}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.emailNotifyCustomer ? "bg-primary" : "bg-gray-300 dark:bg-white/20"}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.emailNotifyCustomer ? "translate-x-5" : "translate-x-0"}`} />
                 </button>
@@ -252,19 +254,19 @@ export default function AdminSettingsPage() {
       case "telegram":
         return (
           <div className="max-w-lg">
-            <h2 className="text-xl font-bold text-dark mb-1">Telegram уведомления</h2>
-            <p className="text-sm text-neutral mb-8">
+            <h2 className="text-xl font-bold text-dark dark:text-white mb-1">Telegram уведомления</h2>
+            <p className="text-sm text-neutral dark:text-white/50 mb-8">
               Отправка уведомлений о новых заявках в Telegram-чат бота.
             </p>
-            <div className="bg-warm-bg rounded-2xl p-5">
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-sm font-semibold text-dark">Уведомления в Telegram</div>
-                  <div className="text-xs text-neutral mt-0.5">Отправлять сообщение в чат бота</div>
+                  <div className="text-sm font-semibold text-dark dark:text-white">Уведомления в Telegram</div>
+                  <div className="text-xs text-neutral dark:text-white/50 mt-0.5">Отправлять сообщение в чат бота</div>
                 </div>
                 <button
                   onClick={() => toggleSetting("telegramNotify")}
-                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.telegramNotify ? "bg-primary" : "bg-gray-300"}`}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.telegramNotify ? "bg-primary" : "bg-gray-300 dark:bg-white/20"}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.telegramNotify ? "translate-x-5" : "translate-x-0"}`} />
                 </button>
@@ -276,27 +278,27 @@ export default function AdminSettingsPage() {
       case "max":
         return (
           <div className="max-w-lg">
-            <h2 className="text-xl font-bold text-dark mb-1">MAX уведомления</h2>
-            <p className="text-sm text-neutral mb-8">
+            <h2 className="text-xl font-bold text-dark dark:text-white mb-1">MAX уведомления</h2>
+            <p className="text-sm text-neutral dark:text-white/50 mb-8">
               Отправка уведомлений о новых заявках в мессенджер MAX.
             </p>
-            <div className="bg-warm-bg rounded-2xl p-5">
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-sm font-semibold text-dark">Уведомления в MAX</div>
-                  <div className="text-xs text-neutral mt-0.5">Отправлять сообщение в чат бота MAX</div>
+                  <div className="text-sm font-semibold text-dark dark:text-white">Уведомления в MAX</div>
+                  <div className="text-xs text-neutral dark:text-white/50 mt-0.5">Отправлять сообщение в чат бота MAX</div>
                 </div>
                 <button
                   onClick={() => toggleSetting("maxNotify")}
-                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.maxNotify ? "bg-primary" : "bg-gray-300"}`}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.maxNotify ? "bg-primary" : "bg-gray-300 dark:bg-white/20"}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.maxNotify ? "translate-x-5" : "translate-x-0"}`} />
                 </button>
               </div>
             </div>
-            <div className="mt-6 p-4 bg-amber-50 rounded-xl">
-              <p className="text-xs text-amber-700">
-                Для работы уведомлений задайте переменные окружения <code className="bg-amber-100 px-1 rounded">MAX_BOT_TOKEN</code> и <code className="bg-amber-100 px-1 rounded">MAX_CHAT_ID</code> на сервере.
+            <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl">
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                Для работы уведомлений задайте переменные окружения <code className="bg-amber-100 dark:bg-amber-500/20 px-1 rounded">MAX_BOT_TOKEN</code> и <code className="bg-amber-100 dark:bg-amber-500/20 px-1 rounded">MAX_CHAT_ID</code> на сервере.
               </p>
             </div>
 
@@ -309,7 +311,7 @@ export default function AdminSettingsPage() {
               <textarea
                 value={broadcastMessage}
                 onChange={(e) => setBroadcastMessage(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm resize-none focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm resize-none focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-shadow"
                 rows={4}
                 maxLength={2000}
                 placeholder="Текст сообщения (поддерживается Markdown)"
@@ -359,43 +361,46 @@ export default function AdminSettingsPage() {
       case "contacts":
         return (
           <div className="max-w-lg">
-            <h2 className="text-xl font-bold text-dark mb-1">Контакты компании</h2>
-            <p className="text-sm text-neutral mb-8">
+            <h2 className="text-xl font-bold text-dark dark:text-white mb-1">Контакты компании</h2>
+            <p className="text-sm text-neutral dark:text-white/50 mb-8">
               Информация о компании, отображаемая на сайте.
             </p>
-            <div className="bg-warm-bg rounded-2xl p-5 space-y-4">
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-5 space-y-4">
               <div>
-                <label className="text-xs text-neutral mb-1.5 block font-medium">Телефон</label>
+                <label className="text-xs text-neutral dark:text-white/50 mb-1.5 block font-medium">Телефон</label>
                 <Input
                   type="text"
                   placeholder="+7 (966) 730-30-03"
                   value={settings.companyPhone}
                   onChange={(e) => setSettings((prev) => ({ ...prev, companyPhone: e.target.value }))}
+                  className="dark:bg-dark dark:border-white/10 dark:text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-neutral mb-1.5 block font-medium">Email</label>
+                <label className="text-xs text-neutral dark:text-white/50 mb-1.5 block font-medium">Email</label>
                 <Input
                   type="email"
                   placeholder="zakaz@csm-center.ru"
                   value={settings.companyEmail}
                   onChange={(e) => setSettings((prev) => ({ ...prev, companyEmail: e.target.value }))}
+                  className="dark:bg-dark dark:border-white/10 dark:text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-neutral mb-1.5 block font-medium">Адрес</label>
+                <label className="text-xs text-neutral dark:text-white/50 mb-1.5 block font-medium">Адрес</label>
                 <Input
                   type="text"
                   placeholder="г. Екатеринбург, ул. Маневровая, 9"
                   value={settings.companyAddress}
                   onChange={(e) => setSettings((prev) => ({ ...prev, companyAddress: e.target.value }))}
+                  className="dark:bg-dark dark:border-white/10 dark:text-white"
                 />
               </div>
               <button
                 onClick={saveContacts}
                 className={`w-full mt-2 py-2.5 rounded-xl text-sm font-semibold transition-shadow ${
                   contactsSaved
-                    ? "bg-green-100 text-green-600"
+                    ? "bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400"
                     : "bg-primary text-white hover:bg-primary-dark"
                 }`}
               >
@@ -408,31 +413,33 @@ export default function AdminSettingsPage() {
       case "security":
         return (
           <div className="max-w-lg">
-            <h2 className="text-xl font-bold text-dark mb-1">Безопасность</h2>
-            <p className="text-sm text-neutral mb-8">
+            <h2 className="text-xl font-bold text-dark dark:text-white mb-1">Безопасность</h2>
+            <p className="text-sm text-neutral dark:text-white/50 mb-8">
               Управление паролем доступа к администрационной панели.
             </p>
-            <div className="bg-warm-bg rounded-2xl p-5 space-y-4">
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-5 space-y-4">
               <div>
-                <label className="text-xs text-neutral mb-1.5 block font-medium">Новый пароль</label>
+                <label className="text-xs text-neutral dark:text-white/50 mb-1.5 block font-medium">Новый пароль</label>
                 <Input
                   type="password"
                   placeholder="Минимум 4 символа"
                   value={newPassword}
                   onChange={(e) => { setNewPassword(e.target.value); setPasswordError(""); setPasswordSuccess(false); }}
+                  className="dark:bg-dark dark:border-white/10 dark:text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-neutral mb-1.5 block font-medium">Повторите пароль</label>
+                <label className="text-xs text-neutral dark:text-white/50 mb-1.5 block font-medium">Повторите пароль</label>
                 <Input
                   type="password"
                   placeholder="Повторите новый пароль"
                   value={confirmPassword}
                   onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(""); setPasswordSuccess(false); }}
+                  className="dark:bg-dark dark:border-white/10 dark:text-white"
                 />
               </div>
-              {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
-              {passwordSuccess && <p className="text-xs text-green-600">Пароль успешно изменён</p>}
+              {passwordError && <p className="text-xs text-red-500 dark:text-red-400">{passwordError}</p>}
+              {passwordSuccess && <p className="text-xs text-green-600 dark:text-green-400">Пароль успешно изменён</p>}
               {!passwordConfirming ? (
                 <button
                   onClick={() => {
@@ -453,7 +460,7 @@ export default function AdminSettingsPage() {
                 </button>
               ) : (
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs text-red-600 flex-shrink-0">Вы уверены?</span>
+                  <span className="text-xs text-red-600 dark:text-red-400 flex-shrink-0">Вы уверены?</span>
                   <button
                     onClick={changePassword}
                     className="flex-1 bg-red-500 text-white py-2 rounded-xl text-xs font-semibold hover:bg-red-600 transition-colors"
@@ -462,7 +469,7 @@ export default function AdminSettingsPage() {
                   </button>
                   <button
                     onClick={() => setPasswordConfirming(false)}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
+                    className="px-3 py-2 rounded-xl text-xs font-semibold bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-white/70 hover:bg-gray-300 dark:hover:bg-white/20 transition-colors"
                   >
                     Отмена
                   </button>
@@ -476,9 +483,9 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="flex bg-white rounded-3xl shadow-xl overflow-hidden">
+      <div className="flex bg-white dark:bg-dark-light rounded-3xl shadow-xl overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-56 bg-warm-bg flex-shrink-0">
+        <aside className="w-56 bg-warm-bg dark:bg-dark flex-shrink-0">
           <div className="p-6">
             <div className="flex items-center gap-2.5 mb-6">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -486,7 +493,7 @@ export default function AdminSettingsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
               </div>
-              <span className="text-sm font-bold text-dark">Настройки</span>
+              <span className="text-sm font-bold text-dark dark:text-white">Настройки</span>
             </div>
             <nav className="space-y-1">
               {tabs.map((tab) => (
@@ -496,7 +503,7 @@ export default function AdminSettingsPage() {
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${
                     activeTab === tab.id
                       ? "bg-primary text-white shadow-md"
-                      : "text-dark hover:bg-white/60"
+                      : "text-dark dark:text-white/70 hover:bg-white/60 dark:hover:bg-white/5"
                   }`}
                 >
                   {tab.icon}
@@ -509,7 +516,17 @@ export default function AdminSettingsPage() {
 
         {/* Content */}
         <main className="flex-1 p-8 min-h-[440px]">
-          {renderContent()}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.15 }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

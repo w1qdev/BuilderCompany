@@ -188,9 +188,9 @@ export default function NotificationsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-primary text-white py-3 px-6 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 bg-primary text-white py-3 px-6 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
-            {saving ? "Сохранение..." : "Сохранить настройки"}
+            {saving ? "Сохранение..." : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Сохранить настройки</>}
           </button>
         </div>
       </div>

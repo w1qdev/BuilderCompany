@@ -21,6 +21,7 @@ model User {
   legalAddress   String?
   avatar         String?
   coverImage     String?
+  banned         Boolean                @default(false)
   position       String?
   timezone       String?                @default("Europe/Moscow")
   notifyDays     String?                @default("14,7")
