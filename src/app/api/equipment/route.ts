@@ -31,20 +31,18 @@ export async function GET(request: NextRequest) {
 
     const showIgnored = searchParams.get("ignored") === "true";
     const orgId = searchParams.get("organizationId");
-
-    // If orgId provided, check membership and show org equipment
-    let where: Record<string, unknown>;
-    if (orgId) {
-      const membership = await prisma.organizationMember.findUnique({
-        where: { userId_organizationId: { userId, organizationId: Number(orgId) } },
-      });
-      if (!membership) {
-        return NextResponse.json({ error: "Нет доступа к организации" }, { status: 403 });
-      }
-      where = { organizationId: Number(orgId), ignored: showIgnored };
-    } else {
-      where = { userId, organizationId: null, ignored: showIgnored };
+    if (!orgId) {
+      return NextResponse.json({ error: "organizationId обязателен" }, { status: 400 });
     }
+
+    const membership = await prisma.organizationMember.findUnique({
+      where: { userId_organizationId: { userId, organizationId: Number(orgId) } },
+    });
+    if (!membership) {
+      return NextResponse.json({ error: "Нет доступа к организации" }, { status: 403 });
+    }
+
+    const where: Record<string, unknown> = { organizationId: Number(orgId), ignored: showIgnored };
     if (status) where.status = status;
     if (categoryParams.length === 1) {
       where.category = categoryParams[0];
@@ -103,11 +101,13 @@ export async function POST(request: NextRequest) {
     }
     const { name, type, serialNumber, verificationDate, nextVerification, interval, category, company, contactEmail, notes, arshinUrl, organizationId } = parsed.data;
 
-    if (organizationId) {
-      const { isOrgMember } = await import("@/lib/orgAccess");
-      if (!(await isOrgMember(userId, organizationId))) {
-        return NextResponse.json({ error: "Нет доступа к организации" }, { status: 403 });
-      }
+    if (!organizationId) {
+      return NextResponse.json({ error: "organizationId обязателен" }, { status: 400 });
+    }
+
+    const { isOrgMember } = await import("@/lib/orgAccess");
+    if (!(await isOrgMember(userId, organizationId))) {
+      return NextResponse.json({ error: "Нет доступа к организации" }, { status: 403 });
     }
 
     // Calculate status based on nextVerification date
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     const equipment = await prisma.equipment.create({
       data: {
         userId,
-        organizationId: organizationId || null,
+        organizationId,
         name: name.trim(),
         type: type?.trim() || null,
         serialNumber: serialNumber?.trim() || null,

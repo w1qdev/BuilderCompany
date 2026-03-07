@@ -108,6 +108,16 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file");
     const category = (formData.get("category") as string) || "verification";
+    const organizationId = Number(formData.get("organizationId"));
+
+    if (!organizationId) {
+      return NextResponse.json({ error: "organizationId обязателен" }, { status: 400 });
+    }
+
+    const { isOrgMember } = await import("@/lib/orgAccess");
+    if (!(await isOrgMember(userId, organizationId))) {
+      return NextResponse.json({ error: "Нет доступа к организации" }, { status: 403 });
+    }
 
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json(
@@ -155,6 +165,7 @@ export async function POST(request: NextRequest) {
 
     const dataToCreate: {
       userId: number;
+      organizationId: number;
       name: string;
       type: string | null;
       serialNumber: string | null;
@@ -218,6 +229,7 @@ export async function POST(request: NextRequest) {
 
       dataToCreate.push({
         userId,
+        organizationId,
         name,
         type: type || null,
         serialNumber: serialNumber || null,
