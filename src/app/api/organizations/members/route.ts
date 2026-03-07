@@ -52,6 +52,12 @@ export async function POST(request: NextRequest) {
       include: { user: { select: { id: true, name: true, email: true } } },
     });
 
+    const { getIO } = await import("@/lib/socket");
+    const io = getIO();
+    if (io) {
+      io.to(`org:${organizationId}`).emit("org-member-changed", { action: "added", userId: targetUser.id, organizationId });
+    }
+
     return NextResponse.json({ member });
   } catch (error) {
     console.error("Add member error:", error);
@@ -83,6 +89,12 @@ export async function DELETE(request: NextRequest) {
     await prisma.organizationMember.deleteMany({
       where: { userId: memberId, organizationId: orgId },
     });
+
+    const { getIO } = await import("@/lib/socket");
+    const io = getIO();
+    if (io) {
+      io.to(`org:${orgId}`).emit("org-member-changed", { action: "removed", userId: memberId, organizationId: orgId });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

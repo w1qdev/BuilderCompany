@@ -134,6 +134,12 @@ export async function POST(request: NextRequest) {
 
     logActivity({ userId, action: "equipment_added", entityType: "equipment", entityId: equipment.id, details: JSON.stringify({ name: equipment.name }) });
 
+    const { getIO } = await import("@/lib/socket");
+    const io = getIO();
+    if (io) {
+      io.to(`org:${organizationId}`).emit("equipment-changed", { action: "created", equipmentId: equipment.id });
+    }
+
     return NextResponse.json(equipment, { status: 201 });
   } catch (error) {
     console.error("Create equipment error:", error);

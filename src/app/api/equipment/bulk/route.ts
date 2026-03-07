@@ -55,6 +55,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Get orgIds before mutation (for realtime)
+    const affectedOrgs = await prisma.equipment.findMany({
+      where: { id: { in: numericIds } },
+      select: { organizationId: true },
+      distinct: ["organizationId"],
+    });
+
     let count = 0;
 
     switch (action as BulkAction) {
@@ -80,6 +87,16 @@ export async function POST(request: NextRequest) {
         });
         count = result.count;
         break;
+      }
+    }
+
+    const { getIO } = await import("@/lib/socket");
+    const io = getIO();
+    if (io) {
+      for (const eq of affectedOrgs) {
+        if (eq.organizationId) {
+          io.to(`org:${eq.organizationId}`).emit("equipment-changed", { action, ids: numericIds });
+        }
       }
     }
 

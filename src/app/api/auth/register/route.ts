@@ -67,6 +67,15 @@ export async function POST(request: NextRequest) {
     // Send welcome email (non-blocking)
     sendWelcomeEmail({ name: user.name, email: user.email }).catch(() => {});
 
+    // Notify admin panel
+    try {
+      const { getIO } = await import("@/lib/socket");
+      const io = getIO();
+      if (io) {
+        io.to("admin").emit("new-user-registered", { id: user.id, name: user.name, email: user.email });
+      }
+    } catch {}
+
     return NextResponse.json({
       success: true,
       user: {

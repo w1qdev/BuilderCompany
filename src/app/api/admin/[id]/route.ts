@@ -94,10 +94,17 @@ export async function PATCH(
     include: { user: true },
   });
 
-  // Emit realtime event to admin panel
+  // Emit realtime events
   const io = getIO();
   if (io) {
     io.emit("request-update", updated);
+    if (updateData.status && updated.userId) {
+      io.to(`user:${updated.userId}`).emit("request-status-changed", {
+        requestId: updated.id,
+        status: updateData.status,
+        service: updated.service,
+      });
+    }
   }
 
   // Send email to user when status changes

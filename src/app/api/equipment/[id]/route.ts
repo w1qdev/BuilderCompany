@@ -94,6 +94,12 @@ export async function PATCH(
 
     logActivity({ userId, action: "equipment_updated", entityType: "equipment", entityId: equipmentId, details: JSON.stringify({ name: updated.name }) });
 
+    const { getIO } = await import("@/lib/socket");
+    const io = getIO();
+    if (io && existing.organizationId) {
+      io.to(`org:${existing.organizationId}`).emit("equipment-changed", { action: "updated", equipmentId });
+    }
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Update equipment error:", error);
@@ -128,6 +134,12 @@ export async function DELETE(
     await prisma.equipment.delete({ where: { id: equipmentId } });
 
     logActivity({ userId, action: "equipment_deleted", entityType: "equipment", entityId: equipmentId, details: JSON.stringify({ name: existing.name }) });
+
+    const { getIO } = await import("@/lib/socket");
+    const io = getIO();
+    if (io && existing.organizationId) {
+      io.to(`org:${existing.organizationId}`).emit("equipment-changed", { action: "deleted", equipmentId });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
