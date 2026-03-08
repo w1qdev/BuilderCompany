@@ -1,13 +1,18 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 interface AdminAuthContextType {
   password: string;
+  token: string;
   authenticated: boolean;
-  login: (password: string) => void;
+  role: string;
+  staffId: number | null;
+  staffName: string;
+  login: (password: string, loginName?: string) => void;
   logout: () => void;
+  getAuthHeaders: () => Record<string, string>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | null>(null);
@@ -20,35 +25,80 @@ export function useAdminAuth() {
 
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
+  const [role, setRole] = useState("admin");
+  const [staffId, setStaffId] = useState<number | null>(null);
+  const [staffName, setStaffName] = useState("");
   const [initializing, setInitializing] = useState(true);
+  const [inputLogin, setInputLogin] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [error, setError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("admin-password");
-    if (stored) {
-      setPassword(stored);
+    const storedToken = sessionStorage.getItem("admin-token");
+    const storedPassword = sessionStorage.getItem("admin-password");
+    const storedRole = sessionStorage.getItem("admin-role");
+    const storedStaffId = sessionStorage.getItem("admin-staff-id");
+    const storedStaffName = sessionStorage.getItem("admin-staff-name");
+
+    if (storedToken) {
+      setToken(storedToken);
+      setRole(storedRole || "admin");
+      setStaffId(storedStaffId ? parseInt(storedStaffId) : null);
+      setStaffName(storedStaffName || "");
+      if (storedPassword) setPassword(storedPassword);
+      setAuthenticated(true);
+    } else if (storedPassword) {
+      // Legacy: password-only session (backward compat)
+      setPassword(storedPassword);
       setAuthenticated(true);
     }
     setInitializing(false);
   }, []);
 
-  const [loginLoading, setLoginLoading] = useState(false);
-
-  const login = async (pwd: string) => {
+  const login = async (pwd: string, loginName?: string) => {
     setError("");
     setLoginLoading(true);
     try {
-      const res = await fetch("/api/admin/stats", {
-        headers: { "x-admin-password": pwd },
+      const res = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          login: loginName || undefined,
+          password: pwd,
+        }),
       });
+
+      const data = await res.json();
+
       if (!res.ok) {
-        setError("Неверный пароль");
+        setError(data.error || "Ошибка авторизации");
         return;
       }
-      sessionStorage.setItem("admin-password", pwd);
-      setPassword(pwd);
+
+      // Store auth data
+      sessionStorage.setItem("admin-token", data.token);
+      sessionStorage.setItem("admin-role", data.role);
+      sessionStorage.setItem("admin-staff-name", data.name);
+
+      if (data.staffId !== null) {
+        sessionStorage.setItem("admin-staff-id", String(data.staffId));
+      } else {
+        sessionStorage.removeItem("admin-staff-id");
+      }
+
+      // For admin (legacy compat), also store password for x-admin-password header
+      if (!loginName) {
+        sessionStorage.setItem("admin-password", pwd);
+        setPassword(pwd);
+      }
+
+      setToken(data.token);
+      setRole(data.role);
+      setStaffId(data.staffId);
+      setStaffName(data.name);
       setAuthenticated(true);
     } catch {
       setError("Ошибка соединения с сервером");
@@ -60,8 +110,27 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setAuthenticated(false);
     setPassword("");
+    setToken("");
+    setRole("admin");
+    setStaffId(null);
+    setStaffName("");
     sessionStorage.removeItem("admin-password");
+    sessionStorage.removeItem("admin-token");
+    sessionStorage.removeItem("admin-role");
+    sessionStorage.removeItem("admin-staff-id");
+    sessionStorage.removeItem("admin-staff-name");
   };
+
+  const getAuthHeaders = useCallback((): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["x-admin-token"] = token;
+    }
+    if (password) {
+      headers["x-admin-password"] = password;
+    }
+    return headers;
+  }, [token, password]);
 
   if (initializing) {
     return (
@@ -78,7 +147,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void login(inputPassword);
+            void login(inputPassword, inputLogin || undefined);
           }}
           className="bg-white dark:bg-dark-light rounded-3xl shadow-xl p-8"
         >
@@ -100,7 +169,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             </div>
             <h1 className="text-2xl font-extrabold text-dark dark:text-white">Админ-панель</h1>
             <p className="text-neutral dark:text-white/50 text-sm mt-1">
-              Введите пароль для входа
+              Введите данные для входа
             </p>
           </div>
 
@@ -111,12 +180,24 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           )}
 
           <Input
+            type="text"
+            placeholder="Логин (необязательно)"
+            value={inputLogin}
+            onChange={(e) => setInputLogin(e.target.value)}
+            className="mb-3 dark:bg-dark dark:border-white/10 dark:text-white"
+            autoComplete="username"
+          />
+          <Input
             type="password"
             placeholder="Пароль"
             value={inputPassword}
             onChange={(e) => setInputPassword(e.target.value)}
-            className="mb-4 dark:bg-dark dark:border-white/10 dark:text-white"
+            className="mb-2 dark:bg-dark dark:border-white/10 dark:text-white"
+            autoComplete="current-password"
           />
+          <p className="text-xs text-neutral dark:text-white/40 mb-4">
+            Сотрудники вводят логин и пароль. Администратор — только пароль.
+          </p>
           <button
             type="submit"
             disabled={loginLoading}
@@ -131,7 +212,19 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AdminAuthContext.Provider value={{ password, authenticated, login, logout }}>
+    <AdminAuthContext.Provider
+      value={{
+        password,
+        token,
+        authenticated,
+        role,
+        staffId,
+        staffName,
+        login,
+        logout,
+        getAuthHeaders,
+      }}
+    >
       {children}
     </AdminAuthContext.Provider>
   );
