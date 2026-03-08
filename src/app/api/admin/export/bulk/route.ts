@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyAdminPassword } from "@/lib/adminAuth";
+import { verifyAdminAuth } from "@/lib/adminAuth";
 import { createRateLimiter } from "@/lib/rateLimit";
 import * as ExcelJS from "exceljs";
 
@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const headerPassword = req.headers.get("x-admin-password");
-  if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
+  const auth = await verifyAdminAuth(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -39,10 +39,15 @@ export async function GET(req: NextRequest) {
     where.createdAt = { gte: new Date(dateFrom) };
   }
 
+  // Staff role: only export their own assigned requests
+  if (auth.role === "staff" && auth.staffId) {
+    where.assigneeId = auth.staffId;
+  }
+
   const requests = await prisma.request.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { items: true, user: true },
+    include: { items: true, user: true, assignedTo: { select: { id: true, name: true } } },
   });
 
   const workbook = new ExcelJS.Workbook();
@@ -124,7 +129,7 @@ export async function GET(req: NextRequest) {
       r.email,
       r.service,
       statusLabels[r.status] || r.status,
-      r.assignee || "",
+      (r as typeof r & { assignedTo?: { name: string } | null }).assignedTo?.name || "",
       r.clientPrice ? `${r.clientPrice.toFixed(2)} ₽` : "",
       r.executorPrice ? `${r.executorPrice.toFixed(2)} ₽` : "",
       r.adminNotes || "",

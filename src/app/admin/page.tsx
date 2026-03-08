@@ -62,8 +62,17 @@ interface AdminRequest {
   markup: number | null;
   clientPrice: number | null;
   needContract: boolean;
-  assignee: string | null;
+  assigneeId: number | null;
+  assignedTo: { id: number; name: string } | null;
   items?: ServiceItemData[];
+}
+
+interface StaffMember {
+  id: number;
+  name: string;
+  login: string;
+  role: string;
+  active: boolean;
 }
 
 interface Stats {
@@ -139,7 +148,7 @@ const sortableColumns: { field: SortField; label: string }[] = [
 ];
 
 export default function AdminPage() {
-  const { password } = useAdminAuth();
+  const { getAuthHeaders, role, staffId } = useAdminAuth();
 
   const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [pages, setPages] = useState(1);
@@ -178,11 +187,12 @@ export default function AdminPage() {
     requests: AdminRequest[];
   } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
 
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/stats", {
-        headers: { "x-admin-password": password },
+        headers: { ...getAuthHeaders() },
       });
       if (res.ok) {
         const data = await res.json();
@@ -191,7 +201,7 @@ export default function AdminPage() {
     } catch {
       // Stats are non-critical
     }
-  }, [password]);
+  }, [getAuthHeaders]);
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -203,9 +213,13 @@ export default function AdminPage() {
         sortOrder,
       });
       if (search) params.set("search", search);
+      // Staff auto-filter: server enforces this too, but pass for clarity
+      if (role === "staff" && staffId) {
+        params.set("staffId", String(staffId));
+      }
 
       const res = await fetch(`/api/admin?${params}`, {
-        headers: { "x-admin-password": password },
+        headers: { ...getAuthHeaders() },
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -224,12 +238,30 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [password, filter, page, search, sortBy, sortOrder]);
+  }, [getAuthHeaders, role, staffId, filter, page, search, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchRequests();
     fetchStats();
   }, [fetchRequests, fetchStats]);
+
+  // Fetch staff list for assignee dropdown
+  useEffect(() => {
+    const fetchStaff = async () => {
+      try {
+        const res = await fetch("/api/admin/staff", {
+          headers: { ...getAuthHeaders() },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStaffList(data.staff.filter((s: StaffMember) => s.active));
+        }
+      } catch {
+        // Non-critical
+      }
+    };
+    fetchStaff();
+  }, [getAuthHeaders]);
 
   // Debounced search
   const handleSearchInput = (value: string) => {
@@ -326,7 +358,7 @@ export default function AdminPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-password": password,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({ status: nextStatus }),
       });
@@ -345,7 +377,7 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/admin/${id}`, {
         method: "DELETE",
-        headers: { "x-admin-password": password },
+        headers: { ...getAuthHeaders() },
       });
       if (res.ok) {
         setRequests((prev) => prev.filter((r) => r.id !== id));
@@ -386,7 +418,7 @@ export default function AdminPage() {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
-              "x-admin-password": password,
+              ...getAuthHeaders(),
             },
             body: JSON.stringify({ status }),
           })
@@ -417,7 +449,7 @@ export default function AdminPage() {
         Array.from(selectedIds).map((id) =>
           fetch(`/api/admin/${id}`, {
             method: "DELETE",
-            headers: { "x-admin-password": password },
+            headers: { ...getAuthHeaders() },
           })
         )
       );
@@ -447,7 +479,7 @@ export default function AdminPage() {
         : `/api/admin/export/${id}`;
       const res = await fetch(url, {
         method: "GET",
-        headers: { "x-admin-password": password },
+        headers: { ...getAuthHeaders() },
       });
 
       if (!res.ok) {
@@ -481,7 +513,7 @@ export default function AdminPage() {
 
   const openFile = async (filePath: string) => {
     const res = await fetch(filePath, {
-      headers: { "x-admin-password": password },
+      headers: { ...getAuthHeaders() },
     });
     if (res.ok) {
       const blob = await res.blob();
@@ -520,7 +552,7 @@ export default function AdminPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-password": password,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           adminNotes,
@@ -557,20 +589,21 @@ export default function AdminPage() {
     }
   };
 
-  const handleAssigneeChange = async (id: number, assignee: string) => {
+  const handleAssigneeChange = async (id: number, newAssigneeId: number | null) => {
     try {
       const res = await fetch(`/api/admin/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-password": password,
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ assignee: assignee || null }),
+        body: JSON.stringify({ assigneeId: newAssigneeId }),
       });
       if (res.ok) {
+        const updated = await res.json();
         setRequests((prev) =>
           prev.map((r) =>
-            r.id === id ? { ...r, assignee: assignee || null } : r
+            r.id === id ? { ...r, assigneeId: updated.assigneeId, assignedTo: updated.assignedTo } : r
           )
         );
         toast.success("Исполнитель назначен");
@@ -584,7 +617,7 @@ export default function AdminPage() {
     try {
       const params = new URLSearchParams({ search: email, export: "true" });
       const res = await fetch(`/api/admin?${params}`, {
-        headers: { "x-admin-password": password },
+        headers: { ...getAuthHeaders() },
       });
       if (res.ok) {
         const data = await res.json();
@@ -626,7 +659,7 @@ export default function AdminPage() {
       if (dateFrom) params.set("dateFrom", dateFrom.toISOString());
     }
     const res = await fetch(`/api/admin?${params}`, {
-      headers: { "x-admin-password": password },
+      headers: { ...getAuthHeaders() },
     });
     if (!res.ok) return;
     const data = await res.json();
@@ -1059,7 +1092,7 @@ export default function AdminPage() {
                       params.set("dateFrom", dateFrom.toISOString());
                   }
                   const res = await fetch(`/api/admin/export/bulk?${params}`, {
-                    headers: { "x-admin-password": password },
+                    headers: { ...getAuthHeaders() },
                   });
                   if (!res.ok) throw new Error();
                   const blob = await res.blob();
@@ -1190,7 +1223,7 @@ export default function AdminPage() {
                       method: "PATCH",
                       headers: {
                         "Content-Type": "application/json",
-                        "x-admin-password": password,
+                        ...getAuthHeaders(),
                       },
                       body: JSON.stringify({ status }),
                     });
@@ -1250,9 +1283,9 @@ export default function AdminPage() {
                         <span className="text-xs text-neutral dark:text-white/50">
                           {formatDate(r.createdAt)}
                         </span>
-                        {r.assignee && (
+                        {r.assignedTo && (
                           <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70 px-1.5 py-0.5 rounded">
-                            {r.assignee}
+                            {r.assignedTo.name}
                           </span>
                         )}
                       </div>
@@ -1743,16 +1776,14 @@ export default function AdminPage() {
                           <div className="text-xs text-neutral dark:text-white/50 mb-1 font-medium uppercase tracking-wide">
                             Исполнитель
                           </div>
-                          <Input
-                            placeholder="Имя исполнителя..."
-                            defaultValue={r.assignee || ""}
-                            onBlur={(e) => {
-                              if (e.target.value !== (r.assignee || "")) {
-                                handleAssigneeChange(r.id, e.target.value);
-                              }
-                            }}
-                            className="h-8 text-sm"
-                          />
+                          <select
+                            value={r.assigneeId || ""}
+                            onChange={(e) => handleAssigneeChange(r.id, e.target.value ? parseInt(e.target.value) : null)}
+                            className="w-full h-8 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark px-2 dark:text-white"
+                          >
+                            <option value="">Не назначен</option>
+                            {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
                         </div>
                         {/* Status dropdown mobile */}
                         <div className="mt-3">
@@ -1766,7 +1797,7 @@ export default function AdminPage() {
                                 method: "PATCH",
                                 headers: {
                                   "Content-Type": "application/json",
-                                  "x-admin-password": password,
+                                  ...getAuthHeaders(),
                                 },
                                 body: JSON.stringify({ status: value }),
                               }).then((res) => {
@@ -1898,7 +1929,7 @@ export default function AdminPage() {
                           </svg>
                           КП
                         </button>
-                        {deleteConfirmId === r.id ? (
+                        {role !== "staff" && (deleteConfirmId === r.id ? (
                           <>
                             <span className="text-sm text-red-600">
                               Удалить?
@@ -1936,7 +1967,7 @@ export default function AdminPage() {
                             </svg>
                             Удалить
                           </button>
-                        )}
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -2639,27 +2670,18 @@ export default function AdminPage() {
                                   Исполнитель
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Input
-                                    placeholder="Имя исполнителя..."
-                                    defaultValue={r.assignee || ""}
-                                    onBlur={(e) => {
-                                      if (
-                                        e.target.value !== (r.assignee || "")
-                                      ) {
-                                        handleAssigneeChange(
-                                          r.id,
-                                          e.target.value
-                                        );
-                                      }
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        (e.target as HTMLInputElement).blur();
-                                      }
+                                  <select
+                                    value={r.assigneeId || ""}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      handleAssigneeChange(r.id, e.target.value ? parseInt(e.target.value) : null);
                                     }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="h-8 text-sm"
-                                  />
+                                    className="w-full h-8 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark px-2 dark:text-white"
+                                  >
+                                    <option value="">Не назначен</option>
+                                    {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                  </select>
                                 </div>
                               </div>
 
@@ -2675,7 +2697,7 @@ export default function AdminPage() {
                                       method: "PATCH",
                                       headers: {
                                         "Content-Type": "application/json",
-                                        "x-admin-password": password,
+                                        ...getAuthHeaders(),
                                       },
                                       body: JSON.stringify({ status: value }),
                                     }).then((res) => {
@@ -2834,7 +2856,7 @@ export default function AdminPage() {
                               )}
                             </div>
 
-                            {deleteConfirmId === r.id ? (
+                            {role !== "staff" && (deleteConfirmId === r.id ? (
                               <>
                                 <span className="text-sm text-red-600">
                                   Удалить заявку?
@@ -2872,7 +2894,7 @@ export default function AdminPage() {
                                 </svg>
                                 Удалить
                               </button>
-                            )}
+                            ))}
                           </div>
                         </TableCell>
                       </TableRow>

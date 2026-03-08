@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyAdminPassword } from "@/lib/adminAuth";
+import { verifyAdminAuth } from "@/lib/adminAuth";
 import { createRateLimiter } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const headerPassword = req.headers.get("x-admin-password");
-  if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
+  const auth = await verifyAdminAuth(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

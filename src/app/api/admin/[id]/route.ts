@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendStatusUpdateEmail } from "@/lib/email";
 import { getIO } from "@/lib/socket";
-import { verifyAdminPassword } from "@/lib/adminAuth";
+import { verifyAdminAuth } from "@/lib/adminAuth";
 import { notifyMaxUserStatusChange } from "@/lib/maxUserNotify";
 
 export const dynamic = 'force-dynamic';
@@ -11,14 +11,26 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const headerPassword = req.headers.get("x-admin-password");
-  if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
+  const auth = await verifyAdminAuth(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
+
+  // Staff role: only allow updating requests assigned to them
+  if (auth.role === "staff" && auth.staffId) {
+    const existing = await prisma.request.findUnique({
+      where: { id: Number(id) },
+      select: { assigneeId: true },
+    });
+    if (!existing || existing.assigneeId !== auth.staffId) {
+      return NextResponse.json({ error: "Forbidden: not assigned to you" }, { status: 403 });
+    }
+  }
+
   const body = await req.json();
-  const { status, adminNotes, executorPrice, markup, assignee } = body;
+  const { status, adminNotes, executorPrice, markup, assigneeId } = body;
 
   // Build update data object with validated fields
   const updateData: {
@@ -27,7 +39,7 @@ export async function PATCH(
     executorPrice?: number | null;
     markup?: number | null;
     clientPrice?: number | null;
-    assignee?: string | null;
+    assigneeId?: number | null;
   } = {};
 
   // Validate and add status
@@ -38,9 +50,9 @@ export async function PATCH(
     updateData.status = status;
   }
 
-  // Validate and add assignee
-  if (assignee !== undefined) {
-    updateData.assignee = assignee === "" ? null : assignee;
+  // Validate and add assigneeId
+  if (assigneeId !== undefined) {
+    updateData.assigneeId = assigneeId === null || assigneeId === "" ? null : Number(assigneeId);
   }
 
   // Validate and add adminNotes
@@ -91,7 +103,7 @@ export async function PATCH(
   const updated = await prisma.request.update({
     where: { id: Number(id) },
     data: updateData,
-    include: { user: true },
+    include: { user: true, assignedTo: { select: { id: true, name: true } } },
   });
 
   // Emit realtime events
@@ -139,9 +151,14 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const headerPassword = req.headers.get("x-admin-password");
-  if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
+  const authDel = await verifyAdminAuth(req);
+  if (!authDel) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Staff cannot delete requests
+  if (authDel.role === "staff") {
+    return NextResponse.json({ error: "Forbidden: staff cannot delete requests" }, { status: 403 });
   }
 
   const { id } = await params;

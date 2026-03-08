@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyAdminPassword } from "@/lib/adminAuth";
+import { verifyAdminAuth } from "@/lib/adminAuth";
 import { createRateLimiter } from "@/lib/rateLimit";
 
 export const dynamic = 'force-dynamic';
@@ -11,8 +11,8 @@ export async function GET(req: NextRequest) {
   if (!adminLimiter(req)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
-  const headerPassword = req.headers.get("x-admin-password");
-  if (!headerPassword || !(await verifyAdminPassword(headerPassword))) {
+  const auth = await verifyAdminAuth(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
   const search = (searchParams.get("search")?.trim() || "").slice(0, 100);
   const sortBy = searchParams.get("sortBy") || "createdAt";
   const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
+  const staffIdParam = searchParams.get("staffId");
 
   const allowedSortFields = ["createdAt", "name", "service", "status"];
   const orderField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
@@ -38,15 +39,24 @@ export async function GET(req: NextRequest) {
       }
     : {};
 
-  const where = { ...statusFilter, ...searchFilter };
+  // Staff role: force filter by their own staffId
+  let staffFilter = {};
+  if (auth.role === "staff" && auth.staffId) {
+    staffFilter = { assigneeId: auth.staffId };
+  } else if (staffIdParam) {
+    staffFilter = { assigneeId: parseInt(staffIdParam) };
+  }
+
+  const where = { ...statusFilter, ...searchFilter, ...staffFilter };
 
   const isExport = searchParams.get("export") === "true";
+  const includeRelations = { items: true, files: true, assignedTo: { select: { id: true, name: true } } };
 
   if (isExport) {
     const requests = await prisma.request.findMany({
       where,
       orderBy: { [orderField]: sortOrder },
-      include: { items: true, files: true },
+      include: includeRelations,
     });
     return NextResponse.json({ requests, total: requests.length });
   }
@@ -57,7 +67,7 @@ export async function GET(req: NextRequest) {
       orderBy: { [orderField]: sortOrder },
       skip: (page - 1) * limit,
       take: limit,
-      include: { items: true, files: true },
+      include: includeRelations,
     }),
     prisma.request.count({ where }),
   ]);
