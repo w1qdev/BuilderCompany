@@ -7,39 +7,51 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-const navItems = [
+const allNavItems = [
   {
     href: "/admin",
     label: "Заявки",
     exact: true,
     icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
+    roles: ["admin", "staff"],
+  },
+  {
+    href: "/admin/staff",
+    label: "Сотрудники",
+    icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
+    roles: ["admin"],
   },
   {
     href: "/admin/users",
     label: "Пользователи",
     icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+    roles: ["admin"],
   },
   {
     href: "/admin/analytics",
     label: "Аналитика",
     icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+    roles: ["admin"],
   },
   {
     href: "/admin/settings",
     label: "Настройки",
     icon: "M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4",
+    roles: ["admin"],
   },
 ];
 
 const breadcrumbMap: Record<string, string> = {
   "/admin": "Заявки",
+  "/admin/staff": "Сотрудники",
   "/admin/users": "Пользователи",
   "/admin/analytics": "Аналитика",
   "/admin/settings": "Настройки",
 };
 
 function AdminShell({ children }: { children: React.ReactNode }) {
-  const { logout } = useAdminAuth();
+  const { logout, role, staffName } = useAdminAuth();
+  const navItems = allNavItems.filter((item) => item.roles.includes(role));
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -193,7 +205,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
               {!sidebarCollapsed && (
                 <>
                   <div className="flex-1 min-w-0 text-left">
-                    <div className="text-sm font-medium text-dark dark:text-white truncate">Администратор</div>
+                    <div className="text-sm font-medium text-dark dark:text-white truncate">{staffName || "Администратор"}</div>
                   </div>
                   <svg
                     className={`w-4 h-4 shrink-0 text-gray-400 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
@@ -205,7 +217,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
               )}
               {sidebarCollapsed && (
                 <div className="hidden lg:block absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-dark dark:bg-white text-white dark:text-dark text-xs font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover/nav:opacity-100 transition-opacity z-50 shadow-lg">
-                  Администратор
+                  {staffName || "Администратор"}
                 </div>
               )}
             </button>
