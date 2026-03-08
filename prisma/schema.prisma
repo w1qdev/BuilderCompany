@@ -90,13 +90,25 @@ model Request {
   markup        Float?
   clientPrice   Float?
   needContract  Boolean  @default(false)
-  assignee      String?
+  assigneeId    Int?
+  assignedTo    Staff?    @relation("AssignedRequests", fields: [assigneeId], references: [id], onDelete: SetNull)
   files         RequestFile[]
   items         RequestItem[]
   @@index([status])
   @@index([userId])
   @@index([createdAt])
-  @@index([assignee])
+  @@index([assigneeId])
+}
+
+model Staff {
+  id        Int       @id @default(autoincrement())
+  name      String
+  login     String    @unique
+  password  String
+  role      String    @default("staff")
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  requests  Request[] @relation("AssignedRequests")
 }
 
 model RequestFile {
