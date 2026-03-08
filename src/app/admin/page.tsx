@@ -25,6 +25,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAdminAuth } from "@/lib/AdminAuthContext";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  closestCorners,
+  useDroppable,
+  useDraggable,
+} from "@dnd-kit/core";
 import { motion } from "framer-motion";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { io as ioClient, Socket } from "socket.io-client";
@@ -147,6 +156,118 @@ const sortableColumns: { field: SortField; label: string }[] = [
   { field: "status", label: "Статус" },
 ];
 
+const statusColumns = [
+  { id: "new", label: "Новые", color: "border-t-blue-500" },
+  { id: "in_progress", label: "В работе", color: "border-t-orange-500" },
+  {
+    id: "pending_payment",
+    label: "Ожидание оплаты",
+    color: "border-t-yellow-500",
+  },
+  { id: "review", label: "На проверке", color: "border-t-purple-500" },
+  { id: "done", label: "Выполнено", color: "border-t-green-500" },
+  { id: "cancelled", label: "Отменено", color: "border-t-red-500" },
+];
+
+function KanbanColumn({
+  id,
+  label,
+  color,
+  requests,
+  onCardClick,
+  formatDate,
+}: {
+  id: string;
+  label: string;
+  color: string;
+  requests: AdminRequest[];
+  onCardClick: (id: number) => void;
+  formatDate: (dateStr: string) => string;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col min-h-[400px] bg-gray-50 dark:bg-zinc-900 rounded-xl border-t-4 ${color} ${isOver ? "ring-2 ring-orange-400" : ""}`}
+    >
+      <div className="p-3 flex items-center justify-between">
+        <span className="font-semibold text-sm text-dark dark:text-white">
+          {label}
+        </span>
+        <span className="bg-gray-200 dark:bg-zinc-700 text-xs rounded-full px-2 py-0.5 text-dark dark:text-white">
+          {requests.length}
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+        {requests.map((r) => (
+          <KanbanCard
+            key={r.id}
+            request={r}
+            onClick={() => onCardClick(r.id)}
+            formatDate={formatDate}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KanbanCard({
+  request,
+  onClick,
+  formatDate,
+  isOverlay,
+}: {
+  request: AdminRequest;
+  onClick: () => void;
+  formatDate: (dateStr: string) => string;
+  isOverlay?: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({ id: request.id });
+  const style = transform
+    ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
+    : undefined;
+
+  return (
+    <div
+      ref={isOverlay ? undefined : setNodeRef}
+      style={isOverlay ? undefined : style}
+      {...(isOverlay ? {} : attributes)}
+      {...(isOverlay ? {} : listeners)}
+      onClick={(e) => {
+        if (!isDragging) {
+          e.stopPropagation();
+          onClick();
+        }
+      }}
+      className={`bg-white dark:bg-zinc-800 rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing border border-gray-100 dark:border-zinc-700 hover:shadow-md transition-shadow ${isDragging && !isOverlay ? "opacity-50" : ""}`}
+    >
+      <div className="font-medium text-dark dark:text-white text-sm truncate">
+        {request.company || request.name}
+      </div>
+      <div className="text-xs text-neutral dark:text-white/50 mt-1 truncate">
+        {request.service}
+      </div>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-xs text-neutral dark:text-white/50">
+          {formatDate(request.createdAt)}
+        </span>
+        {request.assignedTo && (
+          <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full px-2 py-0.5">
+            {request.assignedTo.name}
+          </span>
+        )}
+      </div>
+      {request.clientPrice && (
+        <div className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
+          {request.clientPrice.toLocaleString("ru-RU")} ₽
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { getAuthHeaders, role, staffId } = useAdminAuth();
 
@@ -170,9 +291,7 @@ export default function AdminPage() {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [exportPeriod, setExportPeriod] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
-  const [draggedRequest, setDraggedRequest] = useState<AdminRequest | null>(
-    null
-  );
+  const [activeCard, setActiveCard] = useState<AdminRequest | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editingPricing, setEditingPricing] = useState<{
     [key: number]: {
@@ -714,6 +833,63 @@ export default function AdminPage() {
     });
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const req = requests.find((r) => r.id === event.active.id);
+    setActiveCard(req || null);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    setActiveCard(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const requestId = active.id as number;
+    const newStatus = over.id as string;
+    const request = requests.find((r) => r.id === requestId);
+    if (!request || request.status === newStatus) return;
+
+    const oldStatus = request.status;
+    const label = statusLabels[newStatus];
+
+    // Optimistic update
+    setRequests((prev) =>
+      prev.map((r) =>
+        r.id === requestId ? { ...r, status: newStatus } : r
+      )
+    );
+
+    try {
+      const res = await fetch(`/api/admin/${requestId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        fetchStats();
+        toast.success(`Статус изменён: ${label?.label || newStatus}`);
+      } else {
+        // Revert on failure
+        setRequests((prev) =>
+          prev.map((r) =>
+            r.id === requestId ? { ...r, status: oldStatus } : r
+          )
+        );
+        toast.error("Ошибка при смене статуса");
+      }
+    } catch {
+      // Revert on failure
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId ? { ...r, status: oldStatus } : r
+        )
+      );
+      toast.error("Ошибка при смене статуса");
+    }
+  };
+
   const formatDateFull = (dateStr: string) => {
     return new Date(dateStr).toLocaleString("ru-RU", {
       weekday: "long",
@@ -1200,107 +1376,38 @@ export default function AdminPage() {
           Заявок пока нет
         </div>
       ) : viewMode === "kanban" ? (
-        /* Kanban Board */
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 overflow-x-auto">
-          {statusCycle.map((status) => {
-            const columnRequests = requests.filter((r) => r.status === status);
-            const label = statusLabels[status];
-            return (
-              <div
-                key={status}
-                className="bg-gray-50 dark:bg-white/5 rounded-2xl p-3 min-w-[220px] min-h-[300px]"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={async (e) => {
-                  e.preventDefault();
-                  if (!draggedRequest || draggedRequest.status === status)
-                    return;
-                  const reqId = draggedRequest.id;
-                  setRequests((prev) =>
-                    prev.map((r) => (r.id === reqId ? { ...r, status } : r))
-                  );
-                  try {
-                    const res = await fetch(`/api/admin/${reqId}`, {
-                      method: "PATCH",
-                      headers: {
-                        "Content-Type": "application/json",
-                        ...getAuthHeaders(),
-                      },
-                      body: JSON.stringify({ status }),
-                    });
-                    if (res.ok) {
-                      fetchStats();
-                      toast.success(`Статус изменён: ${label?.label}`);
-                    } else {
-                      setRequests((prev) =>
-                        prev.map((r) =>
-                          r.id === reqId
-                            ? { ...r, status: draggedRequest.status }
-                            : r
-                        )
-                      );
-                    }
-                  } catch {
-                    setRequests((prev) =>
-                      prev.map((r) =>
-                        r.id === reqId
-                          ? { ...r, status: draggedRequest.status }
-                          : r
-                      )
-                    );
-                  }
-                  setDraggedRequest(null);
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant={label?.variant || "default"}>
-                    {label?.label || status}
-                  </Badge>
-                  <span className="text-xs text-neutral dark:text-white/50 font-medium">
-                    {columnRequests.length}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {columnRequests.map((r) => (
-                    <div
-                      key={r.id}
-                      draggable
-                      onDragStart={() => setDraggedRequest(r)}
-                      onDragEnd={() => setDraggedRequest(null)}
-                      onClick={() =>
-                        setExpandedId(expandedId === r.id ? null : r.id)
-                      }
-                      className={`bg-white dark:bg-dark-light rounded-xl p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow border border-gray-100 dark:border-white/10 ${
-                        draggedRequest?.id === r.id ? "opacity-50" : ""
-                      }`}
-                    >
-                      <div className="font-medium text-dark dark:text-white text-sm truncate">
-                        {r.company || r.name}
-                      </div>
-                      <div className="text-xs text-neutral dark:text-white/50 mt-1 truncate">
-                        {r.service}
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-neutral dark:text-white/50">
-                          {formatDate(r.createdAt)}
-                        </span>
-                        {r.assignedTo && (
-                          <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70 px-1.5 py-0.5 rounded">
-                            {r.assignedTo.name}
-                          </span>
-                        )}
-                      </div>
-                      {r.clientPrice && (
-                        <div className="text-xs font-medium text-primary mt-1">
-                          {r.clientPrice.toFixed(2)} ₽
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        /* Kanban Board with @dnd-kit */
+        <DndContext
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+            {statusColumns.map((col) => (
+              <KanbanColumn
+                key={col.id}
+                id={col.id}
+                label={col.label}
+                color={col.color}
+                requests={requests.filter((r) => r.status === col.id)}
+                onCardClick={(id) =>
+                  setExpandedId(expandedId === id ? null : id)
+                }
+                formatDate={formatDate}
+              />
+            ))}
+          </div>
+          <DragOverlay>
+            {activeCard && (
+              <KanbanCard
+                request={activeCard}
+                onClick={() => {}}
+                formatDate={formatDate}
+                isOverlay
+              />
+            )}
+          </DragOverlay>
+        </DndContext>
       ) : (
         <>
           {/* Mobile Cards */}
