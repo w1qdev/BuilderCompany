@@ -50,13 +50,17 @@ export default function OrganizationPage() {
     fetchOrgs();
   }, []);
 
-  // Realtime: refetch when members change
+  // Realtime: refetch when members or equipment change
   const socket = useSocket({ orgIds: organizations.map((o) => o.id) });
   useEffect(() => {
     if (!socket) return;
     const handler = () => fetchOrgs();
     socket.on("org-member-changed", handler);
-    return () => { socket.off("org-member-changed", handler); };
+    socket.on("equipment-changed", handler);
+    return () => {
+      socket.off("org-member-changed", handler);
+      socket.off("equipment-changed", handler);
+    };
   }, [socket]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async () => {

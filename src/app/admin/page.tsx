@@ -84,6 +84,27 @@ interface StaffMember {
   active: boolean;
 }
 
+interface ExecutorRequestData {
+  id: number;
+  requestId: number;
+  executorId: number;
+  executor: { id: number; name: string; email: string };
+  status: string;
+  sentAt: string | null;
+  responseEmail: string | null;
+  invoiceFiles: string;
+  parsedAmount: number | null;
+  finalAmount: number | null;
+  markup: number | null;
+  clientAmount: number | null;
+  approvedAt: string | null;
+  clientPaidAt: string | null;
+  executorPaidAt: string | null;
+  paymentToken: string | null;
+  paymentProofFile: string | null;
+  createdAt: string;
+}
+
 interface Stats {
   total: number;
   new: number;
@@ -113,6 +134,17 @@ const statusLabels: Record<
   review: { label: "На проверке", variant: "review" },
   done: { label: "Завершена", variant: "done" },
   cancelled: { label: "Отменена", variant: "cancelled" },
+};
+
+const executorStatusLabels: Record<string, { label: string; color: string }> = {
+  sent: { label: "Отправлено", color: "bg-blue-100 text-blue-700" },
+  awaiting_response: { label: "Ожидание ответа", color: "bg-yellow-100 text-yellow-700" },
+  response_received: { label: "Ответ получен", color: "bg-indigo-100 text-indigo-700" },
+  invoice_parsed: { label: "Счёт обработан", color: "bg-purple-100 text-purple-700" },
+  approved: { label: "Утверждено", color: "bg-green-100 text-green-700" },
+  sent_to_client: { label: "Отправлено клиенту", color: "bg-orange-100 text-orange-700" },
+  client_paid: { label: "Клиент оплатил", color: "bg-emerald-100 text-emerald-700" },
+  executor_paid: { label: "Оплачен исполнителю", color: "bg-teal-100 text-teal-700" },
 };
 
 const statusCycle = [
@@ -307,6 +339,11 @@ export default function AdminPage() {
   } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [total, setTotal] = useState(0);
+  const [responseTemplates, setResponseTemplates] = useState(RESPONSE_TEMPLATES);
+  const [executorRequests, setExecutorRequests] = useState<Record<number, ExecutorRequestData[]>>({});
+  const [loadingExecutorReqs, setLoadingExecutorReqs] = useState<Record<number, boolean>>({});
+  const [sendingToExecutor, setSendingToExecutor] = useState<number | null>(null);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -359,6 +396,83 @@ export default function AdminPage() {
     }
   }, [getAuthHeaders, role, staffId, filter, page, search, sortBy, sortOrder]);
 
+  const fetchExecutorRequests = useCallback(async (requestId: number) => {
+    if (executorRequests[requestId] || loadingExecutorReqs[requestId]) return;
+    setLoadingExecutorReqs(prev => ({ ...prev, [requestId]: true }));
+    try {
+      const res = await fetch(`/api/admin/executor-request/${requestId}`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setExecutorRequests(prev => ({ ...prev, [requestId]: data.executorRequests || [] }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch executor requests:", err);
+    } finally {
+      setLoadingExecutorReqs(prev => ({ ...prev, [requestId]: false }));
+    }
+  }, [executorRequests, loadingExecutorReqs, getAuthHeaders]);
+
+  const handleSendToExecutor = async (requestId: number) => {
+    setSendingToExecutor(requestId);
+    try {
+      const res = await fetch(`/api/admin/executor-request/${requestId}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setExecutorRequests(prev => ({
+          ...prev,
+          [requestId]: [data.executorRequest ? { ...data.executorRequest, executor: data.executor } : null, ...(prev[requestId] || [])].filter(Boolean),
+        }));
+        toast.success(`Заявка отправлена исполнителю ${data.executor?.name || ""}`);
+        // Refresh
+        setExecutorRequests(prev => {
+          const copy = { ...prev };
+          delete copy[requestId];
+          return copy;
+        });
+        setTimeout(() => fetchExecutorRequests(requestId), 500);
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Ошибка отправки");
+      }
+    } catch {
+      toast.error("Ошибка соединения");
+    } finally {
+      setSendingToExecutor(null);
+    }
+  };
+
+  const handleExecutorAction = async (execReqId: number, requestId: number, action: string, extraData?: Record<string, unknown>) => {
+    try {
+      const res = await fetch(`/api/admin/executor-request/${execReqId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ action, ...extraData }),
+      });
+      if (res.ok) {
+        toast.success("Действие выполнено");
+        // Refresh executor requests
+        setExecutorRequests(prev => {
+          const copy = { ...prev };
+          delete copy[requestId];
+          return copy;
+        });
+        fetchExecutorRequests(requestId);
+        fetchRequests();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Ошибка");
+      }
+    } catch {
+      toast.error("Ошибка соединения");
+    }
+  };
+
   useEffect(() => {
     fetchRequests();
     fetchStats();
@@ -381,6 +495,37 @@ export default function AdminPage() {
     };
     fetchStaff();
   }, [getAuthHeaders]);
+
+  // Fetch custom response templates from settings
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const res = await fetch("/api/admin/settings", {
+          headers: { ...getAuthHeaders() },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.response_templates) {
+            try {
+              const parsed = JSON.parse(data.response_templates);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setResponseTemplates(parsed);
+              }
+            } catch { /* use defaults */ }
+          }
+        }
+      } catch {
+        // Non-critical
+      }
+    };
+    fetchTemplates();
+  }, [getAuthHeaders]);
+
+  useEffect(() => {
+    if (expandedId) {
+      fetchExecutorRequests(expandedId);
+    }
+  }, [expandedId]);
 
   // Debounced search
   const handleSearchInput = (value: string) => {
@@ -1809,6 +1954,156 @@ export default function AdminPage() {
                         </div>
                       </div>
 
+                      {/* Executor Automation Section - Mobile */}
+                      <div className="pt-3 border-t border-gray-200 dark:border-white/10">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-xs text-neutral dark:text-white/50 font-medium uppercase tracking-wide">
+                            Исполнитель
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSendToExecutor(r.id);
+                            }}
+                            disabled={sendingToExecutor === r.id}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                          >
+                            {sendingToExecutor === r.id ? (
+                              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                              </svg>
+                            )}
+                            Отправить
+                          </button>
+                        </div>
+
+                        {loadingExecutorReqs[r.id] ? (
+                          <div className="text-sm text-neutral dark:text-white/50 py-3 text-center">Загрузка...</div>
+                        ) : executorRequests[r.id] && executorRequests[r.id].length > 0 ? (
+                          <div className="space-y-2">
+                            {executorRequests[r.id].map((er) => (
+                              <div key={er.id} className="bg-white dark:bg-dark rounded-lg border border-gray-100 dark:border-white/10 p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-xs text-dark dark:text-white">{er.executor.name}</span>
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${executorStatusLabels[er.status]?.color || "bg-gray-100 text-gray-600"}`}>
+                                    {executorStatusLabels[er.status]?.label || er.status}
+                                  </span>
+                                </div>
+
+                                {/* Pricing info - mobile */}
+                                {(er.parsedAmount || er.finalAmount) && (
+                                  <div className="grid grid-cols-2 gap-2 mb-2">
+                                    {er.parsedAmount != null && (
+                                      <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-2">
+                                        <div className="text-xs text-neutral dark:text-white/50">Из счёта</div>
+                                        <div className="text-xs font-semibold text-dark dark:text-white">{er.parsedAmount.toLocaleString("ru-RU")} ₽</div>
+                                      </div>
+                                    )}
+                                    {er.clientAmount != null && (
+                                      <div className="bg-primary/5 rounded-lg p-2">
+                                        <div className="text-xs text-neutral dark:text-white/50">Для клиента</div>
+                                        <div className="text-xs font-semibold text-primary">{er.clientAmount.toLocaleString("ru-RU")} ₽</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Response email preview - mobile */}
+                                {er.responseEmail && (
+                                  <div className="mb-2">
+                                    <div className="text-xs text-dark dark:text-white bg-gray-50 dark:bg-white/5 rounded-lg p-2 max-h-16 overflow-y-auto whitespace-pre-wrap">
+                                      {er.responseEmail.substring(0, 300)}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Invoice files - mobile */}
+                                {er.invoiceFiles && er.invoiceFiles !== "[]" && (
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    {JSON.parse(er.invoiceFiles).map((file: string, i: number) => (
+                                      <a
+                                        key={i}
+                                        href={`/api/uploads/${file}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs hover:bg-blue-100 transition-colors"
+                                      >
+                                        {file.split("/").pop()}
+                                      </a>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Payment proof - mobile */}
+                                {er.paymentProofFile && (
+                                  <div className="mb-2">
+                                    <a
+                                      href={er.paymentProofFile}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 rounded text-xs hover:bg-green-100 transition-colors"
+                                    >
+                                      Подтверждение оплаты
+                                    </a>
+                                  </div>
+                                )}
+
+                                {/* Action buttons - mobile */}
+                                <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100 dark:border-white/10">
+                                  {(er.status === "response_received" || er.status === "invoice_parsed") && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleExecutorAction(er.id, r.id, "approve", {
+                                          finalAmount: er.finalAmount || er.parsedAmount,
+                                          markup: er.markup || r.markup || 20,
+                                        });
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors"
+                                    >
+                                      Утвердить
+                                    </button>
+                                  )}
+                                  {er.status === "approved" && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleExecutorAction(er.id, r.id, "send-to-client");
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                                    >
+                                      Клиенту
+                                    </button>
+                                  )}
+                                  {er.status === "client_paid" && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleExecutorAction(er.id, r.id, "mark-executor-paid");
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-500 text-white hover:bg-teal-600 transition-colors"
+                                    >
+                                      Оплата исполнителю
+                                    </button>
+                                  )}
+                                  {er.sentAt && (
+                                    <span className="text-xs text-neutral dark:text-white/50 self-center">
+                                      {new Date(er.sentAt).toLocaleDateString("ru-RU")}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-neutral dark:text-white/50 py-2">
+                            Нет назначенного исполнителя.
+                          </div>
+                        )}
+                      </div>
+
                       {/* Quick actions mobile */}
                       <div className="pt-3 border-t border-gray-200 dark:border-white/10">
                         <div className="text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
@@ -2670,6 +2965,176 @@ export default function AdminPage() {
                             </div>
                           </div>
 
+                          {/* Executor Automation Section */}
+                          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="text-sm font-semibold text-dark dark:text-white uppercase tracking-wide">
+                                Исполнитель (автоматизация)
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSendToExecutor(r.id);
+                                }}
+                                disabled={sendingToExecutor === r.id}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                              >
+                                {sendingToExecutor === r.id ? (
+                                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                  </svg>
+                                )}
+                                Отправить исполнителю
+                              </button>
+                            </div>
+
+                            {loadingExecutorReqs[r.id] ? (
+                              <div className="text-sm text-neutral dark:text-white/50 py-4 text-center">Загрузка...</div>
+                            ) : executorRequests[r.id] && executorRequests[r.id].length > 0 ? (
+                              <div className="space-y-3">
+                                {executorRequests[r.id].map((er) => (
+                                  <div key={er.id} className="bg-white dark:bg-dark rounded-xl border border-gray-100 dark:border-white/10 p-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium text-sm text-dark dark:text-white">{er.executor.name}</span>
+                                        <span className="text-xs text-neutral dark:text-white/50">{er.executor.email}</span>
+                                      </div>
+                                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${executorStatusLabels[er.status]?.color || "bg-gray-100 text-gray-600"}`}>
+                                        {executorStatusLabels[er.status]?.label || er.status}
+                                      </span>
+                                    </div>
+
+                                    {/* Pricing info */}
+                                    {(er.parsedAmount || er.finalAmount) && (
+                                      <div className="grid grid-cols-3 gap-3 mb-3">
+                                        {er.parsedAmount != null && (
+                                          <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-2.5">
+                                            <div className="text-xs text-neutral dark:text-white/50">Сумма из счёта</div>
+                                            <div className="text-sm font-semibold text-dark dark:text-white">{er.parsedAmount.toLocaleString("ru-RU")} ₽</div>
+                                          </div>
+                                        )}
+                                        {er.finalAmount != null && (
+                                          <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-2.5">
+                                            <div className="text-xs text-neutral dark:text-white/50">Итоговая сумма</div>
+                                            <div className="text-sm font-semibold text-dark dark:text-white">{er.finalAmount.toLocaleString("ru-RU")} ₽</div>
+                                          </div>
+                                        )}
+                                        {er.clientAmount != null && (
+                                          <div className="bg-primary/5 rounded-lg p-2.5">
+                                            <div className="text-xs text-neutral dark:text-white/50">Для клиента</div>
+                                            <div className="text-sm font-semibold text-primary">{er.clientAmount.toLocaleString("ru-RU")} ₽</div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Response email preview */}
+                                    {er.responseEmail && (
+                                      <div className="mb-3">
+                                        <div className="text-xs text-neutral dark:text-white/50 mb-1">Ответ исполнителя</div>
+                                        <div className="text-sm text-dark dark:text-white bg-gray-50 dark:bg-white/5 rounded-lg p-2.5 max-h-20 overflow-y-auto whitespace-pre-wrap">
+                                          {er.responseEmail.substring(0, 500)}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Invoice files */}
+                                    {er.invoiceFiles && er.invoiceFiles !== "[]" && (
+                                      <div className="mb-3">
+                                        <div className="text-xs text-neutral dark:text-white/50 mb-1">Файлы счёта</div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {JSON.parse(er.invoiceFiles).map((file: string, i: number) => (
+                                            <a
+                                              key={i}
+                                              href={`/api/uploads/${file}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-md text-xs font-medium hover:bg-blue-100 transition-colors"
+                                            >
+                                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                              </svg>
+                                              {file.split("/").pop()}
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Payment proof */}
+                                    {er.paymentProofFile && (
+                                      <div className="mb-3">
+                                        <div className="text-xs text-neutral dark:text-white/50 mb-1">Подтверждение оплаты</div>
+                                        <a
+                                          href={er.paymentProofFile}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-600 rounded-md text-xs font-medium hover:bg-green-100 transition-colors"
+                                        >
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                          </svg>
+                                          Просмотреть
+                                        </a>
+                                      </div>
+                                    )}
+
+                                    {/* Action buttons based on status */}
+                                    <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-white/10">
+                                      {(er.status === "response_received" || er.status === "invoice_parsed") && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleExecutorAction(er.id, r.id, "approve", {
+                                              finalAmount: er.finalAmount || er.parsedAmount,
+                                              markup: er.markup || r.markup || 20,
+                                            });
+                                          }}
+                                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors"
+                                        >
+                                          Утвердить
+                                        </button>
+                                      )}
+                                      {er.status === "approved" && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleExecutorAction(er.id, r.id, "send-to-client");
+                                          }}
+                                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                                        >
+                                          Отправить клиенту
+                                        </button>
+                                      )}
+                                      {er.status === "client_paid" && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleExecutorAction(er.id, r.id, "mark-executor-paid");
+                                          }}
+                                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal-500 text-white hover:bg-teal-600 transition-colors"
+                                        >
+                                          Отметить оплату исполнителю
+                                        </button>
+                                      )}
+                                      {er.sentAt && (
+                                        <span className="text-xs text-neutral dark:text-white/50 self-center">
+                                          Отправлено: {new Date(er.sentAt).toLocaleString("ru-RU")}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-neutral dark:text-white/50 py-2">
+                                Исполнитель не назначен. Нажмите &quot;Отправить исполнителю&quot; для автоподбора.
+                              </div>
+                            )}
+                          </div>
+
                           {/* Quick actions + Assignee + Templates */}
                           <div className="mt-6 pt-6 border-t border-gray-200">
                             <div className="grid lg:grid-cols-3 gap-6">
@@ -2848,7 +3313,7 @@ export default function AdminPage() {
                               Шаблоны ответов
                             </div>
                             <div className="flex flex-wrap gap-1.5">
-                              {RESPONSE_TEMPLATES.map((tmpl, idx) => (
+                              {responseTemplates.map((tmpl, idx) => (
                                 <button
                                   key={idx}
                                   onClick={(e) => {

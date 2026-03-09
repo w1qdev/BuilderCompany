@@ -94,6 +94,7 @@ model Request {
   assignedTo    Staff?    @relation("AssignedRequests", fields: [assigneeId], references: [id], onDelete: SetNull)
   files         RequestFile[]
   items         RequestItem[]
+  executorRequests ExecutorRequest[]
   @@index([status])
   @@index([userId])
   @@index([createdAt])
@@ -293,4 +294,48 @@ model MaxLinkCode {
 
   @@index([userId])
   @@index([code])
+}
+
+model Executor {
+  id                  Int               @id @default(autoincrement())
+  name                String
+  inn                 String?
+  email               String
+  phone               String?
+  address             String?
+  website             String?
+  services            String            @default("[]")
+  accreditationNumber String?
+  active              Boolean           @default(true)
+  notes               String?
+  createdAt           DateTime          @default(now())
+  executorRequests    ExecutorRequest[]
+}
+
+model ExecutorRequest {
+  id              Int       @id @default(autoincrement())
+  requestId       Int
+  request         Request   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  executorId      Int
+  executor        Executor  @relation(fields: [executorId], references: [id])
+  status          String    @default("sent")
+  sentAt          DateTime?
+  emailMessageId  String?
+  responseEmail   String?
+  invoiceFiles    String    @default("[]")
+  parsedAmount    Float?
+  finalAmount     Float?
+  markup          Float?
+  clientAmount    Float?
+  approvedAt      DateTime?
+  clientPaidAt    DateTime?
+  executorPaidAt  DateTime?
+  paymentToken    String?   @unique
+  paymentProofFile String?
+  createdAt       DateTime  @default(now())
+
+  @@index([requestId])
+  @@index([executorId])
+  @@index([paymentToken])
+  @@index([status])
 }

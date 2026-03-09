@@ -113,6 +113,22 @@ app.prepare().then(() => {
   setTimeout(runVerificationCheck, 30000);
   setInterval(runVerificationCheck, 24 * 60 * 60 * 1000);
 
+  // IMAP polling for executor responses (every 2 minutes)
+  const runImapPoll = async () => {
+    try {
+      const imapModule = await import("./src/lib/imap.ts").catch(() => null);
+      if (imapModule && imapModule.pollIncomingEmails) {
+        await imapModule.pollIncomingEmails();
+      }
+    } catch (err) {
+      console.error("IMAP poll error:", err);
+    }
+  };
+
+  // Run IMAP poll after 60s startup delay, then every 2 minutes
+  setTimeout(runImapPoll, 60000);
+  setInterval(runImapPoll, 2 * 60 * 1000);
+
   httpServer
     .once("error", (err) => {
       console.error(err);

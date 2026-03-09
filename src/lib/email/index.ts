@@ -21,6 +21,7 @@ import {
   buildStatusUpdateHtml,
 } from "./templates";
 import { COMPANY_NAME, COMPANY_SHORT } from "./constants";
+import { prisma } from "@/lib/prisma";
 import logger from "@/lib/logger";
 
 // ─── Admin notification email ───
@@ -259,7 +260,20 @@ export async function sendStatusUpdateEmail(data: {
   if (!result) return;
   const { transporter, user } = result;
 
-  const { html, statusLabel } = buildStatusUpdateHtml(data);
+  // Try to load custom template from DB
+  let customTemplate: string | null = null;
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: `template_${data.status}` },
+    });
+    if (setting?.value) {
+      customTemplate = setting.value;
+    }
+  } catch {
+    // Ignore DB errors, fallback to default
+  }
+
+  const { html, statusLabel } = buildStatusUpdateHtml(data, customTemplate);
 
   try {
     await transporter.sendMail({

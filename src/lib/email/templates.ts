@@ -602,26 +602,50 @@ export interface StatusUpdateTemplateData {
   adminNotes?: string | null;
 }
 
-export function buildStatusUpdateHtml(data: StatusUpdateTemplateData): { html: string; statusLabel: string } {
+export function buildStatusUpdateHtml(data: StatusUpdateTemplateData, customTemplate?: string | null): { html: string; statusLabel: string } {
   const statusLabels: Record<string, { label: string; color: string; description: string }> = {
+    new: {
+      label: "Новая",
+      color: "#3b82f6",
+      description: "Статус вашей заявки изменён на «Новая».",
+    },
     in_progress: {
       label: "В работе",
       color: "#f59e0b",
       description: "Ваша заявка принята в работу. Специалисты приступили к выполнению.",
+    },
+    pending_payment: {
+      label: "Ожидает оплаты",
+      color: "#eab308",
+      description: "Счёт на оплату направлен. После оплаты мы приступим к выполнению работ.",
+    },
+    review: {
+      label: "На проверке",
+      color: "#8b5cf6",
+      description: "Ваша заявка находится на этапе проверки.",
     },
     done: {
       label: "Завершена",
       color: "#10b981",
       description: "Ваша заявка выполнена. Документы готовы к выдаче.",
     },
-    new: {
-      label: "Новая",
-      color: "#3b82f6",
-      description: "Статус вашей заявки изменён на «Новая».",
+    cancelled: {
+      label: "Отменена",
+      color: "#ef4444",
+      description: "Ваша заявка была отменена.",
     },
   };
 
   const statusInfo = statusLabels[data.status] || { label: data.status, color: "#6b7280", description: "" };
+
+  // Apply custom template if provided
+  if (customTemplate) {
+    statusInfo.description = customTemplate
+      .replace(/\{name\}/g, escapeHtml(data.name))
+      .replace(/\{service\}/g, "")
+      .replace(/\{id\}/g, String(data.requestId))
+      .replace(/\{status\}/g, statusInfo.label);
+  }
 
   const html = `<!DOCTYPE html>
 <html>

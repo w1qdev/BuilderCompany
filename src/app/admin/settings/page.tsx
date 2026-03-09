@@ -14,9 +14,24 @@ interface Settings {
   companyPhone: string;
   companyEmail: string;
   companyAddress: string;
+  template_new: string;
+  template_in_progress: string;
+  template_pending_payment: string;
+  template_review: string;
+  template_done: string;
+  template_cancelled: string;
+  response_templates: string;
+  imapEnabled: boolean;
+  imapCheckInterval: string;
+  defaultMarkup: string;
 }
 
-type TabId = "email" | "confirmation" | "telegram" | "max" | "contacts" | "security";
+interface ResponseTemplate {
+  label: string;
+  text: string;
+}
+
+type TabId = "email" | "confirmation" | "telegram" | "max" | "contacts" | "templates" | "automation" | "security";
 
 const tabs = [
   {
@@ -65,6 +80,24 @@ const tabs = [
     ),
   },
   {
+    id: "automation" as const,
+    label: "Автоматизация",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+    ),
+  },
+  {
+    id: "templates" as const,
+    label: "Шаблоны",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
     id: "security" as const,
     label: "Безопасность",
     icon: (
@@ -86,6 +119,16 @@ export default function AdminSettingsPage() {
     companyPhone: "",
     companyEmail: "",
     companyAddress: "",
+    template_new: "",
+    template_in_progress: "",
+    template_pending_payment: "",
+    template_review: "",
+    template_done: "",
+    template_cancelled: "",
+    response_templates: "",
+    imapEnabled: false,
+    imapCheckInterval: "2",
+    defaultMarkup: "20",
   });
   const [activeTab, setActiveTab] = useState<TabId>("email");
   const [loading, setLoading] = useState(true);
@@ -101,6 +144,15 @@ export default function AdminSettingsPage() {
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState("");
 
+  const [templatesSaved, setTemplatesSaved] = useState(false);
+  const [responseTemplates, setResponseTemplates] = useState<ResponseTemplate[]>([
+    { label: "Принято в работу", text: "Ваша заявка принята в работу. Мы свяжемся с вами в ближайшее время для уточнения деталей." },
+    { label: "Запрос документов", text: "Для обработки заявки нам необходимы дополнительные документы. Пожалуйста, предоставьте копии свидетельств о поверке." },
+    { label: "Готово к выдаче", text: "Работы по вашей заявке завершены. Документы готовы к выдаче. Свяжитесь с нами для получения." },
+    { label: "Ожидание оплаты", text: "Счёт на оплату направлен на вашу электронную почту. После оплаты мы приступим к выполнению работ." },
+    { label: "Уточнение данных", text: "Просим уточнить данные по заявке: наименование СИ, заводской номер и номер в реестре ФИФ." },
+  ]);
+
   useEffect(() => {
     fetch("/api/admin/settings", { headers: { "x-admin-password": password } })
       .then((res) => {
@@ -110,7 +162,18 @@ export default function AdminSettingsPage() {
         }
         return res.json();
       })
-      .then((data) => setSettings(data))
+      .then((data) => {
+        setSettings(data);
+        // Load custom response templates if saved
+        if (data.response_templates) {
+          try {
+            const parsed = JSON.parse(data.response_templates);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setResponseTemplates(parsed);
+            }
+          } catch { /* use defaults */ }
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [password]);
@@ -407,6 +470,182 @@ export default function AdminSettingsPage() {
                 {contactsSaved ? "Сохранено" : "Сохранить"}
               </button>
             </div>
+          </div>
+        );
+
+      case "automation":
+        return (
+          <div className="max-w-lg">
+            <h2 className="text-xl font-bold text-dark dark:text-white mb-1">Автоматизация</h2>
+            <p className="text-sm text-neutral dark:text-white/50 mb-8">
+              Автоматический поиск исполнителей и обработка входящей почты.
+            </p>
+
+            {/* IMAP Toggle */}
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-5 mb-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-sm font-semibold text-dark dark:text-white">IMAP-поллинг входящей почты</div>
+                  <div className="text-xs text-neutral dark:text-white/50 mt-0.5">Автоматическая проверка ответов от исполнителей</div>
+                </div>
+                <button
+                  onClick={() => {
+                    const updated = { ...settings, imapEnabled: !settings.imapEnabled };
+                    setSettings(updated);
+                    saveSettings(updated);
+                  }}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${settings.imapEnabled ? "bg-primary" : "bg-gray-300 dark:bg-white/20"}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.imapEnabled ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+              {settings.imapEnabled && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/10">
+                  <p className="text-xs text-neutral/60 dark:text-white/30">
+                    Используется ящик из SMTP-настроек ({`SMTP_USER`})
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Check interval */}
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-5 mb-4">
+              <label className="text-sm font-semibold text-dark dark:text-white mb-2 block">Интервал проверки почты</label>
+              <div className="flex gap-2">
+                {["2", "5", "10"].map((val) => (
+                  <button
+                    key={val}
+                    onClick={() => {
+                      const updated = { ...settings, imapCheckInterval: val };
+                      setSettings(updated);
+                      saveSettings(updated);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                      settings.imapCheckInterval === val
+                        ? "bg-primary text-white"
+                        : "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70 hover:bg-gray-200 dark:hover:bg-white/20"
+                    }`}
+                  >
+                    {val} мин
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Default markup */}
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-5">
+              <label className="text-sm font-semibold text-dark dark:text-white mb-2 block">Наценка по умолчанию (%)</label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={settings.defaultMarkup}
+                onChange={(e) => setSettings((prev) => ({ ...prev, defaultMarkup: e.target.value }))}
+                onBlur={(e) => saveSettings({ ...settings, defaultMarkup: e.target.value })}
+                className="w-32 dark:bg-dark dark:border-white/10 dark:text-white"
+              />
+              <p className="text-xs text-neutral/60 dark:text-white/30 mt-1.5">Применяется при автоматическом создании счёта клиенту</p>
+            </div>
+          </div>
+        );
+
+      case "templates":
+        return (
+          <div className="max-w-2xl">
+            <h2 className="text-xl font-bold text-dark dark:text-white mb-1">Шаблоны email-уведомлений</h2>
+            <p className="text-sm text-neutral dark:text-white/50 mb-6">
+              Текст email-сообщений, отправляемых клиентам при смене статуса заявки. Переменные: <code className="bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-xs">{"{name}"}</code> <code className="bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-xs">{"{id}"}</code> <code className="bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-xs">{"{status}"}</code>
+            </p>
+
+            <div className="space-y-4">
+              {([
+                { key: "template_new" as const, label: "Новая", color: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300" },
+                { key: "template_in_progress" as const, label: "В работе", color: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300" },
+                { key: "template_pending_payment" as const, label: "Ожидает оплаты", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300" },
+                { key: "template_review" as const, label: "На проверке", color: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300" },
+                { key: "template_done" as const, label: "Завершена", color: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" },
+                { key: "template_cancelled" as const, label: "Отменена", color: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300" },
+              ]).map(({ key, label, color }) => (
+                <div key={key} className="bg-warm-bg dark:bg-dark rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${color}`}>{label}</span>
+                  </div>
+                  <textarea
+                    value={settings[key]}
+                    onChange={(e) => setSettings((prev) => ({ ...prev, [key]: e.target.value }))}
+                    placeholder={`Текст уведомления для статуса «${label}»... Пусто = шаблон по умолчанию`}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm resize-none focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-shadow"
+                    rows={2}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Response templates (quick-insert in admin notes) */}
+            <h3 className="text-lg font-bold text-dark dark:text-white mt-8 mb-1">Шаблоны быстрых ответов</h3>
+            <p className="text-sm text-neutral dark:text-white/50 mb-4">
+              Быстрые шаблоны для заметок в заявках (кнопки в карточке заявки).
+            </p>
+            <div className="space-y-3">
+              {responseTemplates.map((tmpl, idx) => (
+                <div key={idx} className="bg-warm-bg dark:bg-dark rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Input
+                      value={tmpl.label}
+                      onChange={(e) => {
+                        const updated = [...responseTemplates];
+                        updated[idx] = { ...updated[idx], label: e.target.value };
+                        setResponseTemplates(updated);
+                      }}
+                      placeholder="Название шаблона"
+                      className="flex-1 text-sm dark:bg-white/5 dark:border-white/10 dark:text-white"
+                    />
+                    <button
+                      onClick={() => setResponseTemplates((prev) => prev.filter((_, i) => i !== idx))}
+                      className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                  <textarea
+                    value={tmpl.text}
+                    onChange={(e) => {
+                      const updated = [...responseTemplates];
+                      updated[idx] = { ...updated[idx], text: e.target.value };
+                      setResponseTemplates(updated);
+                    }}
+                    placeholder="Текст шаблона..."
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm resize-none focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-shadow"
+                    rows={2}
+                  />
+                </div>
+              ))}
+              <button
+                onClick={() => setResponseTemplates((prev) => [...prev, { label: "", text: "" }])}
+                className="w-full py-2 rounded-xl border-2 border-dashed border-gray-300 dark:border-white/20 text-sm text-neutral dark:text-white/50 hover:border-primary hover:text-primary transition-colors"
+              >
+                + Добавить шаблон
+              </button>
+            </div>
+
+            <button
+              onClick={async () => {
+                const updated = { ...settings, response_templates: JSON.stringify(responseTemplates) };
+                await saveSettings(updated);
+                setSettings(updated);
+                setTemplatesSaved(true);
+                setTimeout(() => setTemplatesSaved(false), 2000);
+              }}
+              className={`w-full mt-6 py-2.5 rounded-xl text-sm font-semibold transition-shadow ${
+                templatesSaved
+                  ? "bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400"
+                  : "bg-primary text-white hover:bg-primary-dark"
+              }`}
+            >
+              {templatesSaved ? "Сохранено" : "Сохранить все шаблоны"}
+            </button>
           </div>
         );
 

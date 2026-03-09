@@ -1519,7 +1519,6 @@ function NotificationsTab() {
                 const data = await res.json();
                 if (data.code) {
                   setMaxCode(data.code);
-                  setMaxCodeExpiry(new Date(data.expiresAt));
                   // Auto-clear code after 5 minutes
                   setTimeout(() => setMaxCode(null), 5 * 60 * 1000);
                 }

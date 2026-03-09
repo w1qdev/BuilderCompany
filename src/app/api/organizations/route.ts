@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
             members: {
               include: { user: { select: { id: true, name: true, email: true } } },
             },
-            _count: { select: { equipment: true } },
+            _count: { select: { equipment: { where: { ignored: false } } } },
           },
         },
       },

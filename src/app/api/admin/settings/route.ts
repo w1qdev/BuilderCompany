@@ -17,6 +17,24 @@ const STRING_KEYS = [
   "companyEmail",
   "companyAddress",
 ];
+const TEMPLATE_KEYS = [
+  "template_new",
+  "template_in_progress",
+  "template_pending_payment",
+  "template_review",
+  "template_done",
+  "template_cancelled",
+];
+const RESPONSE_TEMPLATE_KEYS = [
+  "response_templates",
+];
+const AUTOMATION_BOOL_KEYS = [
+  "imapEnabled",
+];
+const AUTOMATION_STRING_KEYS = [
+  "imapCheckInterval",
+  "defaultMarkup",
+];
 
 const adminSettingsLimiter = createRateLimiter({
   max: 60,
@@ -34,7 +52,7 @@ export async function GET(req: NextRequest) {
   }
 
   const rows = await prisma.setting.findMany({
-    where: { key: { in: [...BOOL_KEYS, ...STRING_KEYS] } },
+    where: { key: { in: [...BOOL_KEYS, ...STRING_KEYS, ...TEMPLATE_KEYS, ...RESPONSE_TEMPLATE_KEYS, ...AUTOMATION_BOOL_KEYS, ...AUTOMATION_STRING_KEYS] } },
   });
 
   const result: Record<string, string | boolean> = {};
@@ -43,6 +61,22 @@ export async function GET(req: NextRequest) {
     result[key] = row ? row.value === "true" : true;
   }
   for (const key of STRING_KEYS) {
+    const row = rows.find((r) => r.key === key);
+    result[key] = row?.value || "";
+  }
+  for (const key of TEMPLATE_KEYS) {
+    const row = rows.find((r) => r.key === key);
+    result[key] = row?.value || "";
+  }
+  for (const key of RESPONSE_TEMPLATE_KEYS) {
+    const row = rows.find((r) => r.key === key);
+    result[key] = row?.value || "";
+  }
+  for (const key of AUTOMATION_BOOL_KEYS) {
+    const row = rows.find((r) => r.key === key);
+    result[key] = row ? row.value === "true" : false;
+  }
+  for (const key of AUTOMATION_STRING_KEYS) {
     const row = rows.find((r) => r.key === key);
     result[key] = row?.value || "";
   }
@@ -71,6 +105,34 @@ export async function PUT(req: NextRequest) {
       })
     ),
     ...STRING_KEYS.map((key) =>
+      prisma.setting.upsert({
+        where: { key },
+        update: { value: String(body[key] || "") },
+        create: { key, value: String(body[key] || "") },
+      })
+    ),
+    ...TEMPLATE_KEYS.filter((key) => body[key] !== undefined).map((key) =>
+      prisma.setting.upsert({
+        where: { key },
+        update: { value: String(body[key] || "") },
+        create: { key, value: String(body[key] || "") },
+      })
+    ),
+    ...RESPONSE_TEMPLATE_KEYS.filter((key) => body[key] !== undefined).map((key) =>
+      prisma.setting.upsert({
+        where: { key },
+        update: { value: String(body[key] || "") },
+        create: { key, value: String(body[key] || "") },
+      })
+    ),
+    ...AUTOMATION_BOOL_KEYS.filter((key) => body[key] !== undefined).map((key) =>
+      prisma.setting.upsert({
+        where: { key },
+        update: { value: String(body[key] === true) },
+        create: { key, value: String(body[key] === true) },
+      })
+    ),
+    ...AUTOMATION_STRING_KEYS.filter((key) => body[key] !== undefined).map((key) =>
       prisma.setting.upsert({
         where: { key },
         update: { value: String(body[key] || "") },
