@@ -50,6 +50,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const validateField = (field: string, value: string) => {
@@ -518,9 +519,32 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  id="privacyConsent"
+                  checked={privacyConsent}
+                  onChange={(e) => setPrivacyConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                />
+                <label
+                  htmlFor="privacyConsent"
+                  className="text-xs text-neutral dark:text-white/60 cursor-pointer select-none leading-relaxed"
+                >
+                  Я соглашаюсь с{" "}
+                  <Link href="/privacy" className="text-primary hover:underline" target="_blank">
+                    политикой конфиденциальности
+                  </Link>{" "}
+                  и{" "}
+                  <Link href="/terms" className="text-primary hover:underline" target="_blank">
+                    пользовательским соглашением
+                  </Link>
+                </label>
+              </div>
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !privacyConsent}
                 className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >
                 {loading ? "Регистрация..." : "Зарегистрироваться"}

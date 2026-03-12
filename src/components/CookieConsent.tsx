@@ -9,9 +9,7 @@ export default function CookieConsent() {
   useEffect(() => {
     const consent = localStorage.getItem("cookie-consent");
     if (!consent) {
-      // Show banner after a short delay
-      const timer = setTimeout(() => setShowBanner(true), 1000);
-      return () => clearTimeout(timer);
+      setShowBanner(true);
     }
   }, []);
 
@@ -29,6 +27,9 @@ export default function CookieConsent() {
     <AnimatePresence>
       {showBanner && (
         <motion.div
+          role="dialog"
+          aria-label="Cookie consent"
+          data-cookie-consent="banner"
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
@@ -61,7 +62,7 @@ export default function CookieConsent() {
                 </button>
                 <button
                   onClick={acceptAll}
-                  className="px-4 py-2 text-sm font-medium text-white gradient-primary rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all"
+                  className="px-4 py-2 text-sm font-medium text-white gradient-primary rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-shadow"
                 >
                   Принять все
                 </button>

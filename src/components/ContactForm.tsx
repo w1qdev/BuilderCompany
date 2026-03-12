@@ -150,6 +150,7 @@ export default function ContactForm({
   const [needContract, setNeedContract] = useState(false);
   const [addEquipment, setAddEquipment] = useState(false);
   const [consultOnly, setConsultOnly] = useState(false);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const validateContactField = (field: string, value: string) => {
@@ -809,20 +810,35 @@ export default function ContactForm({
         )}
       </div>
 
+      <div className="flex items-start gap-2">
+        <Checkbox
+          id="privacyConsent"
+          checked={privacyConsent}
+          onCheckedChange={(v) => setPrivacyConsent(v === true)}
+          className="mt-0.5"
+        />
+        <Label
+          htmlFor="privacyConsent"
+          className="text-xs text-neutral dark:text-white/60 cursor-pointer select-none leading-relaxed"
+        >
+          Я соглашаюсь с{" "}
+          <a href="/privacy" className="text-primary hover:underline" target="_blank">
+            политикой конфиденциальности
+          </a>{" "}
+          и{" "}
+          <a href="/terms" className="text-primary hover:underline" target="_blank">
+            пользовательским соглашением
+          </a>
+        </Label>
+      </div>
+
       <button
         type="submit"
-        disabled={submitStatus === "loading"}
+        disabled={submitStatus === "loading" || !privacyConsent}
         className="w-full gradient-primary text-white py-3.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {submitStatus === "loading" ? "Отправка..." : "Отправить заявку"}
       </button>
-
-      <p className="text-xs text-neutral-light text-center">
-        Нажимая кнопку, вы соглашаетесь с{" "}
-        <a href="/privacy" className="text-primary hover:underline">
-          политикой конфиденциальности
-        </a>
-      </p>
     </form>
   );
 }
