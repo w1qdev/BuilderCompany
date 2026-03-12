@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import CookieConsent from "@/components/CookieConsent";
+import LegalFooter from "@/components/LegalFooter";
 import PageViewTracker from "@/components/PageViewTracker";
 import { SiteSettingsProvider } from "@/lib/SiteSettingsContext";
 import { Toaster } from "sonner";
@@ -194,6 +195,7 @@ export default function RootLayout({
         <ThemeProvider>
           <SiteSettingsProvider>
             {children}
+            <LegalFooter />
             <PageViewTracker />
             <CookieConsent />
             <Toaster
