@@ -190,12 +190,24 @@ export default function Footer({ onOpenModal }: FooterProps) {
           <p className="text-white/40 text-sm">
             &copy; {currentYear} ЦСМ. Все права защищены.
           </p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center sm:justify-end">
             <a
               href="/privacy"
               className="text-white/40 hover:text-primary transition-colors text-sm"
             >
               Политика конфиденциальности
+            </a>
+            <a
+              href="/privacy#cookies"
+              className="text-white/40 hover:text-primary transition-colors text-sm"
+            >
+              Политика cookie
+            </a>
+            <a
+              href="/terms"
+              className="text-white/40 hover:text-primary transition-colors text-sm"
+            >
+              Пользовательское соглашение
             </a>
             <a
               href="/sitemap"

@@ -45,8 +45,11 @@ export default function CookieConsent() {
                   <h3 className="font-bold text-dark dark:text-white">Использование cookies</h3>
                 </div>
                 <p className="text-sm text-neutral dark:text-white/70">
-                  Мы используем файлы cookie для улучшения работы сайта, анализа трафика и персонализации контента.
-                  Нажимая «Принять все», вы соглашаетесь на использование всех файлов cookie.
+                  Мы используем файлы cookie для улучшения работы сайта и обеспечения авторизации.
+                  Нажимая «Принять все», вы соглашаетесь на использование всех файлов cookie.{" "}
+                  <a href="/privacy#cookies" className="text-primary hover:underline">
+                    Подробнее о cookie
+                  </a>
                 </p>
               </div>
               <div className="flex gap-3 shrink-0">

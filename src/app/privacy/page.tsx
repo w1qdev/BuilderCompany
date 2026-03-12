@@ -104,7 +104,7 @@ export default function PrivacyPage() {
               </ul>
             </section>
 
-            <section>
+            <section id="cookies">
               <h2 className="text-lg font-bold text-dark dark:text-white mb-3">
                 4. Использование файлов cookie
               </h2>
