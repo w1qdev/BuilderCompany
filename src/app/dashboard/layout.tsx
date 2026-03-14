@@ -412,6 +412,15 @@ export default function DashboardLayout({
             })}
           </nav>
 
+          {/* Legal links */}
+          {!sidebarCollapsed && (
+            <div className="shrink-0 px-4 py-2 flex flex-wrap gap-x-4 gap-y-0.5">
+              <Link href="/privacy" className="text-[10px] text-neutral/60 dark:text-white/25 hover:text-primary transition-colors">Конфиденциальность</Link>
+              <Link href="/privacy#cookies" className="text-[10px] text-neutral/60 dark:text-white/25 hover:text-primary transition-colors">Cookie</Link>
+              <Link href="/terms" className="text-[10px] text-neutral/60 dark:text-white/25 hover:text-primary transition-colors">Соглашение</Link>
+            </div>
+          )}
+
           {/* Feedback button — fixed above profile, never scrolls */}
           <div
             className={`shrink-0 py-2 ${

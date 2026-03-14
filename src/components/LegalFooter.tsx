@@ -11,8 +11,9 @@ export default function LegalFooter() {
   // Skip on pages that already have the main Footer with these links
   if (PAGES_WITH_FOOTER.includes(pathname)) return null;
 
-  // Skip on admin pages
+  // Skip on admin and dashboard pages
   if (pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/dashboard")) return null;
 
   return (
     <div className="w-full border-t border-gray-200 dark:border-white/10 bg-white/80 dark:bg-dark-light/80 backdrop-blur-sm">
