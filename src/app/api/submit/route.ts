@@ -183,32 +183,124 @@ export async function POST(req: NextRequest) {
       io.emit("new-request", request);
     }
 
-    // Auto-find executor (non-blocking) — create pending_approval, admin confirms before sending
+    // Auto-find executor (non-blocking) — mode-aware dispatch
     (async () => {
       try {
         const { findExecutorForService } = await import("@/lib/executorMatcher");
         const services = serviceItems.map((i) => i.service);
         const matched = await findExecutorForService(services);
-        if (!matched) return;
+
+        const { getIO } = await import("@/lib/socket");
+        const ioInner = getIO();
+
+        if (!matched) {
+          // Notify admin that no executor was found
+          if (ioInner) {
+            ioInner.to("admin").emit("no-executor-found", {
+              requestId: request.id,
+              services,
+            });
+          }
+          return;
+        }
+
+        // Read automation mode from settings
+        const modeSetting = await prisma.setting.findUnique({
+          where: { key: "automationMode" },
+        });
+        const mode = modeSetting?.value || "semi-auto";
 
         const { v4: uuidv4 } = await import("uuid");
-        await prisma.executorRequest.create({
-          data: {
-            requestId: request.id,
-            executorId: matched.id,
-            status: "pending_approval",
-            paymentToken: uuidv4(),
-          },
-        });
 
-        // Notify admin via Socket.IO
-        const { getIO } = await import("@/lib/socket");
-        const io = getIO();
-        if (io) {
-          io.to("admin").emit("executor-match-found", {
-            requestId: request.id,
-            executorName: matched.name,
+        if (mode === "auto") {
+          // Auto mode: create executor request, send email immediately, advance status
+          const execReq = await prisma.executorRequest.create({
+            data: {
+              requestId: request.id,
+              executorId: matched.id,
+              status: "awaiting_response",
+              paymentToken: uuidv4(),
+              sentAt: new Date(),
+            },
           });
+
+          // Send email to executor immediately
+          const { sendExecutorEmail } = await import("@/lib/executorEmail");
+          const fullRequest = await prisma.request.findUnique({
+            where: { id: request.id },
+            include: { items: true, files: true },
+          });
+
+          const items = (fullRequest?.items || []).map((i: { service: string; poverk: string | null; object: string | null; fabricNumber: string | null; registry: string | null }) => ({
+            service: i.service,
+            poverk: i.poverk || undefined,
+            object: i.object || undefined,
+            fabricNumber: i.fabricNumber || undefined,
+            registry: i.registry || undefined,
+          }));
+
+          const messageId = await sendExecutorEmail({
+            executorName: matched.name,
+            executorEmail: matched.email,
+            requestId: request.id,
+            executorRequestId: execReq.id,
+            clientCompany: request.company || request.name,
+            clientInn: request.inn || undefined,
+            items,
+            message: request.message || undefined,
+            files: fullRequest?.files?.map((f: { fileName: string; filePath: string }) => ({ fileName: f.fileName, filePath: f.filePath })),
+          });
+
+          if (messageId) {
+            await prisma.executorRequest.update({
+              where: { id: execReq.id },
+              data: { emailMessageId: messageId },
+            });
+          }
+
+          // Advance request status to in_progress
+          await prisma.request.update({
+            where: { id: request.id },
+            data: { status: "in_progress" },
+          });
+
+          // Notify admin via Socket.IO
+          if (ioInner) {
+            ioInner.emit("request-update", { id: request.id, status: "in_progress" });
+            ioInner.to("admin").emit("auto-dispatched", {
+              requestId: request.id,
+              executorName: matched.name,
+            });
+            if (request.userId) {
+              ioInner.to(`user:${request.userId}`).emit("request-status-changed", {
+                requestId: request.id,
+                status: "in_progress",
+              });
+              ioInner.to(`user:${request.userId}`).emit("executor-assigned", {
+                requestId: request.id,
+                executorName: matched.name,
+                message: `По вашей заявке #${request.id} найден исполнитель и отправлен запрос`,
+              });
+            }
+          }
+        } else {
+          // Semi-auto mode (default): create pending_approval, admin confirms before sending
+          await prisma.executorRequest.create({
+            data: {
+              requestId: request.id,
+              executorId: matched.id,
+              status: "pending_approval",
+              paymentToken: uuidv4(),
+            },
+          });
+
+          // Notify admin via Socket.IO
+          if (ioInner) {
+            ioInner.to("admin").emit("executor-match-found", {
+              requestId: request.id,
+              executorName: matched.name,
+            });
+          }
         }
       } catch (err) {
         console.error("Auto executor match error:", err);

@@ -34,6 +34,7 @@ const AUTOMATION_BOOL_KEYS = [
 const AUTOMATION_STRING_KEYS = [
   "imapCheckInterval",
   "defaultMarkup",
+  "automationMode",
 ];
 
 const adminSettingsLimiter = createRateLimiter({
@@ -79,6 +80,10 @@ export async function GET(req: NextRequest) {
   for (const key of AUTOMATION_STRING_KEYS) {
     const row = rows.find((r) => r.key === key);
     result[key] = row?.value || "";
+  }
+
+  if (!result["automationMode"]) {
+    result["automationMode"] = "semi-auto";
   }
 
   return NextResponse.json(result);

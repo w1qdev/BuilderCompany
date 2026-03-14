@@ -38,6 +38,7 @@ import { motion } from "framer-motion";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { io as ioClient, Socket } from "socket.io-client";
 import { toast } from "sonner";
+import DispatchModal from "./dispatch-modal";
 
 interface ServiceItemData {
   id: number;
@@ -370,6 +371,9 @@ export default function AdminPage() {
     selectedExecutorId: number;
   } | null>(null);
   const [approveSending, setApproveSending] = useState(false);
+  const [automationMode, setAutomationMode] = useState<"semi-auto" | "auto">("semi-auto");
+  const [dispatchModalOpen, setDispatchModalOpen] = useState(false);
+  const [pendingDispatchCount, setPendingDispatchCount] = useState(0);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -540,6 +544,50 @@ export default function AdminPage() {
     fetchExecutors();
   }, [getAuthHeaders]);
 
+  // Fetch automation mode from settings
+  useEffect(() => {
+    const fetchMode = async () => {
+      try {
+        const res = await fetch("/api/admin/settings", { headers: { ...getAuthHeaders() } });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.automationMode) setAutomationMode(data.automationMode);
+        }
+      } catch {}
+    };
+    fetchMode();
+  }, [getAuthHeaders]);
+
+  // Fetch pending dispatch count
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const res = await fetch("/api/admin/pending-dispatch", { headers: { ...getAuthHeaders() } });
+        if (res.ok) {
+          const data = await res.json();
+          const count = (data.pendingApproval?.length || 0) + (data.noExecutor?.length || 0);
+          setPendingDispatchCount(count);
+          if (count > 0) setDispatchModalOpen(true);
+        }
+      } catch {}
+    };
+    fetchPendingCount();
+  }, [getAuthHeaders]);
+
+  const handleModeToggle = async (mode: "semi-auto" | "auto") => {
+    setAutomationMode(mode);
+    try {
+      await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ automationMode: mode }),
+      });
+      toast.success(mode === "auto" ? "Авто-режим включен" : "Полуавто-режим включен");
+    } catch {
+      toast.error("Ошибка сохранения");
+    }
+  };
+
   const openApprovalModal = (er: ExecutorRequestData, request: AdminRequest) => {
     const code = `[CSM-${request.id}-${er.id}]`;
     const defaultSubject = `Заявка на поверку ${code} — ${request.company || request.name}`;
@@ -696,6 +744,10 @@ export default function AdminPage() {
       setTotal((prev) => prev - 1);
       fetchStats();
     });
+
+    socket.on("executor-match-found", () => setPendingDispatchCount(c => c + 1));
+    socket.on("no-executor-found", () => setPendingDispatchCount(c => c + 1));
+    socket.on("auto-dispatched", () => {});
 
     return () => {
       socket.disconnect();
@@ -1373,6 +1425,48 @@ export default function AdminPage() {
                   <TooltipContent>Включить уведомления</TooltipContent>
                 </Tooltip>
               )}
+          </div>
+
+          {/* Automation mode toggle */}
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-xl bg-gray-100 dark:bg-white/5 p-0.5">
+              <button
+                onClick={() => handleModeToggle("semi-auto")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  automationMode === "semi-auto"
+                    ? "bg-white dark:bg-dark-light text-dark dark:text-white shadow-sm"
+                    : "text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white"
+                }`}
+              >
+                Полуавто
+              </button>
+              <button
+                onClick={() => handleModeToggle("auto")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  automationMode === "auto"
+                    ? "bg-white dark:bg-dark-light text-dark dark:text-white shadow-sm"
+                    : "text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white"
+                }`}
+              >
+                Авто
+              </button>
+            </div>
+
+            {/* Dispatch badge */}
+            <button
+              onClick={() => setDispatchModalOpen(true)}
+              className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+              title="Диспетчер заявок"
+            >
+              <svg className="w-5 h-5 text-neutral dark:text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+              {pendingDispatchCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center min-w-[18px]">
+                  {pendingDispatchCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -3943,6 +4037,17 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      <DispatchModal
+        isOpen={dispatchModalOpen}
+        onClose={() => {
+          setDispatchModalOpen(false);
+          setPendingDispatchCount(0);
+        }}
+        getAuthHeaders={getAuthHeaders}
+        allExecutors={allExecutors}
+        onRefreshRequests={fetchRequests}
+      />
     </TooltipProvider>
   );
 }
