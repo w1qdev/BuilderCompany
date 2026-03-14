@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSocket } from "@/lib/useSocket";
+import { toast } from "sonner";
 
 interface RequestItem {
   id: number;
@@ -142,7 +143,17 @@ function RequestsContent() {
         .catch(() => {});
     };
     socket.on("request-status-changed", handler);
-    return () => { socket.off("request-status-changed", handler); };
+
+    const executorHandler = (data: { requestId: number; message: string }) => {
+      toast.info(data.message, { duration: 6000 });
+      handler();
+    };
+    socket.on("executor-assigned", executorHandler);
+
+    return () => {
+      socket.off("request-status-changed", handler);
+      socket.off("executor-assigned", executorHandler);
+    };
   }, [socket, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch requests when filters change
@@ -286,15 +297,17 @@ function RequestsContent() {
       {/* Date filter + count */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-neutral dark:text-white/50 shrink-0">С</label>
+          <label htmlFor="date-from" className="text-xs text-neutral dark:text-white/50 shrink-0">С</label>
           <input
+            id="date-from"
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-light text-sm text-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
           />
-          <label className="text-xs text-neutral dark:text-white/50 shrink-0">По</label>
+          <label htmlFor="date-to" className="text-xs text-neutral dark:text-white/50 shrink-0">По</label>
           <input
+            id="date-to"
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
@@ -391,7 +404,10 @@ function RequestsContent() {
                 {/* Header — always visible */}
                 <div
                   className="p-6"
+                  role={expandable ? "button" : undefined}
+                  tabIndex={expandable ? 0 : undefined}
                   onClick={() => expandable && setExpandedId(isExpanded ? null : request.id)}
+                  onKeyDown={(e) => { if (expandable && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setExpandedId(isExpanded ? null : request.id); } }}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">

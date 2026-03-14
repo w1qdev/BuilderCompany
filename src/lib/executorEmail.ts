@@ -19,6 +19,7 @@ interface ExecutorEmailData {
   items: NotificationItem[];
   message?: string;
   files?: FileData[];
+  customSubject?: string;
 }
 
 export async function sendExecutorEmail(
@@ -32,7 +33,9 @@ export async function sendExecutorEmail(
   const { transporter, user } = result;
 
   const code = `[CSM-${data.requestId}-${data.executorRequestId}]`;
-  const subject = `Заявка на поверку ${code} — ${data.clientCompany}`;
+  const subject = data.customSubject
+    ? (data.customSubject.includes(code) ? data.customSubject : `${data.customSubject} ${code}`)
+    : `Заявка на поверку ${code} — ${data.clientCompany}`;
 
   // Build items table HTML
   const itemsHtml = data.items

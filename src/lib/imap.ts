@@ -1,7 +1,7 @@
 import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
 import { prisma } from "@/lib/prisma";
-import { parseInvoiceAmount } from "@/lib/invoiceParser";
+import { parseInvoiceAmount, parseAmountFromText } from "@/lib/invoiceParser";
 import { getIO } from "@/lib/socket";
 import logger from "@/lib/logger";
 import { writeFile, mkdir } from "fs/promises";
@@ -134,6 +134,11 @@ export async function pollIncomingEmails(): Promise<void> {
                 parsedAmount = await parseInvoiceAmount(att.content);
               }
             }
+          }
+
+          // Try to parse amount from email body text if no PDF amount found
+          if (!parsedAmount && parsed.text) {
+            parsedAmount = parseAmountFromText(parsed.text);
           }
 
           // Update ExecutorRequest

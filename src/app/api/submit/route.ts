@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
       io.emit("new-request", request);
     }
 
-    // Auto-find executor and send email (non-blocking)
+    // Auto-find executor (non-blocking) — create pending_approval, admin confirms before sending
     (async () => {
       try {
         const { findExecutorForService } = await import("@/lib/executorMatcher");
@@ -192,41 +192,24 @@ export async function POST(req: NextRequest) {
         if (!matched) return;
 
         const { v4: uuidv4 } = await import("uuid");
-        const executorRequest = await prisma.executorRequest.create({
+        await prisma.executorRequest.create({
           data: {
             requestId: request.id,
             executorId: matched.id,
-            status: "awaiting_response",
-            sentAt: new Date(),
+            status: "pending_approval",
             paymentToken: uuidv4(),
           },
         });
 
-        const { sendExecutorEmail } = await import("@/lib/executorEmail");
-        const msgId = await sendExecutorEmail({
-          executorName: matched.name,
-          executorEmail: matched.email,
-          requestId: request.id,
-          executorRequestId: executorRequest.id,
-          clientCompany: company || name,
-          clientInn: inn || undefined,
-          items: serviceItems,
-          message: message || undefined,
-          files: submitFiles,
-        });
-
-        if (msgId) {
-          await prisma.executorRequest.update({
-            where: { id: executorRequest.id },
-            data: { emailMessageId: msgId },
+        // Notify admin via Socket.IO
+        const { getIO } = await import("@/lib/socket");
+        const io = getIO();
+        if (io) {
+          io.to("admin").emit("executor-match-found", {
+            requestId: request.id,
+            executorName: matched.name,
           });
         }
-
-        // Auto-advance status
-        await prisma.request.update({
-          where: { id: request.id },
-          data: { status: "in_progress" },
-        });
       } catch (err) {
         console.error("Auto executor match error:", err);
       }

@@ -70,7 +70,10 @@
       "Bash(npx tsx:*)",
       "Bash(rm:*)",
       "Bash(grep:*)",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "Bash(npm run:*)",
+      "Bash(npx react-doctor:*)",
+      "Bash(git diff:*)"
     ]
   }
 }

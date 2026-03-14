@@ -137,6 +137,7 @@ const statusLabels: Record<
 };
 
 const executorStatusLabels: Record<string, { label: string; color: string }> = {
+  pending_approval: { label: "Ожидает подтверждения", color: "bg-amber-100 text-amber-700" },
   sent: { label: "Отправлено", color: "bg-blue-100 text-blue-700" },
   awaiting_response: { label: "Ожидание ответа", color: "bg-yellow-100 text-yellow-700" },
   response_received: { label: "Ответ получен", color: "bg-indigo-100 text-indigo-700" },
@@ -146,6 +147,17 @@ const executorStatusLabels: Record<string, { label: string; color: string }> = {
   client_paid: { label: "Клиент оплатил", color: "bg-emerald-100 text-emerald-700" },
   executor_paid: { label: "Оплачен исполнителю", color: "bg-teal-100 text-teal-700" },
 };
+
+// Timeline steps for visual process tracker
+const TIMELINE_STEPS = [
+  { status: "pending_approval", label: "Подбор исполнителя" },
+  { status: "awaiting_response", label: "Ожидание ответа" },
+  { status: "response_received", label: "Ответ получен" },
+  { status: "approved", label: "Утверждено" },
+  { status: "sent_to_client", label: "Отправлено клиенту" },
+  { status: "client_paid", label: "Клиент оплатил" },
+  { status: "executor_paid", label: "Оплачено исполнителю" },
+];
 
 const statusCycle = [
   "new",
@@ -267,12 +279,15 @@ function KanbanCard({
       style={isOverlay ? undefined : style}
       {...(isOverlay ? {} : attributes)}
       {...(isOverlay ? {} : listeners)}
+      role="button"
+      tabIndex={0}
       onClick={(e) => {
         if (!isDragging) {
           e.stopPropagation();
           onClick();
         }
       }}
+      onKeyDown={(e) => { if (!isDragging && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); onClick(); } }}
       className={`bg-white dark:bg-zinc-800 rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing border border-gray-100 dark:border-zinc-700 hover:shadow-md transition-shadow ${isDragging && !isOverlay ? "opacity-50" : ""}`}
     >
       <div className="font-medium text-dark dark:text-white text-sm truncate">
@@ -344,6 +359,17 @@ export default function AdminPage() {
   const [executorRequests, setExecutorRequests] = useState<Record<number, ExecutorRequestData[]>>({});
   const [loadingExecutorReqs, setLoadingExecutorReqs] = useState<Record<number, boolean>>({});
   const [sendingToExecutor, setSendingToExecutor] = useState<number | null>(null);
+  const [allExecutors, setAllExecutors] = useState<{ id: number; name: string; email: string; services: string }[]>([]);
+  const [approvalModal, setApprovalModal] = useState<{
+    execReqId: number;
+    requestId: number;
+    request: AdminRequest;
+    executor: { id: number; name: string; email: string };
+    subject: string;
+    message: string;
+    selectedExecutorId: number;
+  } | null>(null);
+  const [approveSending, setApproveSending] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -495,6 +521,76 @@ export default function AdminPage() {
     };
     fetchStaff();
   }, [getAuthHeaders]);
+
+  // Fetch executors list for approval modal
+  useEffect(() => {
+    const fetchExecutors = async () => {
+      try {
+        const res = await fetch("/api/admin/executors", {
+          headers: { ...getAuthHeaders() },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAllExecutors(data.executors || []);
+        }
+      } catch {
+        // Non-critical
+      }
+    };
+    fetchExecutors();
+  }, [getAuthHeaders]);
+
+  const openApprovalModal = (er: ExecutorRequestData, request: AdminRequest) => {
+    const code = `[CSM-${request.id}-${er.id}]`;
+    const defaultSubject = `Заявка на поверку ${code} — ${request.company || request.name}`;
+    setApprovalModal({
+      execReqId: er.id,
+      requestId: request.id,
+      request,
+      executor: er.executor,
+      subject: defaultSubject,
+      message: request.message || "",
+      selectedExecutorId: er.executorId,
+    });
+  };
+
+  const handleApproveAndSend = async () => {
+    if (!approvalModal) return;
+    setApproveSending(true);
+    try {
+      const res = await fetch(`/api/admin/executor-request/${approvalModal.execReqId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({
+          action: "approve-and-send",
+          executorId: approvalModal.selectedExecutorId !== approvalModal.executor.id
+            ? approvalModal.selectedExecutorId
+            : undefined,
+          customSubject: approvalModal.subject,
+          customMessage: approvalModal.message || undefined,
+        }),
+      });
+      if (res.ok) {
+        toast.success("Письмо отправлено исполнителю");
+        setApprovalModal(null);
+        // Refresh executor requests
+        setExecutorRequests(prev => {
+          const copy = { ...prev };
+          delete copy[approvalModal.requestId];
+          return copy;
+        });
+        fetchExecutorRequests(approvalModal.requestId);
+        fetchRequests();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Ошибка отправки");
+      }
+    } catch {
+      toast.error("Ошибка соединения");
+    } finally {
+      setApproveSending(false);
+    }
+  };
 
   // Fetch custom response templates from settings
   useEffect(() => {
@@ -1047,7 +1143,7 @@ export default function AdminPage() {
     });
   };
 
-  const SortArrow = ({ field }: { field: SortField }) => {
+  const renderSortArrow = (field: SortField) => {
     if (sortBy !== field)
       return (
         <span className="text-gray-300 dark:text-white/30 ml-1">&#8597;</span>
@@ -1563,9 +1659,12 @@ export default function AdminPage() {
                 className="bg-white dark:bg-dark-light rounded-2xl shadow-sm overflow-hidden"
               >
                 <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() =>
                     setExpandedId(expandedId === r.id ? null : r.id)
                   }
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedId(expandedId === r.id ? null : r.id); } }}
                   className="p-4 cursor-pointer active:bg-warm-bg/50 dark:active:bg-white/5"
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -1814,10 +1913,11 @@ export default function AdminPage() {
                         </div>
                         <div className="space-y-3">
                           <div>
-                            <label className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
+                            <label htmlFor={`admin-notes-mobile-${r.id}`} className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
                               Заметки админа
                             </label>
                             <Textarea
+                              id={`admin-notes-mobile-${r.id}`}
                               placeholder="Внутренние заметки..."
                               value={
                                 editingPricing[r.id]?.adminNotes !== undefined
@@ -1842,10 +1942,11 @@ export default function AdminPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
+                            <label htmlFor={`executor-price-mobile-${r.id}`} className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
                               Цена исполнителя (₽)
                             </label>
                             <Input
+                              id={`executor-price-mobile-${r.id}`}
                               type="number"
                               min="0"
                               step="0.01"
@@ -1873,10 +1974,11 @@ export default function AdminPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
+                            <span id={`markup-label-mobile-${r.id}`} className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
                               Процент наценки
-                            </label>
+                            </span>
                             <Select
+                              aria-labelledby={`markup-label-mobile-${r.id}`}
                               value={
                                 editingPricing[r.id]?.markup !== undefined
                                   ? editingPricing[r.id].markup
@@ -2272,6 +2374,7 @@ export default function AdminPage() {
                           </button>
                           {exportMenuId === r.id && (
                             <div
+                              role="menu"
                               onClick={(e) => e.stopPropagation()}
                               className="absolute left-0 bottom-full mb-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20 min-w-[200px]"
                             >
@@ -2484,7 +2587,7 @@ export default function AdminPage() {
                       onClick={() => handleSort(col.field)}
                     >
                       {col.label}
-                      <SortArrow field={col.field} />
+                      {renderSortArrow(col.field)}
                     </TableHead>
                   ))}
                   <TableHead className="font-semibold text-dark dark:text-white">
@@ -2814,10 +2917,11 @@ export default function AdminPage() {
                             </div>
                             <div className="grid lg:grid-cols-2 gap-6">
                               <div>
-                                <label className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
+                                <label htmlFor={`admin-notes-${r.id}`} className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
                                   Заметки админа
                                 </label>
                                 <Textarea
+                                  id={`admin-notes-${r.id}`}
                                   placeholder="Внутренние заметки (видны только в админке)..."
                                   value={
                                     editingPricing[r.id]?.adminNotes !==
@@ -2845,10 +2949,11 @@ export default function AdminPage() {
 
                               <div className="space-y-4">
                                 <div>
-                                  <label className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
+                                  <label htmlFor={`executor-price-${r.id}`} className="block text-xs text-neutral dark:text-white/50 mb-2 font-medium uppercase tracking-wide">
                                     Цена исполнителя (₽)
                                   </label>
                                   <Input
+                                    id={`executor-price-${r.id}`}
                                     type="number"
                                     min="0"
                                     step="0.01"
@@ -2971,31 +3076,41 @@ export default function AdminPage() {
                               <div className="text-sm font-semibold text-dark dark:text-white uppercase tracking-wide">
                                 Исполнитель (автоматизация)
                               </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSendToExecutor(r.id);
-                                }}
-                                disabled={sendingToExecutor === r.id}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                              >
-                                {sendingToExecutor === r.id ? (
-                                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                ) : (
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                  </svg>
-                                )}
-                                Отправить исполнителю
-                              </button>
+                              {(!executorRequests[r.id] || executorRequests[r.id].length === 0) && !loadingExecutorReqs[r.id] && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSendToExecutor(r.id);
+                                  }}
+                                  disabled={sendingToExecutor === r.id}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                                >
+                                  {sendingToExecutor === r.id ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                  ) : (
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                  )}
+                                  Подобрать исполнителя
+                                </button>
+                              )}
                             </div>
 
                             {loadingExecutorReqs[r.id] ? (
                               <div className="text-sm text-neutral dark:text-white/50 py-4 text-center">Загрузка...</div>
                             ) : executorRequests[r.id] && executorRequests[r.id].length > 0 ? (
-                              <div className="space-y-3">
-                                {executorRequests[r.id].map((er) => (
+                              <div className="space-y-4">
+                                {executorRequests[r.id].map((er) => {
+                                  // Timeline
+                                  const currentStepIdx = TIMELINE_STEPS.findIndex(s => s.status === er.status);
+                                  const resolvedIdx = er.status === "invoice_parsed" || er.status === "response_received"
+                                    ? TIMELINE_STEPS.findIndex(s => s.status === "response_received")
+                                    : currentStepIdx;
+
+                                  return (
                                   <div key={er.id} className="bg-white dark:bg-dark rounded-xl border border-gray-100 dark:border-white/10 p-4">
+                                    {/* Header */}
                                     <div className="flex items-center justify-between mb-3">
                                       <div className="flex items-center gap-2">
                                         <span className="font-medium text-sm text-dark dark:text-white">{er.executor.name}</span>
@@ -3005,6 +3120,67 @@ export default function AdminPage() {
                                         {executorStatusLabels[er.status]?.label || er.status}
                                       </span>
                                     </div>
+
+                                    {/* Process Timeline */}
+                                    <div className="mb-4 py-3">
+                                      <div className="flex items-center justify-between">
+                                        {TIMELINE_STEPS.map((step, idx) => {
+                                          const isCompleted = idx < resolvedIdx;
+                                          const isCurrent = idx === resolvedIdx;
+                                          return (
+                                            <div key={step.status} className="flex flex-col items-center flex-1 relative">
+                                              {idx > 0 && (
+                                                <div className={`absolute top-3 right-1/2 w-full h-0.5 -translate-y-1/2 ${isCompleted ? "bg-green-400" : "bg-gray-200 dark:bg-white/10"}`} />
+                                              )}
+                                              <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                                isCompleted ? "bg-green-500 text-white" : isCurrent ? "bg-primary text-white ring-4 ring-primary/20" : "bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-white/30"
+                                              }`}>
+                                                {isCompleted ? (
+                                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                                ) : (
+                                                  <span>{idx + 1}</span>
+                                                )}
+                                              </div>
+                                              <span className={`mt-1.5 text-center leading-tight ${isCurrent ? "text-primary font-semibold" : isCompleted ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-white/30"}`} style={{ fontSize: "10px" }}>
+                                                {step.label}
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+
+                                    {/* Pending approval — prominent action */}
+                                    {er.status === "pending_approval" && (
+                                      <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl p-4 mb-3">
+                                        <div className="flex items-start gap-3">
+                                          <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                          </svg>
+                                          <div className="flex-1">
+                                            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                                              Система подобрала исполнителя
+                                            </p>
+                                            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                                              Проверьте данные и подтвердите отправку письма исполнителю
+                                            </p>
+                                          </div>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openApprovalModal(er, r);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shrink-0"
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            Просмотреть и отправить
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
 
                                     {/* Pricing info */}
                                     {(er.parsedAmount || er.finalAmount) && (
@@ -3082,6 +3258,7 @@ export default function AdminPage() {
                                     )}
 
                                     {/* Action buttons based on status */}
+                                    {er.status !== "pending_approval" && (
                                     <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-white/10">
                                       {(er.status === "response_received" || er.status === "invoice_parsed") && (
                                         <button
@@ -3125,12 +3302,14 @@ export default function AdminPage() {
                                         </span>
                                       )}
                                     </div>
+                                    )}
                                   </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             ) : (
                               <div className="text-sm text-neutral dark:text-white/50 py-2">
-                                Исполнитель не назначен. Нажмите &quot;Отправить исполнителю&quot; для автоподбора.
+                                Исполнитель не назначен. Нажмите &quot;Подобрать исполнителя&quot; для автоподбора.
                               </div>
                             )}
                           </div>
@@ -3390,6 +3569,7 @@ export default function AdminPage() {
                               </button>
                               {exportMenuId === r.id && (
                                 <div
+                                  role="menu"
                                   onClick={(e) => e.stopPropagation()}
                                   className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20 min-w-[200px]"
                                 >
@@ -3500,11 +3680,15 @@ export default function AdminPage() {
       {/* Client History Modal */}
       {clientHistory && (
         <div
+          role="dialog"
+          aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={() => setClientHistory(null)}
+          onKeyDown={(e) => { if (e.key === "Escape") setClientHistory(null); }}
         >
           <div className="absolute inset-0 bg-black/40" />
           <div
+            role="document"
             className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
@@ -3573,6 +3757,184 @@ export default function AdminPage() {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Executor Approval Modal */}
+      {approvalModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => !approveSending && setApprovalModal(null)}
+          onKeyDown={(e) => { if (e.key === "Escape" && !approveSending) setApprovalModal(null); }}
+        >
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            role="document"
+            className="relative bg-white dark:bg-dark-light rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white dark:bg-dark-light z-10 flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
+              <div>
+                <h3 className="font-bold text-lg text-dark dark:text-white">
+                  Подтверждение отправки исполнителю
+                </h3>
+                <p className="text-sm text-neutral dark:text-white/50 mt-0.5">
+                  Заявка #{approvalModal.requestId}
+                </p>
+              </div>
+              <button
+                onClick={() => setApprovalModal(null)}
+                disabled={approveSending}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+              >
+                <svg className="w-5 h-5 text-neutral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              {/* Executor selection */}
+              <div>
+                <label className="block text-sm font-semibold text-dark dark:text-white mb-2">
+                  Исполнитель
+                </label>
+                <select
+                  value={approvalModal.selectedExecutorId}
+                  onChange={(e) => setApprovalModal(prev => prev ? { ...prev, selectedExecutorId: Number(e.target.value) } : null)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm text-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  {allExecutors.map((ex) => (
+                    <option key={ex.id} value={ex.id}>
+                      {ex.name} — {ex.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Request items preview */}
+              <div>
+                <label className="block text-sm font-semibold text-dark dark:text-white mb-2">
+                  Что заказывает клиент
+                </label>
+                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
+                  <div className="text-sm text-dark dark:text-white mb-1">
+                    <span className="text-neutral dark:text-white/50">Клиент:</span>{" "}
+                    {approvalModal.request.company || approvalModal.request.name}
+                    {approvalModal.request.inn && (
+                      <span className="text-neutral dark:text-white/50 ml-2">ИНН: {approvalModal.request.inn}</span>
+                    )}
+                  </div>
+                  <div className="text-sm text-dark dark:text-white mb-2">
+                    <span className="text-neutral dark:text-white/50">Услуга:</span>{" "}
+                    {approvalModal.request.service}
+                  </div>
+                  {approvalModal.request.items && approvalModal.request.items.length > 0 && (
+                    <div className="overflow-x-auto mt-2">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-left text-neutral dark:text-white/50 border-b border-gray-200 dark:border-white/10">
+                            <th className="pb-1.5 pr-3 font-medium">#</th>
+                            <th className="pb-1.5 pr-3 font-medium">Услуга</th>
+                            <th className="pb-1.5 pr-3 font-medium">Объект</th>
+                            <th className="pb-1.5 pr-3 font-medium">Зав. номер</th>
+                            <th className="pb-1.5 font-medium">Реестр</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {approvalModal.request.items.map((item, idx) => (
+                            <tr key={item.id} className="border-b border-gray-100 dark:border-white/5 last:border-0">
+                              <td className="py-1.5 pr-3 text-neutral dark:text-white/50">{idx + 1}</td>
+                              <td className="py-1.5 pr-3 text-dark dark:text-white">{item.service}</td>
+                              <td className="py-1.5 pr-3 text-dark dark:text-white">{item.object || "—"}</td>
+                              <td className="py-1.5 pr-3 text-dark dark:text-white">{item.fabricNumber || "—"}</td>
+                              <td className="py-1.5 text-dark dark:text-white">{item.registry || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {approvalModal.request.files && approvalModal.request.files.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {approvalModal.request.files.map((f) => (
+                        <a
+                          key={f.id}
+                          href={f.filePath}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                          </svg>
+                          {f.fileName}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email subject */}
+              <div>
+                <label className="block text-sm font-semibold text-dark dark:text-white mb-2">
+                  Тема письма
+                </label>
+                <input
+                  type="text"
+                  value={approvalModal.subject}
+                  onChange={(e) => setApprovalModal(prev => prev ? { ...prev, subject: e.target.value } : null)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm text-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+
+              {/* Additional message */}
+              <div>
+                <label className="block text-sm font-semibold text-dark dark:text-white mb-2">
+                  Дополнительное сообщение
+                </label>
+                <textarea
+                  value={approvalModal.message}
+                  onChange={(e) => setApprovalModal(prev => prev ? { ...prev, message: e.target.value } : null)}
+                  rows={3}
+                  placeholder="Необязательное сообщение для исполнителя..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm text-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="sticky bottom-0 bg-white dark:bg-dark-light z-10 p-5 border-t border-gray-100 dark:border-white/10 flex items-center gap-3">
+              <button
+                onClick={handleApproveAndSend}
+                disabled={approveSending}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {approveSending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Отправка...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    Подтвердить и отправить
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setApprovalModal(null)}
+                disabled={approveSending}
+                className="px-5 py-3 rounded-xl text-sm font-semibold border border-gray-200 dark:border-white/10 text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              >
+                Отмена
+              </button>
             </div>
           </div>
         </div>

@@ -53,7 +53,7 @@ registerInfoHandlers(bot);
 
 // Text message handler — route through session-based handlers
 bot.on("message_created", async (ctx) => {
-  const userId = ctx.user?.user_id;
+  const userId = ctx.message?.sender?.user_id;
 
   // Skip if this user just triggered bot_started (avoid duplicate)
   if (userId && startedUsers.has(userId)) return;

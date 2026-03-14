@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminAuth } from "@/lib/adminAuth";
 import { sendStatusUpdateEmail } from "@/lib/email";
+import { sendExecutorEmail } from "@/lib/executorEmail";
 import { getIO } from "@/lib/socket";
 
 export const dynamic = "force-dynamic";
@@ -40,11 +41,11 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { action, finalAmount, markup } = body;
+  const { action, finalAmount, markup, executorId, customSubject, customMessage } = body;
 
   const execReq = await prisma.executorRequest.findUnique({
     where: { id: Number(id) },
-    include: { request: true, executor: true },
+    include: { request: { include: { items: true, files: true } }, executor: true },
   });
   if (!execReq) {
     return NextResponse.json({ error: "Не найдено" }, { status: 404 });
@@ -150,6 +151,71 @@ export async function PATCH(
       const io3 = getIO();
       if (io3) {
         io3.emit("request-update", { id: execReq.requestId, status: "done" });
+      }
+      break;
+    }
+
+    case "approve-and-send": {
+      // Admin confirmed the auto-matched executor — send email now
+      let executor = execReq.executor;
+
+      // Allow changing executor before sending
+      if (executorId && executorId !== execReq.executorId) {
+        const newExecutor = await prisma.executor.findUnique({ where: { id: Number(executorId) } });
+        if (!newExecutor || !newExecutor.active) {
+          return NextResponse.json({ error: "Исполнитель не найден или неактивен" }, { status: 404 });
+        }
+        executor = newExecutor;
+        data.executorId = newExecutor.id;
+      }
+
+      const request = execReq.request;
+      const items = request.items.map((i: { service: string; poverk: string | null; object: string | null; fabricNumber: string | null; registry: string | null }) => ({
+        service: i.service,
+        poverk: i.poverk || undefined,
+        object: i.object || undefined,
+        fabricNumber: i.fabricNumber || undefined,
+        registry: i.registry || undefined,
+      }));
+
+      const messageId = await sendExecutorEmail({
+        executorName: executor.name,
+        executorEmail: executor.email,
+        requestId: request.id,
+        executorRequestId: execReq.id,
+        clientCompany: request.company || request.name,
+        clientInn: request.inn || undefined,
+        items,
+        message: customMessage || request.message || undefined,
+        files: request.files?.map((f: { fileName: string; filePath: string }) => ({ fileName: f.fileName, filePath: f.filePath })),
+        customSubject,
+      });
+
+      data.status = "awaiting_response";
+      data.sentAt = new Date();
+      if (messageId) data.emailMessageId = messageId;
+
+      // Auto-advance request status
+      if (request.status === "new") {
+        await prisma.request.update({
+          where: { id: request.id },
+          data: { status: "in_progress" },
+        });
+        const io = getIO();
+        if (io) {
+          io.emit("request-update", { id: request.id, status: "in_progress" });
+          if (request.userId) {
+            io.to(`user:${request.userId}`).emit("request-status-changed", {
+              requestId: request.id,
+              status: "in_progress",
+            });
+            io.to(`user:${request.userId}`).emit("executor-assigned", {
+              requestId: request.id,
+              executorName: executor.name,
+              message: `По вашей заявке #${request.id} найден исполнитель и отправлен запрос`,
+            });
+          }
+        }
       }
       break;
     }
