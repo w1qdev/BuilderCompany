@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createTransporter } from "@/lib/email/transport";
+import { createTransporter, createSupportTransporter } from "@/lib/email/transport";
 import { COMPANY_SHORT } from "@/lib/email/constants";
 import { createRateLimiter } from "@/lib/rateLimit";
 import { jwtVerify } from "jose";
@@ -79,7 +79,8 @@ export async function POST(request: NextRequest) {
       attachments.push({ filename: file.name, content: buffer });
     }
 
-    const result = createTransporter();
+    // Prefer dedicated support transporter, fall back to main
+    const result = createSupportTransporter() || createTransporter();
     if (!result) {
       return NextResponse.json(
         { error: "Email не настроен на сервере" },
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     const escapedMessage = message.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
     await transporter.sendMail({
-      from: `"${COMPANY_SHORT} — Замечания" <${smtpUser}>`,
+      from: `"${COMPANY_SHORT} — Поддержка" <${smtpUser}>`,
       to: "support@csm-center.ru",
       replyTo: userEmail,
       subject: `Замечание от ${userName} (${userEmail})`,

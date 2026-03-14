@@ -58,6 +58,27 @@ export function createTransporter(): TransporterResult | null {
   };
 }
 
+export function createSupportTransporter(): TransporterResult | null {
+  const host = process.env.SUPPORT_SMTP_HOST;
+  const port = Number(process.env.SUPPORT_SMTP_PORT) || 587;
+  const user = process.env.SUPPORT_SMTP_USER;
+  const pass = process.env.SUPPORT_SMTP_PASS;
+
+  if (!host || !user || !pass) {
+    return null;
+  }
+
+  return {
+    transporter: nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    }),
+    user,
+  };
+}
+
 // ─── Excel generation ───
 
 export async function generateExcelBuffer(
