@@ -2376,6 +2376,7 @@ export default function AdminPage() {
                             <div
                               role="menu"
                               onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); } }}
                               className="absolute left-0 bottom-full mb-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20 min-w-[200px]"
                             >
                               <button
@@ -3571,6 +3572,7 @@ export default function AdminPage() {
                                 <div
                                   role="menu"
                                   onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); } }}
                                   className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20 min-w-[200px]"
                                 >
                                   <button
@@ -3691,6 +3693,7 @@ export default function AdminPage() {
             role="document"
             className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); } }}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <div>
@@ -3775,6 +3778,7 @@ export default function AdminPage() {
             role="document"
             className="relative bg-white dark:bg-dark-light rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); } }}
           >
             <div className="sticky top-0 bg-white dark:bg-dark-light z-10 flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
               <div>

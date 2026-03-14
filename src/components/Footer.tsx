@@ -1,6 +1,7 @@
 "use client";
 
 import { useSiteSettings } from "@/lib/SiteSettingsContext";
+import Link from "next/link";
 import Logo from "./Logo";
 
 interface FooterProps {
@@ -191,30 +192,30 @@ export default function Footer({ onOpenModal }: FooterProps) {
             &copy; {currentYear} ЦСМ. Все права защищены.
           </p>
           <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center sm:justify-end">
-            <a
+            <Link
               href="/privacy"
               className="text-white/40 hover:text-primary transition-colors text-sm"
             >
               Политика конфиденциальности
-            </a>
-            <a
+            </Link>
+            <Link
               href="/privacy#cookies"
               className="text-white/40 hover:text-primary transition-colors text-sm"
             >
               Политика cookie
-            </a>
-            <a
+            </Link>
+            <Link
               href="/terms"
               className="text-white/40 hover:text-primary transition-colors text-sm"
             >
               Пользовательское соглашение
-            </a>
-            <a
+            </Link>
+            <Link
               href="/sitemap"
               className="text-white/40 hover:text-primary transition-colors text-sm"
             >
               Карта сайта
-            </a>
+            </Link>
           </div>
         </div>
       </div>

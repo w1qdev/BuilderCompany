@@ -159,8 +159,9 @@ export default function OrganizationPage() {
           <h2 className="text-lg font-semibold text-dark dark:text-white mb-4">Новая организация</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-dark dark:text-white/70 mb-1">Название *</label>
+              <label htmlFor="org-name" className="block text-sm font-medium text-dark dark:text-white/70 mb-1">Название *</label>
               <input
+                id="org-name"
                 type="text"
                 value={createForm.name}
                 onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
@@ -169,8 +170,9 @@ export default function OrganizationPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark dark:text-white/70 mb-1">ИНН</label>
+              <label htmlFor="org-inn" className="block text-sm font-medium text-dark dark:text-white/70 mb-1">ИНН</label>
               <input
+                id="org-inn"
                 type="text"
                 value={createForm.inn}
                 onChange={(e) => setCreateForm((f) => ({ ...f, inn: e.target.value }))}
@@ -179,8 +181,9 @@ export default function OrganizationPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark dark:text-white/70 mb-1">КПП</label>
+              <label htmlFor="org-kpp" className="block text-sm font-medium text-dark dark:text-white/70 mb-1">КПП</label>
               <input
+                id="org-kpp"
                 type="text"
                 value={createForm.kpp}
                 onChange={(e) => setCreateForm((f) => ({ ...f, kpp: e.target.value }))}
@@ -189,8 +192,9 @@ export default function OrganizationPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark dark:text-white/70 mb-1">Адрес</label>
+              <label htmlFor="org-address" className="block text-sm font-medium text-dark dark:text-white/70 mb-1">Адрес</label>
               <input
+                id="org-address"
                 type="text"
                 value={createForm.address}
                 onChange={(e) => setCreateForm((f) => ({ ...f, address: e.target.value }))}

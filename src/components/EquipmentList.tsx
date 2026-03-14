@@ -11,6 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import Link from "next/link";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { statusConfig as _statusConfig } from "@/lib/equipmentStatus";
@@ -1035,12 +1036,12 @@ export default function EquipmentList({
           Для работы с оборудованием создайте организацию или попросите
           администратора добавить вас.
         </p>
-        <a
+        <Link
           href="/dashboard/organization"
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           Перейти к организациям
-        </a>
+        </Link>
       </div>
     );
   }
@@ -1373,11 +1374,16 @@ export default function EquipmentList({
         <Portal>
           <div
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            role="button"
+            tabIndex={-1}
             onClick={() => setShowForm(false)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowForm(false); } }}
           >
             <div
+              role="dialog"
               className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6"
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { e.stopPropagation(); }}
             >
               <h2 className="text-lg font-bold text-dark dark:text-white mb-4">
                 {editingId
@@ -1794,11 +1800,16 @@ export default function EquipmentList({
         <Portal>
           <div
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            role="button"
+            tabIndex={-1}
             onClick={() => setShowOrgImport(false)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowOrgImport(false); } }}
           >
             <div
+              role="dialog"
               className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-xl w-full flex flex-col max-h-[80vh]"
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { e.stopPropagation(); }}
             >
               {/* Fixed header — не скроллируется, дропдаун не обрезается */}
               <div className="p-6 pb-0 shrink-0">
@@ -2158,11 +2169,16 @@ export default function EquipmentList({
         <Portal>
           <div
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            role="button"
+            tabIndex={-1}
             onClick={() => !deleting && setDeleteConfirmId(null)}
+            onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !deleting) { e.preventDefault(); setDeleteConfirmId(null); } }}
           >
             <div
+              role="dialog"
               className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-sm w-full p-6"
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { e.stopPropagation(); }}
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
@@ -3322,11 +3338,16 @@ export default function EquipmentList({
         <Portal>
           <div
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            role="button"
+            tabIndex={-1}
             onClick={() => setShowCompare(false)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowCompare(false); } }}
           >
             <div
+              role="dialog"
               className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-4xl w-full max-h-[85vh] overflow-auto p-6"
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { e.stopPropagation(); }}
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-dark dark:text-white">
@@ -3428,11 +3449,16 @@ export default function EquipmentList({
         <Portal>
           <div
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            role="button"
+            tabIndex={-1}
             onClick={() => setHistoryEquipmentId(null)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setHistoryEquipmentId(null); } }}
           >
             <div
+              role="dialog"
               className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { e.stopPropagation(); }}
             >
               <div className="px-6 pt-6 pb-4 shrink-0 border-b border-gray-100 dark:border-white/5">
                 <div className="flex items-center justify-between">

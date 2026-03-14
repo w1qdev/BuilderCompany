@@ -55,7 +55,7 @@ export default function BugReportButton() {
       {open && (
         <Portal>
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+            <div className="absolute inset-0 bg-black/50" role="button" tabIndex={-1} onClick={() => setOpen(false)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(false); } }} />
             <div className="relative bg-white dark:bg-dark-light rounded-2xl shadow-2xl w-full max-w-md p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-dark dark:text-white">Сообщить об ошибке</h2>
@@ -77,7 +77,6 @@ export default function BugReportButton() {
                 rows={5}
                 maxLength={2000}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm text-dark dark:text-white placeholder:text-neutral dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                autoFocus
               />
 
               <div className="flex items-center justify-between mt-4">

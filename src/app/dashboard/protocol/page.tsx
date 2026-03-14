@@ -176,12 +176,12 @@ export default function ProtocolPage() {
       <div className="bg-white dark:bg-dark-light rounded-2xl shadow-sm p-6 space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Номер протокола</label>
-            <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.protocolNumber} onChange={(e) => updateField("protocolNumber", e.target.value)} placeholder="001/2026" />
+            <label htmlFor="protocol-number" className="block text-xs font-medium text-neutral mb-1">Номер протокола</label>
+            <input id="protocol-number" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.protocolNumber} onChange={(e) => updateField("protocolNumber", e.target.value)} placeholder="001/2026" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Дата</label>
-            <input type="date" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.date} onChange={(e) => updateField("date", e.target.value)} />
+            <label htmlFor="protocol-date" className="block text-xs font-medium text-neutral mb-1">Дата</label>
+            <input id="protocol-date" type="date" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.date} onChange={(e) => updateField("date", e.target.value)} />
           </div>
         </div>
 
@@ -189,38 +189,38 @@ export default function ProtocolPage() {
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Наименование СИ</label>
-            <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.equipmentName} onChange={(e) => updateField("equipmentName", e.target.value)} placeholder="Манометр" />
+            <label htmlFor="protocol-equipment-name" className="block text-xs font-medium text-neutral mb-1">Наименование СИ</label>
+            <input id="protocol-equipment-name" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.equipmentName} onChange={(e) => updateField("equipmentName", e.target.value)} placeholder="Манометр" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Тип/Модель</label>
-            <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.equipmentType} onChange={(e) => updateField("equipmentType", e.target.value)} placeholder="МП-100" />
+            <label htmlFor="protocol-equipment-type" className="block text-xs font-medium text-neutral mb-1">Тип/Модель</label>
+            <input id="protocol-equipment-type" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.equipmentType} onChange={(e) => updateField("equipmentType", e.target.value)} placeholder="МП-100" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Заводской номер</label>
-            <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.serialNumber} onChange={(e) => updateField("serialNumber", e.target.value)} />
+            <label htmlFor="protocol-serial-number" className="block text-xs font-medium text-neutral mb-1">Заводской номер</label>
+            <input id="protocol-serial-number" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.serialNumber} onChange={(e) => updateField("serialNumber", e.target.value)} />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral mb-1">Принадлежит (организация)</label>
-          <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.owner} onChange={(e) => updateField("owner", e.target.value)} placeholder='ООО "Компания"' />
+          <label htmlFor="protocol-owner" className="block text-xs font-medium text-neutral mb-1">Принадлежит (организация)</label>
+          <input id="protocol-owner" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.owner} onChange={(e) => updateField("owner", e.target.value)} placeholder='ООО "Компания"' />
         </div>
 
         <hr className="border-gray-200 dark:border-white/10" />
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Вид поверки</label>
-            <select className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.verificationType} onChange={(e) => updateField("verificationType", e.target.value)}>
+            <label htmlFor="protocol-verification-type" className="block text-xs font-medium text-neutral mb-1">Вид поверки</label>
+            <select id="protocol-verification-type" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.verificationType} onChange={(e) => updateField("verificationType", e.target.value)}>
               <option value="первичная">Первичная</option>
               <option value="периодическая">Периодическая</option>
               <option value="внеочередная">Внеочередная</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Заключение</label>
-            <select className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.conclusion} onChange={(e) => updateField("conclusion", e.target.value)}>
+            <label htmlFor="protocol-conclusion" className="block text-xs font-medium text-neutral mb-1">Заключение</label>
+            <select id="protocol-conclusion" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.conclusion} onChange={(e) => updateField("conclusion", e.target.value)}>
               <option value="годен">Годен</option>
               <option value="не годен">Не годен</option>
             </select>
@@ -228,30 +228,30 @@ export default function ProtocolPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral mb-1">Методика поверки</label>
-          <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.method} onChange={(e) => updateField("method", e.target.value)} placeholder="Методика поверки" />
+          <label htmlFor="protocol-method" className="block text-xs font-medium text-neutral mb-1">Методика поверки</label>
+          <input id="protocol-method" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.method} onChange={(e) => updateField("method", e.target.value)} placeholder="Методика поверки" />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral mb-1">Условия поверки</label>
-          <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.conditions} onChange={(e) => updateField("conditions", e.target.value)} />
+          <label htmlFor="protocol-conditions" className="block text-xs font-medium text-neutral mb-1">Условия поверки</label>
+          <input id="protocol-conditions" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.conditions} onChange={(e) => updateField("conditions", e.target.value)} />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral mb-1">Результаты поверки</label>
-          <textarea className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm resize-none" rows={3} value={form.result} onChange={(e) => updateField("result", e.target.value)} placeholder="Все метрологические характеристики соответствуют требованиям..." />
+          <label htmlFor="protocol-result" className="block text-xs font-medium text-neutral mb-1">Результаты поверки</label>
+          <textarea id="protocol-result" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm resize-none" rows={3} value={form.result} onChange={(e) => updateField("result", e.target.value)} placeholder="Все метрологические характеристики соответствуют требованиям..." />
         </div>
 
         <hr className="border-gray-200 dark:border-white/10" />
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Поверитель (Ф.И.О.)</label>
-            <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.inspector} onChange={(e) => updateField("inspector", e.target.value)} placeholder="Иванов И.И." />
+            <label htmlFor="protocol-inspector" className="block text-xs font-medium text-neutral mb-1">Поверитель (Ф.И.О.)</label>
+            <input id="protocol-inspector" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.inspector} onChange={(e) => updateField("inspector", e.target.value)} placeholder="Иванов И.И." />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral mb-1">Должность</label>
-            <input className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.inspectorPosition} onChange={(e) => updateField("inspectorPosition", e.target.value)} />
+            <label htmlFor="protocol-inspector-position" className="block text-xs font-medium text-neutral mb-1">Должность</label>
+            <input id="protocol-inspector-position" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm" value={form.inspectorPosition} onChange={(e) => updateField("inspectorPosition", e.target.value)} />
           </div>
         </div>
 

@@ -59,11 +59,16 @@ export default function EquipmentFormModal({
     <Portal>
       <div
         className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        role="button"
+        tabIndex={-1}
         onClick={onClose}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClose(); } }}
       >
         <div
+          role="dialog"
           className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => { e.stopPropagation(); }}
         >
           <h2 className="text-lg font-bold text-dark dark:text-white mb-4">
             {editingId

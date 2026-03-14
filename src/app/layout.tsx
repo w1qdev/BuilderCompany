@@ -6,6 +6,7 @@ import LegalFooter from "@/components/LegalFooter";
 import PageViewTracker from "@/components/PageViewTracker";
 import { SiteSettingsProvider } from "@/lib/SiteSettingsContext";
 import { Toaster } from "sonner";
+import { MotionConfig } from "framer-motion";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://csm-center.ru";
 
@@ -192,6 +193,7 @@ export default function RootLayout({
             __html: `if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})})}`,
           }}
         />
+        <MotionConfig reducedMotion="user">
         <ThemeProvider>
           <SiteSettingsProvider>
             {children}
@@ -242,6 +244,7 @@ export default function RootLayout({
             />
           </SiteSettingsProvider>
         </ThemeProvider>
+        </MotionConfig>
       </body>
     </html>
   );

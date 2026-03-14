@@ -106,7 +106,7 @@ export default function DocumentsPage() {
 
               {doc.needsEquipment && (
                 <div>
-                  <label className="text-xs font-medium text-neutral dark:text-white/50 mb-1 block">
+                  <label htmlFor={`doc-equipment-${doc.type}`} className="text-xs font-medium text-neutral dark:text-white/50 mb-1 block">
                     Прибор
                   </label>
                   {equipment.length === 0 ? (
@@ -115,6 +115,7 @@ export default function DocumentsPage() {
                     </div>
                   ) : (
                     <select
+                      id={`doc-equipment-${doc.type}`}
                       value={selectedId[doc.type] || ""}
                       onChange={(e) =>
                         setSelectedId((prev) => ({ ...prev, [doc.type]: Number(e.target.value) }))

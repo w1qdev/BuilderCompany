@@ -172,8 +172,9 @@ export default function UncertaintyPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-neutral mb-1">Граница погрешности (a)</label>
+              <label htmlFor="range-limit" className="block text-xs font-medium text-neutral mb-1">Граница погрешности (a)</label>
               <input
+                id="range-limit"
                 type="text"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="0.05"
@@ -183,7 +184,7 @@ export default function UncertaintyPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-neutral mb-1">Закон распределения</label>
+              <span className="block text-xs font-medium text-neutral mb-1">Закон распределения</span>
               <div className="flex gap-2">
                 {[
                   { value: "uniform", label: "Равномерное", desc: "k = √3" },
@@ -207,8 +208,9 @@ export default function UncertaintyPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-neutral mb-1">Уровень доверия</label>
+              <label htmlFor="confidence-level" className="block text-xs font-medium text-neutral mb-1">Уровень доверия</label>
               <select
+                id="confidence-level"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-sm"
                 value={confidenceLevel}
                 onChange={(e) => setConfidenceLevel(e.target.value)}

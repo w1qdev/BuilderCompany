@@ -102,7 +102,10 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             {/* Backdrop */}
             <div
               className="absolute inset-0 bg-black/50"
+              role="button"
+              tabIndex={-1}
               onClick={handleClose}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClose(); } }}
             />
 
             {/* Modal */}

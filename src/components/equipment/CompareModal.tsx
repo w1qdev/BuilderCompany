@@ -19,8 +19,8 @@ export default function CompareModal({ show, items, onClose }: CompareModalProps
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <div className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-4xl w-full max-h-[85vh] overflow-auto p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="button" tabIndex={-1} onClick={onClose} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClose(); } }}>
+        <div role="dialog" className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-4xl w-full max-h-[85vh] overflow-auto p-6" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { e.stopPropagation(); }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-dark dark:text-white">Сравнение оборудования</h2>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-neutral">

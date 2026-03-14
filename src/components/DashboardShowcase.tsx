@@ -277,6 +277,8 @@ function EquipmentPreview({
         {data.rows.map((row, i) => (
           <div
             key={i}
+            role="button"
+            tabIndex={0}
             className={`grid grid-cols-[16px_1fr_auto_auto_auto] gap-2 px-3 py-2.5 text-xs text-gray-600 items-center cursor-pointer transition-colors ${
               i > 0 ? "border-t border-gray-50" : ""
             } ${hoveredRow === i ? "bg-orange-50/40" : ""} ${
@@ -285,6 +287,7 @@ function EquipmentPreview({
             onMouseEnter={() => setHoveredRow(i)}
             onMouseLeave={() => setHoveredRow(null)}
             onClick={() => toggleRow(i)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleRow(i); } }}
           >
             <div
               className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors ${
@@ -555,12 +558,15 @@ function RequestsPreview({
         return (
           <div
             key={r.id}
-            className={`bg-white rounded-xl shadow-sm border p-3 space-y-2.5 cursor-pointer transition-all ${
+            role="button"
+            tabIndex={0}
+            className={`bg-white rounded-xl shadow-sm border p-3 space-y-2.5 cursor-pointer transition-shadow ${
               isExpanded
                 ? "border-[#E87A2E]/30 shadow-md"
                 : "border-gray-100 hover:shadow-md"
             }`}
             onClick={() => setExpanded(isExpanded ? null : r.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(isExpanded ? null : r.id); } }}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -885,6 +891,8 @@ function ThemesPreview({
         {data.themes.map((theme, i) => (
           <div
             key={theme.name}
+            role="button"
+            tabIndex={0}
             className={`rounded-lg overflow-hidden shadow-sm cursor-pointer transition-all hover:scale-[1.03] ${
               selectedTheme === i
                 ? ""
@@ -899,6 +907,7 @@ function ThemesPreview({
                 : {}
             }
             onClick={() => setSelectedTheme(i)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedTheme(i); } }}
           >
             {/* Mini dashboard mockup */}
             <div className="p-1.5" style={{ backgroundColor: theme.bg }}>
@@ -987,6 +996,8 @@ function ThemesPreview({
             {fontSizes.map((s, si) => (
               <div
                 key={s}
+                role="button"
+                tabIndex={0}
                 className={`w-4 h-4 rounded text-[8px] flex items-center justify-center cursor-pointer transition-colors ${
                   fontSize === si
                     ? "text-white font-bold"
@@ -994,6 +1005,7 @@ function ThemesPreview({
                 }`}
                 style={fontSize === si ? { backgroundColor: t.primary } : {}}
                 onClick={() => setFontSize(si)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFontSize(si); } }}
               >
                 {s}
               </div>
@@ -1001,8 +1013,11 @@ function ThemesPreview({
           </div>
         </div>
         <div
+          role="button"
+          tabIndex={0}
           className="flex items-center gap-1.5 bg-white rounded-lg border border-gray-100 px-2 py-1 cursor-pointer"
           onClick={() => setCompact(!compact)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCompact(!compact); } }}
         >
           <span className="text-[9px] text-gray-400">Компактный</span>
           <div
@@ -1189,8 +1204,7 @@ export default function DashboardShowcase() {
               </div>
 
               {/* Preview content */}
-              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-              <div onClick={handlePreviewInteraction}>
+              <div role="button" tabIndex={0} onClick={handlePreviewInteraction} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePreviewInteraction(); } }}>
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={feature.id}

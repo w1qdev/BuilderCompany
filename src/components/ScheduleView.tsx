@@ -656,11 +656,14 @@ export default function ScheduleView({
                       ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5"
                       : ""
                   }`}
+                  role={events.length > 0 ? "button" : undefined}
+                  tabIndex={events.length > 0 ? 0 : undefined}
                   onClick={() => {
                     if (events.length > 0) {
                       setSelectedDay(isSelected ? null : dayKey);
                     }
                   }}
+                  onKeyDown={(e) => { if (events.length > 0 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setSelectedDay(isSelected ? null : dayKey); } }}
                 >
                   {/* Day number */}
                   <div
@@ -783,8 +786,10 @@ export default function ScheduleView({
                   {isSelected && events.length > 0 && (
                     <div
                       ref={popoverRef}
+                      role="dialog"
                       className="absolute z-20 top-full left-0 sm:left-1/2 sm:-translate-x-1/2 mt-1 w-72 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-3 space-y-2"
                       onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); } }}
                     >
                       <div className="text-sm font-semibold text-dark dark:text-white mb-2">
                         {date.toLocaleDateString("ru-RU", {

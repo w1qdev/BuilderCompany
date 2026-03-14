@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 const services = ["Поверка СИ", "Калибровка", "Аттестация", "Другое"];
 const poverkOptions = ["Первичная", "Периодическая"];
@@ -822,13 +823,13 @@ export default function ContactForm({
           className="text-xs text-neutral dark:text-white/60 cursor-pointer select-none leading-relaxed"
         >
           Я соглашаюсь с{" "}
-          <a href="/privacy" className="text-primary hover:underline" target="_blank">
+          <Link href="/privacy" className="text-primary hover:underline" target="_blank">
             политикой конфиденциальности
-          </a>{" "}
+          </Link>{" "}
           и{" "}
-          <a href="/terms" className="text-primary hover:underline" target="_blank">
+          <Link href="/terms" className="text-primary hover:underline" target="_blank">
             пользовательским соглашением
-          </a>
+          </Link>
         </Label>
       </div>
 

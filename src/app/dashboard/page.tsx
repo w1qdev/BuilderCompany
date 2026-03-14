@@ -242,7 +242,7 @@ export default function DashboardPage() {
             </button>
             {widgetSettingsOpen && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setWidgetSettingsOpen(false)} />
+                <div className="fixed inset-0 z-10" role="button" tabIndex={-1} onClick={() => setWidgetSettingsOpen(false)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setWidgetSettingsOpen(false); } }} />
                 <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-xl shadow-lg py-2 w-56">
                   <p className="px-3 py-1.5 text-xs font-semibold text-neutral dark:text-white/40 uppercase">Виджеты</p>
                   {(Object.keys(WIDGET_LABELS) as WidgetKey[]).map((key) => (

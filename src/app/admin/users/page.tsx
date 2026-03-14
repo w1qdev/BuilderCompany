@@ -320,7 +320,10 @@ export default function AdminUsersPage() {
                 >
                   {/* Row */}
                   <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setExpandedId(expandedId === user.id ? null : user.id)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedId(expandedId === user.id ? null : user.id); } }}
                     className={`grid lg:grid-cols-[1fr_1.2fr_0.8fr_0.8fr_0.5fr_0.5fr_0.7fr_0.5fr] gap-2 px-4 py-3 cursor-pointer border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors items-center ${
                       user.banned ? "opacity-60" : ""
                     }`}

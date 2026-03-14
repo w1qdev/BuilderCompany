@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function CookieConsent() {
   const [hidden, setHidden] = useState(false);
@@ -43,9 +44,9 @@ export default function CookieConsent() {
             <p className="text-sm text-neutral dark:text-white/70">
               Мы используем файлы cookie для улучшения работы сайта и обеспечения авторизации.
               Нажимая «Принять все», вы соглашаетесь на использование всех файлов cookie.{" "}
-              <a href="/privacy#cookies" className="text-primary hover:underline">
+              <Link href="/privacy#cookies" className="text-primary hover:underline">
                 Подробнее о cookie
-              </a>
+              </Link>
             </p>
           </div>
           <div className="flex gap-3 shrink-0">

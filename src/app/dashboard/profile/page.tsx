@@ -282,7 +282,10 @@ export default function ProfilePage() {
         {/* Banner */}
         <div
           className="h-32 sm:h-40 relative group cursor-pointer"
+          role="button"
+          tabIndex={0}
           onClick={() => coverInputRef.current?.click()}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); coverInputRef.current?.click(); } }}
         >
           <div className="w-full h-full gradient-primary" />
           {user.coverImage && (
@@ -328,7 +331,10 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div
               className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white dark:bg-dark-light border-4 border-white dark:border-dark-light shadow-lg flex items-center justify-center shrink-0 relative group cursor-pointer overflow-hidden"
+              role="button"
+              tabIndex={0}
               onClick={() => avatarInputRef.current?.click()}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); avatarInputRef.current?.click(); } }}
             >
               <span className="text-3xl sm:text-4xl font-bold text-primary">
                 {user.name.charAt(0).toUpperCase()}
@@ -588,10 +594,11 @@ function ProfileTab({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+          <label htmlFor="profile-name" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
             ФИО
           </label>
           <input
+            id="profile-name"
             type="text"
             value={companyForm.name}
             onChange={(e) =>
@@ -602,10 +609,11 @@ function ProfileTab({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+          <label htmlFor="profile-phone" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
             Телефон
           </label>
           <input
+            id="profile-phone"
             type="tel"
             value={companyForm.phone}
             onChange={(e) =>
@@ -619,10 +627,11 @@ function ProfileTab({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+          <label htmlFor="profile-position" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
             Должность
           </label>
           <input
+            id="profile-position"
             type="text"
             value={companyForm.position}
             onChange={(e) =>
@@ -633,10 +642,11 @@ function ProfileTab({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+          <label htmlFor="profile-timezone" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
             Часовой пояс
           </label>
           <select
+            id="profile-timezone"
             value={companyForm.timezone}
             onChange={(e) =>
               setCompanyForm({ ...companyForm, timezone: e.target.value })
@@ -653,10 +663,11 @@ function ProfileTab({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+        <label htmlFor="profile-email" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
           Email
         </label>
         <input
+          id="profile-email"
           type="email"
           value={user.email}
           readOnly
@@ -670,10 +681,11 @@ function ProfileTab({
         </h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+            <label htmlFor="profile-company" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
               Краткое наименование
             </label>
             <input
+              id="profile-company"
               type="text"
               value={companyForm.company}
               onChange={(e) =>
@@ -684,10 +696,11 @@ function ProfileTab({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+            <label htmlFor="profile-legal-name" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
               Полное наименование
             </label>
             <input
+              id="profile-legal-name"
               type="text"
               value={companyForm.legalName}
               onChange={(e) =>
@@ -699,10 +712,11 @@ function ProfileTab({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+              <label htmlFor="profile-inn" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
                 ИНН
               </label>
               <input
+                id="profile-inn"
                 type="text"
                 value={companyForm.inn}
                 onChange={(e) =>
@@ -714,10 +728,11 @@ function ProfileTab({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+              <label htmlFor="profile-kpp" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
                 КПП
               </label>
               <input
+                id="profile-kpp"
                 type="text"
                 value={companyForm.kpp}
                 onChange={(e) =>
@@ -730,10 +745,11 @@ function ProfileTab({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+            <label htmlFor="profile-legal-address" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
               Юридический адрес
             </label>
             <input
+              id="profile-legal-address"
               type="text"
               value={companyForm.legalAddress}
               onChange={(e) =>
@@ -1102,6 +1118,45 @@ function CompactToggle() {
   );
 }
 
+/* ============ EyeIcon ============ */
+
+const EyeIcon = ({ show }: { show: boolean }) =>
+  show ? (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18"
+      />
+    </svg>
+  ) : (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+      />
+    </svg>
+  );
+
 /* ============ Security Tab ============ */
 
 function SecurityTab({
@@ -1137,43 +1192,6 @@ function SecurityTab({
   onSubmit: (e: React.FormEvent) => void;
   onConfirm: () => void;
 }) {
-  const EyeIcon = ({ show }: { show: boolean }) =>
-    show ? (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18"
-        />
-      </svg>
-    ) : (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-        />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-        />
-      </svg>
-    );
-
   return (
     <div className="space-y-8">
       {/* Change password */}
@@ -1205,11 +1223,12 @@ function SecurityTab({
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+              <label htmlFor="profile-current-password" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
                 Текущий пароль
               </label>
               <div className="relative">
                 <input
+                  id="profile-current-password"
                   type={showCurrentPassword ? "text" : "password"}
                   value={passwordForm.currentPassword}
                   onChange={(e) =>
@@ -1233,11 +1252,12 @@ function SecurityTab({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+              <label htmlFor="profile-new-password" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
                 Новый пароль
               </label>
               <div className="relative">
                 <input
+                  id="profile-new-password"
                   type={showNewPassword ? "text" : "password"}
                   value={passwordForm.newPassword}
                   onChange={(e) =>
@@ -1262,11 +1282,12 @@ function SecurityTab({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+              <label htmlFor="profile-confirm-password" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
                 Подтверждение пароля
               </label>
               <div className="relative">
                 <input
+                  id="profile-confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
                   value={passwordForm.confirmPassword}
                   onChange={(e) =>

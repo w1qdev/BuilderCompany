@@ -23,8 +23,8 @@ export default function HistoryModal({
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <div className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="button" tabIndex={-1} onClick={onClose} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClose(); } }}>
+        <div role="dialog" className="bg-white dark:bg-dark-light rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { e.stopPropagation(); }}>
           <div className="px-6 pt-6 pb-4 shrink-0 border-b border-gray-100 dark:border-white/5">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-dark dark:text-white">История поверок</h2>

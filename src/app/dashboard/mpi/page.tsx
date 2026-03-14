@@ -111,10 +111,11 @@ export default function MpiPage() {
 
         <div className="grid sm:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-neutral dark:text-white/60 mb-1">
+            <label htmlFor="mpi-last-date" className="block text-sm font-medium text-neutral dark:text-white/60 mb-1">
               Дата последней поверки
             </label>
             <input
+              id="mpi-last-date"
               type="date"
               value={lastDate}
               onChange={(e) => { setLastDate(e.target.value); setCalcResult(null); }}
@@ -122,10 +123,11 @@ export default function MpiPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral dark:text-white/60 mb-1">
+            <label htmlFor="mpi-months" className="block text-sm font-medium text-neutral dark:text-white/60 mb-1">
               МПИ (месяцев)
             </label>
             <input
+              id="mpi-months"
               type="number"
               min={1}
               max={120}

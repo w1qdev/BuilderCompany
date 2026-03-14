@@ -124,10 +124,11 @@ export default function CalculatorPage() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                    <label htmlFor="calc-measured-value" className="block text-sm font-medium text-dark dark:text-white mb-1">
                       Измеренное значение (X)
                     </label>
                     <input
+                      id="calc-measured-value"
                       type="number"
                       value={measuredValue}
                       onChange={(e) => setMeasuredValue(e.target.value)}
@@ -136,10 +137,11 @@ export default function CalculatorPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                    <label htmlFor="calc-reference-value" className="block text-sm font-medium text-dark dark:text-white mb-1">
                       Эталонное значение (X₀)
                     </label>
                     <input
+                      id="calc-reference-value"
                       type="number"
                       value={referenceValue}
                       onChange={(e) => setReferenceValue(e.target.value)}
@@ -183,10 +185,11 @@ export default function CalculatorPage() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                    <label htmlFor="calc-class-value" className="block text-sm font-medium text-dark dark:text-white mb-1">
                       Класс точности (γ), %
                     </label>
                     <input
+                      id="calc-class-value"
                       type="number"
                       value={classValue}
                       onChange={(e) => setClassValue(e.target.value)}
@@ -195,10 +198,11 @@ export default function CalculatorPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-dark dark:text-white mb-1">
+                    <label htmlFor="calc-scale-max" className="block text-sm font-medium text-dark dark:text-white mb-1">
                       Верхний предел шкалы (X_max)
                     </label>
                     <input
+                      id="calc-scale-max"
                       type="number"
                       value={scaleMax}
                       onChange={(e) => setScaleMax(e.target.value)}

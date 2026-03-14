@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type Category =
   | "length"
@@ -261,21 +261,13 @@ const unitCategories: Record<Category, { name: string; units: Unit[] }> = {
   },
 };
 
-export default function ConverterPage() {
-  const [category, setCategory] = useState<Category>("length");
+function ConverterPanel({ category }: { category: Category }) {
   const [fromUnit, setFromUnit] = useState(0);
   const [toUnit, setToUnit] = useState(1);
   const [fromValue, setFromValue] = useState("");
   const [toValue, setToValue] = useState("");
 
   const currentUnits = unitCategories[category].units;
-
-  useEffect(() => {
-    setFromUnit(0);
-    setToUnit(1);
-    setFromValue("");
-    setToValue("");
-  }, [category]);
 
   const convert = (value: string, direction: "from" | "to") => {
     const numValue = parseFloat(value);
@@ -311,6 +303,125 @@ export default function ConverterPage() {
   };
 
   return (
+    <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-6">
+      <div className="space-y-4">
+        {/* From */}
+        <div>
+          <label htmlFor="converter-from" className="block text-sm font-medium text-dark dark:text-white mb-2">
+            Из
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="converter-from"
+              type="number"
+              value={fromValue}
+              onChange={(e) => {
+                setFromValue(e.target.value);
+                convert(e.target.value, "from");
+              }}
+              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              placeholder="Введите значение"
+            />
+            <select
+              value={fromUnit}
+              onChange={(e) => {
+                setFromUnit(parseInt(e.target.value));
+                if (fromValue) convert(fromValue, "from");
+              }}
+              className="px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+            >
+              {currentUnits.map((unit, index) => (
+                <option key={index} value={index}>
+                  {unit.name} ({unit.symbol})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Swap button */}
+        <div className="flex justify-center">
+          <button
+            onClick={swapUnits}
+            className="p-2 rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+          >
+            <svg
+              className="w-5 h-5 text-dark dark:text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* To */}
+        <div>
+          <label htmlFor="converter-to" className="block text-sm font-medium text-dark dark:text-white mb-2">
+            В
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="converter-to"
+              type="number"
+              value={toValue}
+              onChange={(e) => {
+                setToValue(e.target.value);
+                convert(e.target.value, "to");
+              }}
+              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              placeholder="Результат"
+            />
+            <select
+              value={toUnit}
+              onChange={(e) => {
+                setToUnit(parseInt(e.target.value));
+                if (fromValue) convert(fromValue, "from");
+              }}
+              className="px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+            >
+              {currentUnits.map((unit, index) => (
+                <option key={index} value={index}>
+                  {unit.name} ({unit.symbol})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Quick result */}
+        {fromValue && toValue && (
+          <div className="mt-4 p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
+            <p className="text-center text-dark dark:text-white">
+              <span className="font-semibold">{fromValue}</span>{" "}
+              <span className="text-neutral dark:text-white/70">
+                {currentUnits[fromUnit].symbol}
+              </span>
+              {" = "}
+              <span className="font-semibold text-primary">
+                {toValue}
+              </span>{" "}
+              <span className="text-neutral dark:text-white/70">
+                {currentUnits[toUnit].symbol}
+              </span>
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function ConverterPage() {
+  const [category, setCategory] = useState<Category>("length");
+
+  return (
     <div className="max-w-3xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -340,117 +451,8 @@ export default function ConverterPage() {
             ))}
           </div>
 
-          {/* Converter */}
-          <div className="bg-white dark:bg-dark-light rounded-2xl shadow-lg p-6">
-            <div className="space-y-4">
-              {/* From */}
-              <div>
-                <label className="block text-sm font-medium text-dark dark:text-white mb-2">
-                  Из
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={fromValue}
-                    onChange={(e) => {
-                      setFromValue(e.target.value);
-                      convert(e.target.value, "from");
-                    }}
-                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    placeholder="Введите значение"
-                  />
-                  <select
-                    value={fromUnit}
-                    onChange={(e) => {
-                      setFromUnit(parseInt(e.target.value));
-                      if (fromValue) convert(fromValue, "from");
-                    }}
-                    className="px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  >
-                    {currentUnits.map((unit, index) => (
-                      <option key={index} value={index}>
-                        {unit.name} ({unit.symbol})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Swap button */}
-              <div className="flex justify-center">
-                <button
-                  onClick={swapUnits}
-                  className="p-2 rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
-                >
-                  <svg
-                    className="w-5 h-5 text-dark dark:text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              {/* To */}
-              <div>
-                <label className="block text-sm font-medium text-dark dark:text-white mb-2">
-                  В
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={toValue}
-                    onChange={(e) => {
-                      setToValue(e.target.value);
-                      convert(e.target.value, "to");
-                    }}
-                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    placeholder="Результат"
-                  />
-                  <select
-                    value={toUnit}
-                    onChange={(e) => {
-                      setToUnit(parseInt(e.target.value));
-                      if (fromValue) convert(fromValue, "from");
-                    }}
-                    className="px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-dark text-dark dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  >
-                    {currentUnits.map((unit, index) => (
-                      <option key={index} value={index}>
-                        {unit.name} ({unit.symbol})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Quick result */}
-              {fromValue && toValue && (
-                <div className="mt-4 p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
-                  <p className="text-center text-dark dark:text-white">
-                    <span className="font-semibold">{fromValue}</span>{" "}
-                    <span className="text-neutral dark:text-white/70">
-                      {currentUnits[fromUnit].symbol}
-                    </span>
-                    {" = "}
-                    <span className="font-semibold text-primary">
-                      {toValue}
-                    </span>{" "}
-                    <span className="text-neutral dark:text-white/70">
-                      {currentUnits[toUnit].symbol}
-                    </span>
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Converter - key prop resets all state when category changes */}
+          <ConverterPanel key={category} category={category} />
 
       </motion.div>
     </div>
