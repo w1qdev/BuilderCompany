@@ -121,16 +121,18 @@ model RequestFile {
 }
 
 model RequestItem {
-  id           Int        @id @default(autoincrement())
-  requestId    Int
-  request      Request    @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  equipmentId  Int?
-  equipment    Equipment? @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
-  service      String
-  poverk       String?
-  object       String?
-  fabricNumber String?
-  registry     String?
+  id              Int            @id @default(autoincrement())
+  requestId       Int
+  request         Request        @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  equipmentId     Int?
+  equipment       Equipment?     @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  equipmentTypeId Int?
+  equipmentType   EquipmentType? @relation(fields: [equipmentTypeId], references: [id], onDelete: SetNull)
+  service         String
+  poverk          String?
+  object          String?
+  fabricNumber    String?
+  registry        String?
 }
 
 model Service {
@@ -297,19 +299,42 @@ model MaxLinkCode {
 }
 
 model Executor {
-  id                  Int               @id @default(autoincrement())
+  id                  Int                       @id @default(autoincrement())
   name                String
   inn                 String?
   email               String
   phone               String?
   address             String?
   website             String?
-  services            String            @default("[]")
+  services            String                    @default("[]")
   accreditationNumber String?
-  active              Boolean           @default(true)
+  active              Boolean                   @default(true)
   notes               String?
-  createdAt           DateTime          @default(now())
+  createdAt           DateTime                  @default(now())
   executorRequests    ExecutorRequest[]
+  specializations     ExecutorSpecialization[]
+}
+
+model EquipmentType {
+  id              Int                       @id @default(autoincrement())
+  name            String                    @unique
+  category        String?
+  createdAt       DateTime                  @default(now())
+  specializations ExecutorSpecialization[]
+  requestItems    RequestItem[]
+}
+
+model ExecutorSpecialization {
+  id              Int           @id @default(autoincrement())
+  executorId      Int
+  executor        Executor      @relation(fields: [executorId], references: [id], onDelete: Cascade)
+  serviceType     String
+  equipmentTypeId Int
+  equipmentType   EquipmentType @relation(fields: [equipmentTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([executorId, serviceType, equipmentTypeId])
+  @@index([executorId])
+  @@index([equipmentTypeId])
 }
 
 model ExecutorRequest {

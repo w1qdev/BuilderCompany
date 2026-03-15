@@ -12,7 +12,13 @@ export async function GET(req: NextRequest) {
 
   const executors = await prisma.executor.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { executorRequests: true } } },
+    include: {
+      _count: { select: { executorRequests: true } },
+      specializations: {
+        include: { equipmentType: { select: { id: true, name: true, category: true } } },
+        orderBy: { serviceType: "asc" },
+      },
+    },
   });
 
   return NextResponse.json({ executors });
@@ -55,6 +61,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const specializations = body.specializations as
+      | { serviceType: string; equipmentTypeId: number }[]
+      | undefined;
+
     const executor = await prisma.executor.create({
       data: {
         name: name.trim(),
@@ -66,8 +76,24 @@ export async function POST(req: NextRequest) {
         services: servicesJson,
         accreditationNumber: accreditationNumber?.trim() || null,
         notes: notes?.trim() || null,
+        ...(specializations?.length
+          ? {
+              specializations: {
+                create: specializations.map((s) => ({
+                  serviceType: s.serviceType,
+                  equipmentTypeId: s.equipmentTypeId,
+                })),
+              },
+            }
+          : {}),
       },
-      include: { _count: { select: { executorRequests: true } } },
+      include: {
+        _count: { select: { executorRequests: true } },
+        specializations: {
+          include: { equipmentType: { select: { id: true, name: true, category: true } } },
+          orderBy: { serviceType: "asc" },
+        },
+      },
     });
 
     return NextResponse.json({ executor }, { status: 201 });

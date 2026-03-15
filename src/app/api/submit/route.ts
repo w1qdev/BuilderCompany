@@ -23,6 +23,7 @@ interface SubmitItem {
   object?: string;
   fabricNumber?: string;
   registry?: string;
+  equipmentTypeId?: number;
 }
 
 interface SubmitFile {
@@ -55,12 +56,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Support both old format (single service) and new format (items array)
-    const toItem = (i: { service: string; poverk?: string | null; object?: string | null; fabricNumber?: string | null; registry?: string | null }): SubmitItem => ({
+    const toItem = (i: { service: string; poverk?: string | null; object?: string | null; fabricNumber?: string | null; registry?: string | null; equipmentTypeId?: number | null }): SubmitItem => ({
       service: i.service,
       poverk: i.poverk || undefined,
       object: i.object || undefined,
       fabricNumber: i.fabricNumber || undefined,
       registry: i.registry || undefined,
+      equipmentTypeId: i.equipmentTypeId || undefined,
     });
 
     let serviceItems: SubmitItem[];
@@ -121,6 +123,7 @@ export async function POST(req: NextRequest) {
             object: item.object || null,
             fabricNumber: item.fabricNumber || null,
             registry: item.registry || null,
+            equipmentTypeId: item.equipmentTypeId || null,
           })),
         },
       },
@@ -188,7 +191,11 @@ export async function POST(req: NextRequest) {
       try {
         const { findExecutorForService } = await import("@/lib/executorMatcher");
         const services = serviceItems.map((i) => i.service);
-        const matched = await findExecutorForService(services);
+        const itemsForMatcher = serviceItems.map((i) => ({
+          service: i.service,
+          equipmentTypeId: i.equipmentTypeId || null,
+        }));
+        const matched = await findExecutorForService(services, itemsForMatcher);
 
         const { getIO } = await import("@/lib/socket");
         const ioInner = getIO();

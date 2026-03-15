@@ -6,6 +6,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+interface EquipmentTypeRef {
+  id: number;
+  name: string;
+  category: string | null;
+}
+
+interface Specialization {
+  id: number;
+  serviceType: string;
+  equipmentTypeId: number;
+  equipmentType: EquipmentTypeRef;
+}
+
 interface Executor {
   id: number;
   name: string;
@@ -20,6 +33,12 @@ interface Executor {
   notes: string | null;
   createdAt: string;
   _count: { executorRequests: number };
+  specializations: Specialization[];
+}
+
+interface SpecRow {
+  serviceType: string;
+  equipmentTypeId: number;
 }
 
 interface ExecutorFormData {
@@ -45,6 +64,14 @@ const emptyForm: ExecutorFormData = {
   accreditationNumber: "",
   notes: "",
 };
+
+const SERVICE_TYPES = [
+  "Поверка СИ",
+  "Калибровка",
+  "Аттестация ИО",
+  "Испытания",
+  "Ремонт СИ",
+];
 
 const serviceColors = [
   "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400",
@@ -79,6 +106,10 @@ export default function AdminExecutorsPage() {
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof ExecutorFormData, string>>>({});
   const [formLoading, setFormLoading] = useState(false);
 
+  // Specializations state
+  const [specRows, setSpecRows] = useState<SpecRow[]>([]);
+  const [equipmentTypes, setEquipmentTypes] = useState<EquipmentTypeRef[]>([]);
+
   // Delete confirmation
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
@@ -101,9 +132,22 @@ export default function AdminExecutorsPage() {
     }
   }, [getAuthHeaders]);
 
+  const fetchEquipmentTypes = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/equipment-types", { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setEquipmentTypes(data.types);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [getAuthHeaders]);
+
   useEffect(() => {
     fetchExecutors();
-  }, [fetchExecutors]);
+    fetchEquipmentTypes();
+  }, [fetchExecutors, fetchEquipmentTypes]);
 
   // Access control
   if (currentRole !== "admin") {
@@ -146,6 +190,7 @@ export default function AdminExecutorsPage() {
   const openCreateModal = () => {
     setEditingId(null);
     setForm(emptyForm);
+    setSpecRows([]);
     setFormErrors({});
     setModalOpen(true);
   };
@@ -164,6 +209,12 @@ export default function AdminExecutorsPage() {
       accreditationNumber: executor.accreditationNumber || "",
       notes: executor.notes || "",
     });
+    setSpecRows(
+      executor.specializations.map((s) => ({
+        serviceType: s.serviceType,
+        equipmentTypeId: s.equipmentTypeId,
+      }))
+    );
     setFormErrors({});
     setModalOpen(true);
   };
@@ -177,6 +228,9 @@ export default function AdminExecutorsPage() {
         .map((s) => s.trim())
         .filter(Boolean);
 
+      // Filter out incomplete spec rows
+      const validSpecs = specRows.filter((s) => s.serviceType && s.equipmentTypeId);
+
       const body = {
         name: form.name,
         email: form.email,
@@ -187,6 +241,7 @@ export default function AdminExecutorsPage() {
         services: servicesArray,
         accreditationNumber: form.accreditationNumber,
         notes: form.notes,
+        specializations: validSpecs,
       };
 
       if (editingId) {
@@ -303,19 +358,32 @@ export default function AdminExecutorsPage() {
     }
   };
 
-  const renderServiceTags = (servicesJson: string) => {
-    const services = parseServices(servicesJson);
-    if (services.length === 0) return <span className="text-xs text-neutral dark:text-white/30">--</span>;
+  const renderServiceTags = (executor: Executor) => {
+    const services = parseServices(executor.services);
+    const specCount = executor.specializations?.length || 0;
+
+    if (services.length === 0 && specCount === 0)
+      return <span className="text-xs text-neutral dark:text-white/30">--</span>;
+
     return (
-      <div className="flex flex-wrap gap-1">
-        {services.map((service, idx) => (
-          <span
-            key={idx}
-            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${serviceColors[idx % serviceColors.length]}`}
-          >
-            {service}
-          </span>
-        ))}
+      <div className="space-y-1">
+        {services.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {services.map((service, idx) => (
+              <span
+                key={idx}
+                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${serviceColors[idx % serviceColors.length]}`}
+              >
+                {service}
+              </span>
+            ))}
+          </div>
+        )}
+        {specCount > 0 && (
+          <div className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+            {specCount} спец.
+          </div>
+        )}
       </div>
     );
   };
@@ -430,7 +498,7 @@ export default function AdminExecutorsPage() {
                     <div className="text-sm text-neutral dark:text-white/60 truncate" title={executor.email}>
                       {executor.email}
                     </div>
-                    <div>{renderServiceTags(executor.services)}</div>
+                    <div>{renderServiceTags(executor)}</div>
                     <div className="text-xs text-neutral dark:text-white/60 truncate" title={executor.accreditationNumber || ""}>
                       {executor.accreditationNumber || <span className="text-neutral dark:text-white/30">--</span>}
                     </div>
@@ -517,7 +585,7 @@ export default function AdminExecutorsPage() {
                         </button>
                       </div>
                     </div>
-                    <div>{renderServiceTags(executor.services)}</div>
+                    <div>{renderServiceTags(executor)}</div>
                     <div className="flex items-center justify-between text-xs text-neutral dark:text-white/40">
                       <span>Заявок: {executor._count.executorRequests}</span>
                       {executor.accreditationNumber && <span>Аккр.: {executor.accreditationNumber}</span>}
@@ -680,6 +748,78 @@ export default function AdminExecutorsPage() {
                             {service}
                           </span>
                         ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Specializations editor */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-medium text-neutral dark:text-white/50">
+                      Специализации
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSpecRows((prev) => [
+                          ...prev,
+                          { serviceType: SERVICE_TYPES[0], equipmentTypeId: equipmentTypes[0]?.id || 0 },
+                        ])
+                      }
+                      className="text-xs text-primary hover:text-primary/80 font-medium"
+                    >
+                      + Добавить
+                    </button>
+                  </div>
+                  {specRows.length === 0 ? (
+                    <p className="text-xs text-neutral dark:text-white/30 italic">
+                      Нет специализаций (будет использован текстовый поиск по услугам)
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {specRows.map((row, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <select
+                            value={row.serviceType}
+                            onChange={(e) => {
+                              const updated = [...specRows];
+                              updated[idx] = { ...updated[idx], serviceType: e.target.value };
+                              setSpecRows(updated);
+                            }}
+                            className="flex-1 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark px-2 py-1.5 text-xs text-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          >
+                            {SERVICE_TYPES.map((st) => (
+                              <option key={st} value={st}>
+                                {st}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            value={row.equipmentTypeId}
+                            onChange={(e) => {
+                              const updated = [...specRows];
+                              updated[idx] = { ...updated[idx], equipmentTypeId: parseInt(e.target.value, 10) };
+                              setSpecRows(updated);
+                            }}
+                            className="flex-1 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark px-2 py-1.5 text-xs text-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          >
+                            {equipmentTypes.map((et) => (
+                              <option key={et.id} value={et.id}>
+                                {et.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => setSpecRows((prev) => prev.filter((_, i) => i !== idx))}
+                            className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors shrink-0"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

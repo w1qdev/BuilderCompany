@@ -76,6 +76,12 @@ type FormFields = {
   message: string;
 };
 
+type EquipmentTypeOption = {
+  id: number;
+  name: string;
+  category: string | null;
+};
+
 type ServiceItem = {
   id: string;
   service: string;
@@ -83,6 +89,7 @@ type ServiceItem = {
   object: string;
   fabricNumber: string;
   registry: string;
+  equipmentTypeId: number | null;
 };
 
 function formatPhone(value: string): string {
@@ -110,6 +117,7 @@ function createServiceItem(initial?: Partial<ServiceItem>): ServiceItem {
     object: initial?.object || "",
     fabricNumber: initial?.fabricNumber || "",
     registry: initial?.registry || "",
+    equipmentTypeId: initial?.equipmentTypeId || null,
   };
 }
 
@@ -153,6 +161,16 @@ export default function ContactForm({
   const [consultOnly, setConsultOnly] = useState(false);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [equipmentTypes, setEquipmentTypes] = useState<EquipmentTypeOption[]>([]);
+  const [eqSearches, setEqSearches] = useState<Record<string, string>>({});
+  const [eqDropdownOpen, setEqDropdownOpen] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/equipment-types")
+      .then((res) => res.json())
+      .then((data) => setEquipmentTypes(data.types || []))
+      .catch(() => {});
+  }, []);
 
   const validateContactField = (field: string, value: string) => {
     let error = "";
@@ -314,12 +332,13 @@ export default function ContactForm({
           items: consultOnly
             ? []
             : serviceItems.map(
-                ({ service, poverk, object, fabricNumber, registry }) => ({
+                ({ service, poverk, object, fabricNumber, registry, equipmentTypeId }) => ({
                   service,
                   poverk: service === "Поверка СИ" ? poverk : undefined,
                   object,
                   fabricNumber,
                   registry: service === "Поверка СИ" ? registry : undefined,
+                  equipmentTypeId: equipmentTypeId || undefined,
                 }),
               ),
           fileName: firstName,
@@ -578,16 +597,93 @@ export default function ContactForm({
               )}
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Полное наименовение СИ или оборудования</Label>
-              <Input
-                type="text"
-                placeholder=""
-                value={item.object}
-                onChange={(e) =>
-                  updateItem(item.id, { object: e.target.value })
-                }
-              />
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Полное наименование СИ или оборудования</Label>
+                <Input
+                  type="text"
+                  placeholder=""
+                  value={item.object}
+                  onChange={(e) =>
+                    updateItem(item.id, { object: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Equipment type autocomplete */}
+              <div className="space-y-1.5 relative">
+                <Label>Тип оборудования</Label>
+                <Input
+                  type="text"
+                  placeholder="Начните вводить..."
+                  value={
+                    eqDropdownOpen === item.id
+                      ? (eqSearches[item.id] ?? "")
+                      : (equipmentTypes.find((et) => et.id === item.equipmentTypeId)?.name || "")
+                  }
+                  onChange={(e) => {
+                    setEqSearches((prev) => ({ ...prev, [item.id]: e.target.value }));
+                    setEqDropdownOpen(item.id);
+                    if (!e.target.value.trim()) {
+                      updateItem(item.id, { equipmentTypeId: null });
+                    }
+                  }}
+                  onFocus={() => {
+                    setEqDropdownOpen(item.id);
+                    const current = equipmentTypes.find((et) => et.id === item.equipmentTypeId);
+                    setEqSearches((prev) => ({ ...prev, [item.id]: current?.name || "" }));
+                  }}
+                  onBlur={() => {
+                    // Delay to allow click on dropdown
+                    setTimeout(() => setEqDropdownOpen((prev) => prev === item.id ? null : prev), 200);
+                  }}
+                />
+                {eqDropdownOpen === item.id && (() => {
+                  const query = (eqSearches[item.id] || "").toLowerCase();
+                  const filtered = equipmentTypes.filter((et) =>
+                    et.name.toLowerCase().includes(query)
+                  );
+                  if (filtered.length === 0) return null;
+                  return (
+                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filtered.map((et) => (
+                        <button
+                          key={et.id}
+                          type="button"
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/10 transition-colors ${
+                            et.id === item.equipmentTypeId ? "bg-primary/10 text-primary font-medium" : "text-dark dark:text-white"
+                          }`}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            updateItem(item.id, { equipmentTypeId: et.id });
+                            setEqSearches((prev) => ({ ...prev, [item.id]: et.name }));
+                            setEqDropdownOpen(null);
+                          }}
+                        >
+                          <span>{et.name}</span>
+                          {et.category && (
+                            <span className="ml-2 text-xs text-neutral dark:text-white/40">{et.category}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+                {item.equipmentTypeId && eqDropdownOpen !== item.id && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateItem(item.id, { equipmentTypeId: null });
+                      setEqSearches((prev) => ({ ...prev, [item.id]: "" }));
+                    }}
+                    className="absolute right-2 top-[calc(50%+4px)] text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3">

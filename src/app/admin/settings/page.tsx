@@ -31,7 +31,14 @@ interface ResponseTemplate {
   text: string;
 }
 
-type TabId = "email" | "confirmation" | "telegram" | "max" | "contacts" | "templates" | "automation" | "security";
+type TabId = "email" | "confirmation" | "telegram" | "max" | "contacts" | "templates" | "automation" | "equipment" | "security";
+
+interface EquipmentTypeItem {
+  id: number;
+  name: string;
+  category: string | null;
+  _count: { specializations: number; requestItems: number };
+}
 
 const tabs = [
   {
@@ -98,6 +105,15 @@ const tabs = [
     ),
   },
   {
+    id: "equipment" as const,
+    label: "Оборудование",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+      </svg>
+    ),
+  },
+  {
     id: "security" as const,
     label: "Безопасность",
     icon: (
@@ -145,6 +161,16 @@ export default function AdminSettingsPage() {
   const [broadcastResult, setBroadcastResult] = useState("");
 
   const [templatesSaved, setTemplatesSaved] = useState(false);
+
+  // Equipment types state
+  const [eqTypes, setEqTypes] = useState<EquipmentTypeItem[]>([]);
+  const [eqSearch, setEqSearch] = useState("");
+  const [eqNewName, setEqNewName] = useState("");
+  const [eqNewCategory, setEqNewCategory] = useState("");
+  const [eqEditId, setEqEditId] = useState<number | null>(null);
+  const [eqEditName, setEqEditName] = useState("");
+  const [eqEditCategory, setEqEditCategory] = useState("");
+  const [eqDeleteId, setEqDeleteId] = useState<number | null>(null);
   const [responseTemplates, setResponseTemplates] = useState<ResponseTemplate[]>([
     { label: "Принято в работу", text: "Ваша заявка принята в работу. Мы свяжемся с вами в ближайшее время для уточнения деталей." },
     { label: "Запрос документов", text: "Для обработки заявки нам необходимы дополнительные документы. Пожалуйста, предоставьте копии свидетельств о поверке." },
@@ -177,6 +203,22 @@ export default function AdminSettingsPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [password]);
+
+  const fetchEquipmentTypes = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/equipment-types", {
+        headers: { "x-admin-password": password },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEqTypes(data.types);
+      }
+    } catch { /* ignore */ }
+  }, [password]);
+
+  useEffect(() => {
+    if (activeTab === "equipment") fetchEquipmentTypes();
+  }, [activeTab, fetchEquipmentTypes]);
 
   const saveSettings = useCallback(
     async (updated: Settings) => {
@@ -648,6 +690,224 @@ export default function AdminSettingsPage() {
             </button>
           </div>
         );
+
+      case "equipment": {
+        const filteredEq = eqTypes.filter(
+          (et) =>
+            et.name.toLowerCase().includes(eqSearch.toLowerCase()) ||
+            (et.category && et.category.toLowerCase().includes(eqSearch.toLowerCase()))
+        );
+
+        const handleAddEqType = async () => {
+          if (!eqNewName.trim()) return;
+          try {
+            const res = await fetch("/api/admin/equipment-types", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-admin-password": password },
+              body: JSON.stringify({ name: eqNewName.trim(), category: eqNewCategory.trim() || null }),
+            });
+            if (res.ok) {
+              setEqNewName("");
+              setEqNewCategory("");
+              fetchEquipmentTypes();
+            } else {
+              const data = await res.json();
+              alert(data.error || "Ошибка");
+            }
+          } catch { /* ignore */ }
+        };
+
+        const handleUpdateEqType = async (id: number) => {
+          if (!eqEditName.trim()) return;
+          try {
+            const res = await fetch(`/api/admin/equipment-types/${id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json", "x-admin-password": password },
+              body: JSON.stringify({ name: eqEditName.trim(), category: eqEditCategory.trim() || null }),
+            });
+            if (res.ok) {
+              setEqEditId(null);
+              fetchEquipmentTypes();
+            } else {
+              const data = await res.json();
+              alert(data.error || "Ошибка");
+            }
+          } catch { /* ignore */ }
+        };
+
+        const handleDeleteEqType = async (id: number) => {
+          try {
+            const res = await fetch(`/api/admin/equipment-types/${id}`, {
+              method: "DELETE",
+              headers: { "x-admin-password": password },
+            });
+            if (res.ok) {
+              setEqDeleteId(null);
+              fetchEquipmentTypes();
+            } else {
+              const data = await res.json();
+              alert(data.error || "Ошибка");
+            }
+          } catch { /* ignore */ }
+        };
+
+        return (
+          <div>
+            <h2 className="text-xl font-bold text-dark dark:text-white mb-1">Типы оборудования</h2>
+            <p className="text-sm text-neutral dark:text-white/50 mb-6">
+              Каталог типов оборудования для специализаций исполнителей и заявок.
+            </p>
+
+            {/* Add new */}
+            <div className="bg-warm-bg dark:bg-dark rounded-2xl p-4 mb-4">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <label className="text-xs font-medium text-neutral dark:text-white/50 mb-1 block">Название</label>
+                  <Input
+                    value={eqNewName}
+                    onChange={(e) => setEqNewName(e.target.value)}
+                    placeholder="Например: Термометры"
+                    className="dark:bg-dark-light dark:border-white/10 dark:text-white"
+                    onKeyDown={(e) => e.key === "Enter" && handleAddEqType()}
+                  />
+                </div>
+                <div className="w-40">
+                  <label className="text-xs font-medium text-neutral dark:text-white/50 mb-1 block">Категория</label>
+                  <Input
+                    value={eqNewCategory}
+                    onChange={(e) => setEqNewCategory(e.target.value)}
+                    placeholder="Температура"
+                    className="dark:bg-dark-light dark:border-white/10 dark:text-white"
+                    onKeyDown={(e) => e.key === "Enter" && handleAddEqType()}
+                  />
+                </div>
+                <button
+                  onClick={handleAddEqType}
+                  disabled={!eqNewName.trim()}
+                  className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+                >
+                  Добавить
+                </button>
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="mb-4">
+              <Input
+                value={eqSearch}
+                onChange={(e) => setEqSearch(e.target.value)}
+                placeholder="Поиск по названию или категории..."
+                className="dark:bg-dark dark:border-white/10 dark:text-white"
+              />
+            </div>
+
+            {/* List */}
+            <div className="bg-white dark:bg-dark rounded-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
+              <div className="grid grid-cols-[1fr_0.6fr_0.4fr_0.4fr] gap-2 px-4 py-2.5 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/10 text-xs font-semibold text-neutral dark:text-white/50 uppercase">
+                <div>Название</div>
+                <div>Категория</div>
+                <div className="text-center">Использ.</div>
+                <div className="text-center">Действия</div>
+              </div>
+              {filteredEq.length === 0 ? (
+                <div className="text-center py-8 text-sm text-neutral dark:text-white/40">
+                  {eqSearch ? "Ничего не найдено" : "Нет типов оборудования"}
+                </div>
+              ) : (
+                filteredEq.map((et) => (
+                  <div key={et.id} className="grid grid-cols-[1fr_0.6fr_0.4fr_0.4fr] gap-2 px-4 py-2.5 border-b border-gray-50 dark:border-white/5 items-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                    {eqEditId === et.id ? (
+                      <>
+                        <Input
+                          value={eqEditName}
+                          onChange={(e) => setEqEditName(e.target.value)}
+                          className="h-8 text-sm dark:bg-dark-light dark:border-white/10 dark:text-white"
+                          onKeyDown={(e) => e.key === "Enter" && handleUpdateEqType(et.id)}
+                        />
+                        <Input
+                          value={eqEditCategory}
+                          onChange={(e) => setEqEditCategory(e.target.value)}
+                          className="h-8 text-sm dark:bg-dark-light dark:border-white/10 dark:text-white"
+                          onKeyDown={(e) => e.key === "Enter" && handleUpdateEqType(et.id)}
+                        />
+                        <div />
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleUpdateEqType(et.id)}
+                            className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setEqEditId(null)}
+                            className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-sm font-medium text-dark dark:text-white">{et.name}</div>
+                        <div className="text-xs text-neutral dark:text-white/50">{et.category || "—"}</div>
+                        <div className="text-center text-xs text-neutral dark:text-white/50">
+                          {et._count.specializations + et._count.requestItems}
+                        </div>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => {
+                              setEqEditId(et.id);
+                              setEqEditName(et.name);
+                              setEqEditCategory(et.category || "");
+                            }}
+                            className="p-1.5 text-neutral dark:text-white/50 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          {eqDeleteId === et.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleDeleteEqType(et.id)}
+                                className="px-1.5 py-0.5 text-[10px] font-semibold text-white bg-red-500 rounded hover:bg-red-600 transition-colors"
+                              >
+                                Да
+                              </button>
+                              <button
+                                onClick={() => setEqDeleteId(null)}
+                                className="px-1.5 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400 rounded transition-colors"
+                              >
+                                Нет
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEqDeleteId(et.id)}
+                              className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            <p className="text-xs text-neutral dark:text-white/40 mt-3">
+              Всего: {eqTypes.length} типов. Удаление возможно только для неиспользуемых типов.
+            </p>
+          </div>
+        );
+      }
 
       case "security":
         return (

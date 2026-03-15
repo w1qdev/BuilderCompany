@@ -46,7 +46,21 @@ export async function GET(req: NextRequest) {
       executorRequests: { none: {} },
       createdAt: { gt: lastView },
     },
-    select: { id: true, service: true, company: true, name: true },
+    select: {
+      id: true,
+      service: true,
+      company: true,
+      name: true,
+      items: {
+        select: {
+          id: true,
+          service: true,
+          object: true,
+          equipmentTypeId: true,
+          equipmentType: { select: { id: true, name: true } },
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -80,6 +94,12 @@ export async function GET(req: NextRequest) {
       requestId: r.id,
       service: r.service,
       company: r.company || r.name,
+      items: r.items.map((i) => ({
+        id: i.id,
+        service: i.service,
+        object: i.object,
+        equipmentType: i.equipmentType,
+      })),
     })),
   });
 }

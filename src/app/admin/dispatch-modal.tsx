@@ -35,6 +35,12 @@ interface NoExecutorItem {
   requestId: number;
   service: string;
   company: string;
+  items?: {
+    id: number;
+    service: string;
+    object: string | null;
+    equipmentType: { id: number; name: string } | null;
+  }[];
 }
 
 interface DispatchData {
@@ -539,8 +545,9 @@ export default function DispatchModal({
                         {data.noExecutor.map((item) => (
                           <div
                             key={item.requestId}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50/50 p-3 dark:border-rose-800/50 dark:bg-rose-950/20"
+                            className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 dark:border-rose-800/50 dark:bg-rose-950/20 space-y-2"
                           >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="text-sm">
                               <span className="font-medium text-zinc-900 dark:text-zinc-100">
                                 #{item.requestId}
@@ -613,6 +620,30 @@ export default function DispatchModal({
                                 </button>
                               )}
                             </div>
+                          </div>
+                            {/* Show uncovered items */}
+                            {item.items && item.items.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {item.items.map((ri) => (
+                                  <span
+                                    key={ri.id}
+                                    className="inline-flex items-center gap-1 rounded-md bg-rose-100 px-2 py-0.5 text-[11px] text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
+                                  >
+                                    <span className="font-medium">{ri.service}</span>
+                                    {ri.equipmentType && (
+                                      <span className="text-rose-500 dark:text-rose-400">
+                                        → {ri.equipmentType.name}
+                                      </span>
+                                    )}
+                                    {ri.object && !ri.equipmentType && (
+                                      <span className="text-rose-500 dark:text-rose-400">
+                                        ({ri.object})
+                                      </span>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

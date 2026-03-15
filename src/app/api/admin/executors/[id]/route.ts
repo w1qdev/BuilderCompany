@@ -51,10 +51,33 @@ export async function PATCH(
       }
     }
 
+    // Handle specializations replace
+    if (body.specializations !== undefined) {
+      const specs = body.specializations as { serviceType: string; equipmentTypeId: number }[];
+      await prisma.executorSpecialization.deleteMany({
+        where: { executorId },
+      });
+      if (specs.length > 0) {
+        await prisma.executorSpecialization.createMany({
+          data: specs.map((s) => ({
+            executorId,
+            serviceType: s.serviceType,
+            equipmentTypeId: s.equipmentTypeId,
+          })),
+        });
+      }
+    }
+
     const executor = await prisma.executor.update({
       where: { id: executorId },
       data,
-      include: { _count: { select: { executorRequests: true } } },
+      include: {
+        _count: { select: { executorRequests: true } },
+        specializations: {
+          include: { equipmentType: { select: { id: true, name: true, category: true } } },
+          orderBy: { serviceType: "asc" },
+        },
+      },
     });
 
     return NextResponse.json({ executor });
