@@ -8,7 +8,7 @@ RUN npm install --omit=dev --no-audit --no-fund && rm -rf /root/.npm
 
 COPY bot/dist ./dist
 COPY prisma ./prisma
-RUN npx prisma generate --schema=./prisma/schema.prisma && rm -rf /root/.npm
+RUN npm install --no-save prisma && npx prisma generate --schema=./prisma/schema.prisma && rm -rf /root/.npm
 
 USER node
 
