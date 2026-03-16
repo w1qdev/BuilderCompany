@@ -73,7 +73,8 @@
       "Bash(npx prisma:*)",
       "Bash(npm run:*)",
       "Bash(npx react-doctor:*)",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(git:*)"
     ]
   }
 }
