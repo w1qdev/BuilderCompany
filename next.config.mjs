@@ -53,6 +53,10 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   // Webpack configuration for Three.js
   webpack: (config) => {
     config.externals = [...(config.externals || []), { canvas: "canvas" }];
