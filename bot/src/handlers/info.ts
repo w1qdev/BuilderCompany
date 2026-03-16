@@ -18,7 +18,7 @@ export function registerInfoHandlers(bot: any) {
     const settings = await prisma.setting.findMany({
       where: { key: { in: ["companyPhone", "companyEmail", "companyAddress"] } },
     });
-    const get = (key: string) => settings.find((s) => s.key === key)?.value || "";
+    const get = (key: string) => settings.find((s: { key: string; value: string }) => s.key === key)?.value || "";
 
     const phone = get("companyPhone") || "+7 (966) 730-30-03";
     const email = get("companyEmail") || "zakaz@csm-center.ru";

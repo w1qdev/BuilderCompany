@@ -52,7 +52,7 @@ export function startCronJobs() {
       const maxUser = await prisma.maxUser.findFirst({ where: { userId } });
       if (!maxUser) continue;
 
-      const lines = items.map((eq) => {
+      const lines = items.map((eq: typeof items[number]) => {
         const date = eq.nextVerification
           ? eq.nextVerification.toLocaleDateString("ru-RU")
           : "—";

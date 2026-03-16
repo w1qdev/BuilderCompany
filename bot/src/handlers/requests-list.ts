@@ -36,7 +36,7 @@ export function registerRequestsListHandlers(bot: any) {
       return;
     }
 
-    const lines = requests.map((r) => {
+    const lines = requests.map((r: typeof requests[number]) => {
       const date = r.createdAt.toLocaleDateString("ru-RU");
       const status = STATUS_LABELS[r.status] || r.status;
       return `#${r.id} | ${r.service} | ${status} | ${date}`;
