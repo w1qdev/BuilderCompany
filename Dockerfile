@@ -21,8 +21,8 @@ COPY server.js ./server.js
 RUN npm install --no-save socket.io@4 && rm -rf /root/.npm
 
 # Create directories (public/images is mounted as volume)
-RUN mkdir -p /app/uploads /app/data /app/public/images && \
-    chown -R nextjs:nodejs /app/uploads /app/data /app/public
+RUN mkdir -p /app/uploads /app/data /app/public/images /app/.next/cache /app/logs && \
+    chown -R nextjs:nodejs /app/uploads /app/data /app/public /app/.next/cache /app/logs
 
 USER nextjs
 
