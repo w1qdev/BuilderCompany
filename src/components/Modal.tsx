@@ -10,10 +10,15 @@ interface ModalProps {
   onClose: () => void;
   onSuccess?: () => void;
   showEquipmentCheckbox?: boolean;
+  catalogMode?: boolean;
   initialValues?: {
     name?: string;
     phone?: string;
     email?: string;
+    equipmentTypeId?: number;
+    equipmentTypeName?: string;
+    equipmentSubTypeName?: string;
+    service?: string;
   };
 }
 
@@ -22,6 +27,7 @@ export default function Modal({
   onClose,
   onSuccess,
   showEquipmentCheckbox = false,
+  catalogMode = false,
   initialValues,
 }: ModalProps) {
   const [isDirty, setIsDirty] = useState(false);
@@ -79,7 +85,7 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative bg-white dark:bg-dark-light rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+            className={`relative bg-white dark:bg-dark-light rounded-3xl shadow-2xl w-full max-h-[90vh] overflow-y-auto ${catalogMode ? "max-w-xl" : "max-w-3xl"}`}
           >
             {/* Close button */}
             <button
@@ -119,15 +125,12 @@ export default function Modal({
                   </svg>
                 </div>
                 <h3 className="text-2xl font-extrabold text-dark dark:text-white">
-                  Оставить заявку
+                  {catalogMode ? "Заказать поверку" : "Оставить заявку"}
                 </h3>
                 <p className="text-neutral dark:text-white/60 text-sm mt-1">
-                  Если в расчёте стоимости поверки Вы не нашли интересующий тип
-                  приборов или модель, это не означает что мы не сможем поверить
-                  её. Вам необходимо воспользоваться функцией Заказать поверку и
-                  в произвольной форме в комментариях указать какие
-                  метрологические услуги требуются либо в произвольной форме
-                  отправить запрос на элетронную почту zakaz@csm-center.ru
+                  {catalogMode
+                    ? "Оставьте контакты и мы рассчитаем стоимость за 15 минут"
+                    : "Заполните форму и мы свяжемся с вами в течение 15 минут в рабочее время"}
                 </p>
               </div>
 
@@ -156,6 +159,7 @@ export default function Modal({
               <ContactForm
                 onSuccess={onSuccess || onClose}
                 showEquipmentCheckbox={showEquipmentCheckbox}
+                catalogMode={catalogMode}
                 initialValues={initialValues}
                 onDirtyChange={handleDirtyChange}
               />

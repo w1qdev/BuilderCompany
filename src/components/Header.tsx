@@ -9,6 +9,7 @@ import Logo from "./Logo";
 
 const navLinks = [
   { href: "#services", label: "Услуги" },
+  { href: "/catalog", label: "Каталог" },
   { href: "#payment", label: "Оплата" },
   { href: "#calculator", label: "Калькулятор" },
   { href: "#portfolio", label: "Портфолио" },

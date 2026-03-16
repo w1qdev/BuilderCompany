@@ -74,7 +74,11 @@
       "Bash(npm run:*)",
       "Bash(npx react-doctor:*)",
       "Bash(git diff:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "WebFetch(domain:pixabay.com)",
+      "WebFetch(domain:www.pexels.com)",
+      "WebFetch(domain:api.pexels.com)",
+      "WebFetch(domain:commons.wikimedia.org)"
     ]
   }
 }

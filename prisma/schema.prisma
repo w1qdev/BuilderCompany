@@ -322,6 +322,18 @@ model EquipmentType {
   createdAt       DateTime                  @default(now())
   specializations ExecutorSpecialization[]
   requestItems    RequestItem[]
+  subTypes        EquipmentSubType[]
+}
+
+model EquipmentSubType {
+  id              Int           @id @default(autoincrement())
+  name            String
+  equipmentTypeId Int
+  equipmentType   EquipmentType @relation(fields: [equipmentTypeId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+
+  @@unique([name, equipmentTypeId])
+  @@index([equipmentTypeId])
 }
 
 model ExecutorSpecialization {

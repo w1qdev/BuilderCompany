@@ -117,7 +117,11 @@ const tabContent: Record<string, TabContent> = {
   },
 };
 
-export default function Services() {
+interface ServicesProps {
+  onOpenModal?: () => void;
+}
+
+export default function Services({ onOpenModal }: ServicesProps) {
   const [activeTab, setActiveTab] = useState(tabs[0].id);
 
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -328,26 +332,19 @@ export default function Services() {
                 </div>
               </div>
 
-              <p className="text-base text-neutral dark:text-white/70 leading-relaxed mt-6">
-                Проверка и калибровка средств измерений – важный этап в
-                обеспечении точности и надежности результатов измерений. Это
-                процесс, который позволяет проверить и настроить средства
-                измерений на соответствие установленным стандартам и
-                требованиям. Поверка и калибровка являются двумя разными
-                процедурами, но тесно взаимосвязанными и в некоторых случаях
-                могут проводиться одновременно.
-                <br />
-                Поверка – это процесс проверки средства измерения на
-                соответствие его показаний установленным стандартам, результаты
-                вносятся во всеобщую базу АРШИН. Проводится сравнение показаний
-                прибора с эталонными значениями. Если результат поверки
-                укладывается в заданные пределы погрешности, то средство
-                измерения считается исправным и готовым к использованию. В
-                случае превышения допустимых пределов погрешности, прибор
-                подлежит настройке и регулировке. Поверка проводится
-                периодически с установленным интервалом, чтобы гарантировать
-                точность измерений в течение всего срока службы прибора.
-              </p>
+              {onOpenModal && (
+                <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
+                  <button
+                    onClick={onOpenModal}
+                    className="gradient-primary text-white px-8 py-3.5 rounded-2xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-shadow"
+                  >
+                    Заказать услугу
+                  </button>
+                  <span className="text-sm text-neutral dark:text-white/50">
+                    Ответим в течение 15 минут в рабочее время
+                  </span>
+                </div>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>

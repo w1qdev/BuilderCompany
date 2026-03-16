@@ -30,6 +30,7 @@ const ALLOWED_EXTENSIONS = [
 interface ContactFormProps {
   onSuccess?: () => void;
   showEquipmentCheckbox?: boolean;
+  catalogMode?: boolean;
   initialValues?: {
     name?: string;
     phone?: string;
@@ -37,6 +38,10 @@ interface ContactFormProps {
     object?: string;
     fabricNumber?: string;
     registry?: string;
+    equipmentTypeId?: number;
+    equipmentTypeName?: string;
+    equipmentSubTypeName?: string;
+    service?: string;
   };
   onDirtyChange?: (dirty: boolean) => void;
 }
@@ -124,6 +129,7 @@ function createServiceItem(initial?: Partial<ServiceItem>): ServiceItem {
 export default function ContactForm({
   onSuccess,
   showEquipmentCheckbox = false,
+  catalogMode = false,
   initialValues,
   onDirtyChange,
 }: ContactFormProps) {
@@ -139,9 +145,11 @@ export default function ContactForm({
   });
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([
     createServiceItem({
-      object: initialValues?.object,
+      object: initialValues?.equipmentSubTypeName || initialValues?.object || "",
       fabricNumber: initialValues?.fabricNumber,
       registry: initialValues?.registry,
+      equipmentTypeId: initialValues?.equipmentTypeId || null,
+      service: initialValues?.service || services[0],
     }),
   ]);
   const [files, setFiles] = useState<File[]>([]);
@@ -158,11 +166,15 @@ export default function ContactForm({
   const [errorMsg, setErrorMsg] = useState("");
   const [needContract, setNeedContract] = useState(false);
   const [addEquipment, setAddEquipment] = useState(false);
-  const [consultOnly, setConsultOnly] = useState(false);
+  const [consultOnly, setConsultOnly] = useState(!showEquipmentCheckbox && !initialValues?.equipmentTypeId);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [equipmentTypes, setEquipmentTypes] = useState<EquipmentTypeOption[]>([]);
-  const [eqSearches, setEqSearches] = useState<Record<string, string>>({});
+  const initialEqSearches: Record<string, string> = {};
+  if (initialValues?.equipmentTypeName && serviceItems[0]?.id) {
+    initialEqSearches[serviceItems[0].id] = initialValues.equipmentTypeName;
+  }
+  const [eqSearches, setEqSearches] = useState<Record<string, string>>(initialEqSearches);
   const [eqDropdownOpen, setEqDropdownOpen] = useState<string | null>(null);
 
   useEffect(() => {
@@ -410,6 +422,164 @@ export default function ContactForm({
     );
   }
 
+  if (catalogMode && initialValues?.equipmentTypeName) {
+    const catalogServices = ["Поверка СИ", "Калибровка", "Аттестация"];
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Selected equipment card */}
+        <div className="relative bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 border border-primary/20 rounded-2xl p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shrink-0">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-primary uppercase tracking-wider mb-1">Выбранное оборудование</p>
+              <h4 className="text-base font-bold text-dark dark:text-white">{initialValues.equipmentTypeName}</h4>
+              {initialValues.equipmentSubTypeName && (
+                <p className="text-sm text-neutral dark:text-white/60 mt-0.5">{initialValues.equipmentSubTypeName}</p>
+              )}
+            </div>
+          </div>
+          {/* Service selector */}
+          <div className="flex gap-1.5 mt-4 p-1 bg-white/60 dark:bg-white/5 rounded-xl">
+            {catalogServices.map((svc) => (
+              <button
+                key={svc}
+                type="button"
+                onClick={() => {
+                  setServiceItems((prev) => prev.map((si, i) => i === 0 ? { ...si, service: svc } : si));
+                }}
+                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-colors ${
+                  serviceItems[0]?.service === svc
+                    ? "gradient-primary text-white shadow-sm"
+                    : "text-neutral dark:text-white/50 hover:text-dark dark:hover:text-white"
+                }`}
+              >
+                {svc === "Поверка СИ" ? "Поверка" : svc}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Contact fields */}
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="cat-name">
+              Ваше имя <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="cat-name"
+              type="text"
+              placeholder="Иванов Иван"
+              required
+              value={form.name}
+              onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) validateContactField("name", e.target.value); }}
+              onBlur={(e) => validateContactField("name", e.target.value)}
+              className={fieldErrors.name ? "border-red-400 dark:border-red-500" : ""}
+            />
+            {fieldErrors.name && <p className="text-xs text-red-500">{fieldErrors.name}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cat-phone">
+              Телефон <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="cat-phone"
+              type="tel"
+              placeholder="+7 (___) ___-__-__"
+              required
+              value={form.phone}
+              onChange={(e) => { setForm({ ...form, phone: formatPhone(e.target.value) }); if (fieldErrors.phone) validateContactField("phone", formatPhone(e.target.value)); }}
+              onBlur={(e) => validateContactField("phone", e.target.value)}
+              className={fieldErrors.phone ? "border-red-400 dark:border-red-500" : ""}
+            />
+            {fieldErrors.phone && <p className="text-xs text-red-500">{fieldErrors.phone}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cat-email">
+              Email <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="cat-email"
+              type="email"
+              placeholder="email@example.com"
+              required
+              value={form.email}
+              onChange={(e) => { setForm({ ...form, email: e.target.value }); if (fieldErrors.email) validateContactField("email", e.target.value); }}
+              onBlur={(e) => validateContactField("email", e.target.value)}
+              className={fieldErrors.email ? "border-red-400 dark:border-red-500" : ""}
+            />
+            {fieldErrors.email && <p className="text-xs text-red-500">{fieldErrors.email}</p>}
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="cat-company">Наименование организации</Label>
+            <Input
+              id="cat-company"
+              type="text"
+              value={form.company}
+              onChange={(e) => setForm({ ...form, company: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cat-inn">ИНН</Label>
+            <Input
+              id="cat-inn"
+              type="text"
+              placeholder="1234567890"
+              maxLength={12}
+              value={form.inn}
+              onChange={(e) =>
+                setForm({ ...form, inn: e.target.value.replace(/\D/g, "") })
+              }
+            />
+          </div>
+        </div>
+
+        {submitStatus === "error" && (
+          <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3">
+            {errorMsg}
+          </div>
+        )}
+
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id="cat-privacy"
+            checked={privacyConsent}
+            onCheckedChange={(v) => setPrivacyConsent(v === true)}
+            className="mt-0.5"
+          />
+          <Label
+            htmlFor="cat-privacy"
+            className="text-xs text-neutral dark:text-white/60 cursor-pointer select-none leading-relaxed"
+          >
+            Я соглашаюсь с{" "}
+            <Link href="/privacy" className="text-primary hover:underline" target="_blank">
+              политикой конфиденциальности
+            </Link>{" "}
+            и{" "}
+            <Link href="/terms" className="text-primary hover:underline" target="_blank">
+              пользовательским соглашением
+            </Link>
+          </Label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitStatus === "loading" || !privacyConsent}
+          className="w-full gradient-primary text-white py-3.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {submitStatus === "loading" ? "Отправка..." : "Заказать поверку"}
+        </button>
+      </form>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid sm:grid-cols-3 gap-3">
@@ -597,7 +767,7 @@ export default function ContactForm({
               )}
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid sm:grid-cols-2 gap-3 sm:items-end">
               <div className="space-y-1.5">
                 <Label>Полное наименование СИ или оборудования</Label>
                 <Input

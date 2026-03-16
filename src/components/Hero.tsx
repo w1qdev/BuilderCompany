@@ -65,7 +65,7 @@ export default function Hero({ onOpenModal }: HeroProps) {
       </AnimatePresence>
 
       {/* Dark gradient overlay for text contrast */}
-      <div className="absolute inset-0 bg-gradient-to-b from-dark/60 via-dark/50 to-dark/70" />
+      <div className="absolute inset-0 bg-gradient-to-b from-dark/75 via-dark/65 to-dark/80" />
 
       <div className="relative z-10 max-w-8xl mx-auto px-4 sm:px-6 pt-32 pb-20 text-center">
         <motion.div
@@ -101,20 +101,28 @@ export default function Hero({ onOpenModal }: HeroProps) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
+          className="flex flex-col items-center gap-4"
         >
-          <button
-            onClick={onOpenModal}
-            className="gradient-primary text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
-          >
-            Оставить заявку
-          </button>
-          <a
-            href="#services"
-            className="border-2 border-white/30 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-white/10 transition-all duration-300"
-          >
-            Наши услуги
-          </a>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={onOpenModal}
+              className="gradient-primary text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
+            >
+              Оставить заявку
+            </button>
+            <a
+              href="#services"
+              className="border-2 border-white/30 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-white/10 transition-all duration-300"
+            >
+              Наши услуги
+            </a>
+          </div>
+          <p className="flex items-center gap-2 text-white/60 text-sm">
+            <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+            </svg>
+            Ответим в течение 15 минут в рабочее время
+          </p>
         </motion.div>
 
         {/* Stats with animated counters */}
