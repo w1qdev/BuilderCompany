@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@maxhub/max-bot-api": "latest",
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^6.2.1",
     "node-cron": "^3.0.3",
     "dotenv": "^17.2.4"
   },
