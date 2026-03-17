@@ -41,9 +41,13 @@ npx prisma generate --schema=../prisma/schema.prisma
 npx tsc
 cd ..
 
-# Step 4: Run database migrations on host
+# Step 4: Run database migrations and seed on host
 echo "[4/6] Running database migrations..."
 DATABASE_URL="file:$(pwd)/data/prod.db" npx prisma migrate deploy
+
+echo "  Seeding equipment data..."
+DATABASE_URL="file:$(pwd)/data/prod.db" npx tsx prisma/seed-equipment-types.ts
+DATABASE_URL="file:$(pwd)/data/prod.db" npx tsx prisma/seed-equipment-subtypes.ts
 
 # Step 5: Stop old containers, clean Docker cache, build minimal images
 echo "[5/6] Building Docker images..."
