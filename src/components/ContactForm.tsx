@@ -280,8 +280,8 @@ export default function ContactForm({
     setSubmitStatus(SubmitStatusEnums.LOADING);
     setErrorMsg("");
 
-    // Validate registry for Поверка СИ items (skip if consultation only)
-    if (!consultOnly) {
+    // Validate registry for Поверка СИ items (skip if consultation only or catalog mode)
+    if (!consultOnly && !catalogMode) {
       for (let i = 0; i < serviceItems.length; i++) {
         if (
           serviceItems[i].service === "Поверка СИ" &&

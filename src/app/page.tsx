@@ -34,22 +34,35 @@ type ModalInitialValues = {
 
 export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalInitialValues, setModalInitialValues] = useState<ModalInitialValues | undefined>();
+  const [modalInitialValues, setModalInitialValues] = useState<
+    ModalInitialValues | undefined
+  >();
   const [catalogMode, setCatalogMode] = useState(false);
 
-  const openModal = () => { setModalInitialValues(undefined); setCatalogMode(false); setModalOpen(true); };
-  const closeModal = () => { setModalOpen(false); setModalInitialValues(undefined); setCatalogMode(false); };
-
-  const handleCatalogOrder = useCallback((item: { id: number; name: string; subTypeName?: string }) => {
-    setModalInitialValues({
-      equipmentTypeId: item.id || undefined,
-      equipmentTypeName: item.name,
-      equipmentSubTypeName: item.subTypeName || undefined,
-      service: "Поверка СИ",
-    });
-    setCatalogMode(true);
+  const openModal = () => {
+    setModalInitialValues(undefined);
+    setCatalogMode(false);
     setModalOpen(true);
-  }, []);
+  };
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalInitialValues(undefined);
+    setCatalogMode(false);
+  };
+
+  const handleCatalogOrder = useCallback(
+    (item: { id: number; name: string; subTypeName?: string }) => {
+      setModalInitialValues({
+        equipmentTypeId: item.id || undefined,
+        equipmentTypeName: item.name,
+        equipmentSubTypeName: item.subTypeName || undefined,
+        service: "Поверка СИ",
+      });
+      setCatalogMode(true);
+      setModalOpen(true);
+    },
+    [],
+  );
 
   return (
     <>
@@ -58,9 +71,9 @@ export default function Home() {
       <main>
         <Hero onOpenModal={openModal} />
         <Services onOpenModal={openModal} />
-        <section id="catalog" className="py-20 sm:py-28 bg-white dark:bg-dark">
+        {/*<section id="catalog" className="py-20 sm:py-28 bg-white dark:bg-dark">
           <CatalogPageContent onOrderClick={handleCatalogOrder} />
-        </section>
+        </section>*/}
         <Process />
         <Science onOpenModal={openModal} />
         <Delivery />
@@ -73,7 +86,12 @@ export default function Home() {
         <Testimonials />
       </main>
       <Footer onOpenModal={openModal} />
-      <Modal isOpen={modalOpen} onClose={closeModal} initialValues={modalInitialValues} catalogMode={catalogMode} />
+      <Modal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        initialValues={modalInitialValues}
+        catalogMode={catalogMode}
+      />
       <BackToTop />
     </>
   );
