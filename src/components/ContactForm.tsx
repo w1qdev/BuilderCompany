@@ -145,7 +145,8 @@ export default function ContactForm({
   });
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([
     createServiceItem({
-      object: initialValues?.equipmentSubTypeName || initialValues?.object || "",
+      object:
+        initialValues?.equipmentSubTypeName || initialValues?.object || "",
       fabricNumber: initialValues?.fabricNumber,
       registry: initialValues?.registry,
       equipmentTypeId: initialValues?.equipmentTypeId || null,
@@ -166,15 +167,20 @@ export default function ContactForm({
   const [errorMsg, setErrorMsg] = useState("");
   const [needContract, setNeedContract] = useState(false);
   const [addEquipment, setAddEquipment] = useState(false);
-  const [consultOnly, setConsultOnly] = useState(!showEquipmentCheckbox && !initialValues?.equipmentTypeId);
+  const [consultOnly, setConsultOnly] = useState(
+    !showEquipmentCheckbox && !initialValues?.equipmentTypeId,
+  );
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [equipmentTypes, setEquipmentTypes] = useState<EquipmentTypeOption[]>([]);
+  const [equipmentTypes, setEquipmentTypes] = useState<EquipmentTypeOption[]>(
+    [],
+  );
   const initialEqSearches: Record<string, string> = {};
   if (initialValues?.equipmentTypeName && serviceItems[0]?.id) {
     initialEqSearches[serviceItems[0].id] = initialValues.equipmentTypeName;
   }
-  const [eqSearches, setEqSearches] = useState<Record<string, string>>(initialEqSearches);
+  const [eqSearches, setEqSearches] =
+    useState<Record<string, string>>(initialEqSearches);
   const [eqDropdownOpen, setEqDropdownOpen] = useState<string | null>(null);
 
   useEffect(() => {
@@ -191,7 +197,8 @@ export default function ContactForm({
       const digits = value.replace(/\D/g, "");
       if (digits.length < 11) error = "Введите корректный номер телефона";
     }
-    if (field === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = "Введите корректный email";
+    if (field === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+      error = "Введите корректный email";
     setFieldErrors((prev) => {
       if (error) return { ...prev, [field]: error };
       const next = { ...prev };
@@ -202,7 +209,15 @@ export default function ContactForm({
 
   // Track form dirtiness
   useEffect(() => {
-    const isDirty = !!(form.name || form.phone || form.email || form.company || form.inn || form.message || files.length > 0);
+    const isDirty = !!(
+      form.name ||
+      form.phone ||
+      form.email ||
+      form.company ||
+      form.inn ||
+      form.message ||
+      files.length > 0
+    );
     onDirtyChange?.(isDirty);
   }, [form, files, onDirtyChange]);
 
@@ -344,7 +359,14 @@ export default function ContactForm({
           items: consultOnly
             ? []
             : serviceItems.map(
-                ({ service, poverk, object, fabricNumber, registry, equipmentTypeId }) => ({
+                ({
+                  service,
+                  poverk,
+                  object,
+                  fabricNumber,
+                  registry,
+                  equipmentTypeId,
+                }) => ({
                   service,
                   poverk: service === "Поверка СИ" ? poverk : undefined,
                   object,
@@ -431,15 +453,31 @@ export default function ContactForm({
         <div className="relative bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 border border-primary/20 rounded-2xl p-5">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shrink-0">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-primary uppercase tracking-wider mb-1">Выбранное оборудование</p>
-              <h4 className="text-base font-bold text-dark dark:text-white">{initialValues.equipmentTypeName}</h4>
+              <p className="text-xs font-medium text-primary uppercase tracking-wider mb-1">
+                Выбранное оборудование
+              </p>
+              <h4 className="text-base font-bold text-dark dark:text-white">
+                {initialValues.equipmentTypeName}
+              </h4>
               {initialValues.equipmentSubTypeName && (
-                <p className="text-sm text-neutral dark:text-white/60 mt-0.5">{initialValues.equipmentSubTypeName}</p>
+                <p className="text-sm text-neutral dark:text-white/60 mt-0.5">
+                  {initialValues.equipmentSubTypeName}
+                </p>
               )}
             </div>
           </div>
@@ -450,7 +488,11 @@ export default function ContactForm({
                 key={svc}
                 type="button"
                 onClick={() => {
-                  setServiceItems((prev) => prev.map((si, i) => i === 0 ? { ...si, service: svc } : si));
+                  setServiceItems((prev) =>
+                    prev.map((si, i) =>
+                      i === 0 ? { ...si, service: svc } : si,
+                    ),
+                  );
                 }}
                 className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-colors ${
                   serviceItems[0]?.service === svc
@@ -476,11 +518,19 @@ export default function ContactForm({
               placeholder="Иванов Иван"
               required
               value={form.name}
-              onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) validateContactField("name", e.target.value); }}
+              onChange={(e) => {
+                setForm({ ...form, name: e.target.value });
+                if (fieldErrors.name)
+                  validateContactField("name", e.target.value);
+              }}
               onBlur={(e) => validateContactField("name", e.target.value)}
-              className={fieldErrors.name ? "border-red-400 dark:border-red-500" : ""}
+              className={
+                fieldErrors.name ? "border-red-400 dark:border-red-500" : ""
+              }
             />
-            {fieldErrors.name && <p className="text-xs text-red-500">{fieldErrors.name}</p>}
+            {fieldErrors.name && (
+              <p className="text-xs text-red-500">{fieldErrors.name}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cat-phone">
@@ -492,11 +542,19 @@ export default function ContactForm({
               placeholder="+7 (___) ___-__-__"
               required
               value={form.phone}
-              onChange={(e) => { setForm({ ...form, phone: formatPhone(e.target.value) }); if (fieldErrors.phone) validateContactField("phone", formatPhone(e.target.value)); }}
+              onChange={(e) => {
+                setForm({ ...form, phone: formatPhone(e.target.value) });
+                if (fieldErrors.phone)
+                  validateContactField("phone", formatPhone(e.target.value));
+              }}
               onBlur={(e) => validateContactField("phone", e.target.value)}
-              className={fieldErrors.phone ? "border-red-400 dark:border-red-500" : ""}
+              className={
+                fieldErrors.phone ? "border-red-400 dark:border-red-500" : ""
+              }
             />
-            {fieldErrors.phone && <p className="text-xs text-red-500">{fieldErrors.phone}</p>}
+            {fieldErrors.phone && (
+              <p className="text-xs text-red-500">{fieldErrors.phone}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cat-email">
@@ -508,11 +566,19 @@ export default function ContactForm({
               placeholder="email@example.com"
               required
               value={form.email}
-              onChange={(e) => { setForm({ ...form, email: e.target.value }); if (fieldErrors.email) validateContactField("email", e.target.value); }}
+              onChange={(e) => {
+                setForm({ ...form, email: e.target.value });
+                if (fieldErrors.email)
+                  validateContactField("email", e.target.value);
+              }}
               onBlur={(e) => validateContactField("email", e.target.value)}
-              className={fieldErrors.email ? "border-red-400 dark:border-red-500" : ""}
+              className={
+                fieldErrors.email ? "border-red-400 dark:border-red-500" : ""
+              }
             />
-            {fieldErrors.email && <p className="text-xs text-red-500">{fieldErrors.email}</p>}
+            {fieldErrors.email && (
+              <p className="text-xs text-red-500">{fieldErrors.email}</p>
+            )}
           </div>
         </div>
 
@@ -559,11 +625,19 @@ export default function ContactForm({
             className="text-xs text-neutral dark:text-white/60 cursor-pointer select-none leading-relaxed"
           >
             Я соглашаюсь с{" "}
-            <Link href="/privacy" className="text-primary hover:underline" target="_blank">
+            <Link
+              href="/privacy"
+              className="text-primary hover:underline"
+              target="_blank"
+            >
               политикой конфиденциальности
             </Link>{" "}
             и{" "}
-            <Link href="/terms" className="text-primary hover:underline" target="_blank">
+            <Link
+              href="/terms"
+              className="text-primary hover:underline"
+              target="_blank"
+            >
               пользовательским соглашением
             </Link>
           </Label>
@@ -574,7 +648,7 @@ export default function ContactForm({
           disabled={submitStatus === "loading" || !privacyConsent}
           className="w-full gradient-primary text-white py-3.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {submitStatus === "loading" ? "Отправка..." : "Заказать поверку"}
+          {submitStatus === "loading" ? "Отправка..." : "Заказать"}
         </button>
       </form>
     );
@@ -593,11 +667,19 @@ export default function ContactForm({
             placeholder="Иванов Иван"
             required
             value={form.name}
-            onChange={(e) => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) validateContactField("name", e.target.value); }}
+            onChange={(e) => {
+              setForm({ ...form, name: e.target.value });
+              if (fieldErrors.name)
+                validateContactField("name", e.target.value);
+            }}
             onBlur={(e) => validateContactField("name", e.target.value)}
-            className={fieldErrors.name ? "border-red-400 dark:border-red-500" : ""}
+            className={
+              fieldErrors.name ? "border-red-400 dark:border-red-500" : ""
+            }
           />
-          {fieldErrors.name && <p className="text-xs text-red-500">{fieldErrors.name}</p>}
+          {fieldErrors.name && (
+            <p className="text-xs text-red-500">{fieldErrors.name}</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="contact-phone">
@@ -609,11 +691,19 @@ export default function ContactForm({
             placeholder="+7 (___) ___-__-__"
             required
             value={form.phone}
-            onChange={(e) => { setForm({ ...form, phone: formatPhone(e.target.value) }); if (fieldErrors.phone) validateContactField("phone", formatPhone(e.target.value)); }}
+            onChange={(e) => {
+              setForm({ ...form, phone: formatPhone(e.target.value) });
+              if (fieldErrors.phone)
+                validateContactField("phone", formatPhone(e.target.value));
+            }}
             onBlur={(e) => validateContactField("phone", e.target.value)}
-            className={fieldErrors.phone ? "border-red-400 dark:border-red-500" : ""}
+            className={
+              fieldErrors.phone ? "border-red-400 dark:border-red-500" : ""
+            }
           />
-          {fieldErrors.phone && <p className="text-xs text-red-500">{fieldErrors.phone}</p>}
+          {fieldErrors.phone && (
+            <p className="text-xs text-red-500">{fieldErrors.phone}</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="contact-email">
@@ -625,11 +715,19 @@ export default function ContactForm({
             placeholder="email@example.com"
             required
             value={form.email}
-            onChange={(e) => { setForm({ ...form, email: e.target.value }); if (fieldErrors.email) validateContactField("email", e.target.value); }}
+            onChange={(e) => {
+              setForm({ ...form, email: e.target.value });
+              if (fieldErrors.email)
+                validateContactField("email", e.target.value);
+            }}
             onBlur={(e) => validateContactField("email", e.target.value)}
-            className={fieldErrors.email ? "border-red-400 dark:border-red-500" : ""}
+            className={
+              fieldErrors.email ? "border-red-400 dark:border-red-500" : ""
+            }
           />
-          {fieldErrors.email && <p className="text-xs text-red-500">{fieldErrors.email}</p>}
+          {fieldErrors.email && (
+            <p className="text-xs text-red-500">{fieldErrors.email}</p>
+          )}
         </div>
       </div>
 
@@ -685,78 +783,57 @@ export default function ContactForm({
       </div>
 
       {/* Service Items */}
-      {!consultOnly && <div className="space-y-3">
-        {serviceItems.map((item, index) => (
-          <div
-            key={item.id}
-            className="relative border border-gray-200 dark:border-white/10 rounded-xl p-4 space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-dark dark:text-white">
-                Позиция {index + 1}
-              </span>
-              {serviceItems.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeItem(item.id)}
-                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                  title="Удалить позицию"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+      {!consultOnly && (
+        <div className="space-y-3">
+          {serviceItems.map((item, index) => (
+            <div
+              key={item.id}
+              className="relative border border-gray-200 dark:border-white/10 rounded-xl p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-dark dark:text-white">
+                  Позиция {index + 1}
+                </span>
+                {serviceItems.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.id)}
+                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Удалить позицию"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>
-                  Услуга <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={item.service}
-                  onValueChange={(value) =>
-                    updateItem(item.id, { service: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите услугу" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
               </div>
 
-              {item.service === "Поверка СИ" && (
+              <div className="grid sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Поверка</Label>
+                  <Label>
+                    Услуга <span className="text-red-500">*</span>
+                  </Label>
                   <Select
-                    value={item.poverk}
+                    value={item.service}
                     onValueChange={(value) =>
-                      updateItem(item.id, { poverk: value })
+                      updateItem(item.id, { service: value })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Выберите тип поверки" />
+                      <SelectValue placeholder="Выберите услугу" />
                     </SelectTrigger>
                     <SelectContent>
-                      {poverkOptions.map((s) => (
+                      {services.map((s) => (
                         <SelectItem key={s} value={s}>
                           {s}
                         </SelectItem>
@@ -764,158 +841,221 @@ export default function ContactForm({
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-            </div>
 
-            <div className="grid sm:grid-cols-2 gap-3 sm:items-end">
-              <div className="space-y-1.5">
-                <Label>Полное наименование СИ или оборудования</Label>
-                <Input
-                  type="text"
-                  placeholder=""
-                  value={item.object}
-                  onChange={(e) =>
-                    updateItem(item.id, { object: e.target.value })
-                  }
-                />
-              </div>
-
-              {/* Equipment type autocomplete */}
-              <div className="space-y-1.5 relative">
-                <Label>Тип оборудования</Label>
-                <Input
-                  type="text"
-                  placeholder="Начните вводить..."
-                  value={
-                    eqDropdownOpen === item.id
-                      ? (eqSearches[item.id] ?? "")
-                      : (equipmentTypes.find((et) => et.id === item.equipmentTypeId)?.name || "")
-                  }
-                  onChange={(e) => {
-                    setEqSearches((prev) => ({ ...prev, [item.id]: e.target.value }));
-                    setEqDropdownOpen(item.id);
-                    if (!e.target.value.trim()) {
-                      updateItem(item.id, { equipmentTypeId: null });
-                    }
-                  }}
-                  onFocus={() => {
-                    setEqDropdownOpen(item.id);
-                    const current = equipmentTypes.find((et) => et.id === item.equipmentTypeId);
-                    setEqSearches((prev) => ({ ...prev, [item.id]: current?.name || "" }));
-                  }}
-                  onBlur={() => {
-                    // Delay to allow click on dropdown
-                    setTimeout(() => setEqDropdownOpen((prev) => prev === item.id ? null : prev), 200);
-                  }}
-                />
-                {eqDropdownOpen === item.id && (() => {
-                  const query = (eqSearches[item.id] || "").toLowerCase();
-                  const filtered = equipmentTypes.filter((et) =>
-                    et.name.toLowerCase().includes(query)
-                  );
-                  if (filtered.length === 0) return null;
-                  return (
-                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      {filtered.map((et) => (
-                        <button
-                          key={et.id}
-                          type="button"
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/10 transition-colors ${
-                            et.id === item.equipmentTypeId ? "bg-primary/10 text-primary font-medium" : "text-dark dark:text-white"
-                          }`}
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => {
-                            updateItem(item.id, { equipmentTypeId: et.id });
-                            setEqSearches((prev) => ({ ...prev, [item.id]: et.name }));
-                            setEqDropdownOpen(null);
-                          }}
-                        >
-                          <span>{et.name}</span>
-                          {et.category && (
-                            <span className="ml-2 text-xs text-neutral dark:text-white/40">{et.category}</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })()}
-                {item.equipmentTypeId && eqDropdownOpen !== item.id && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      updateItem(item.id, { equipmentTypeId: null });
-                      setEqSearches((prev) => ({ ...prev, [item.id]: "" }));
-                    }}
-                    className="absolute right-2 top-[calc(50%+4px)] text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                {item.service === "Поверка СИ" && (
+                  <div className="space-y-1.5">
+                    <Label>Поверка</Label>
+                    <Select
+                      value={item.poverk}
+                      onValueChange={(value) =>
+                        updateItem(item.id, { poverk: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите тип поверки" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {poverkOptions.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
               </div>
-            </div>
 
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Заводской номер</Label>
-                <Input
-                  type="text"
-                  placeholder="123"
-                  value={item.fabricNumber}
-                  onChange={(e) =>
-                    updateItem(item.id, { fabricNumber: e.target.value })
-                  }
-                />
-              </div>
-
-              {item.service === "Поверка СИ" && (
+              <div className="grid sm:grid-cols-2 gap-3 sm:items-end">
                 <div className="space-y-1.5">
-                  <Label>
-                    Номер реестра <span className="text-red-500">*</span>
-                  </Label>
+                  <Label>Полное наименование СИ или оборудования</Label>
                   <Input
                     type="text"
-                    placeholder="12345-12"
-                    required
-                    value={item.registry}
+                    placeholder=""
+                    value={item.object}
                     onChange={(e) =>
-                      updateItem(item.id, { registry: e.target.value })
+                      updateItem(item.id, { object: e.target.value })
                     }
                   />
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
 
-        <button
-          type="button"
-          onClick={addItem}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-200 dark:border-white/20 rounded-xl text-sm text-neutral dark:text-white/60 hover:border-primary hover:text-primary transition-colors"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+                {/* Equipment type autocomplete */}
+                <div className="space-y-1.5 relative">
+                  <Label>Тип оборудования</Label>
+                  <Input
+                    type="text"
+                    placeholder="Начните вводить..."
+                    value={
+                      eqDropdownOpen === item.id
+                        ? (eqSearches[item.id] ?? "")
+                        : equipmentTypes.find(
+                            (et) => et.id === item.equipmentTypeId,
+                          )?.name || ""
+                    }
+                    onChange={(e) => {
+                      setEqSearches((prev) => ({
+                        ...prev,
+                        [item.id]: e.target.value,
+                      }));
+                      setEqDropdownOpen(item.id);
+                      if (!e.target.value.trim()) {
+                        updateItem(item.id, { equipmentTypeId: null });
+                      }
+                    }}
+                    onFocus={() => {
+                      setEqDropdownOpen(item.id);
+                      const current = equipmentTypes.find(
+                        (et) => et.id === item.equipmentTypeId,
+                      );
+                      setEqSearches((prev) => ({
+                        ...prev,
+                        [item.id]: current?.name || "",
+                      }));
+                    }}
+                    onBlur={() => {
+                      // Delay to allow click on dropdown
+                      setTimeout(
+                        () =>
+                          setEqDropdownOpen((prev) =>
+                            prev === item.id ? null : prev,
+                          ),
+                        200,
+                      );
+                    }}
+                  />
+                  {eqDropdownOpen === item.id &&
+                    (() => {
+                      const query = (eqSearches[item.id] || "").toLowerCase();
+                      const filtered = equipmentTypes.filter((et) =>
+                        et.name.toLowerCase().includes(query),
+                      );
+                      if (filtered.length === 0) return null;
+                      return (
+                        <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-dark-light border border-gray-200 dark:border-white/10 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {filtered.map((et) => (
+                            <button
+                              key={et.id}
+                              type="button"
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/10 transition-colors ${
+                                et.id === item.equipmentTypeId
+                                  ? "bg-primary/10 text-primary font-medium"
+                                  : "text-dark dark:text-white"
+                              }`}
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                updateItem(item.id, { equipmentTypeId: et.id });
+                                setEqSearches((prev) => ({
+                                  ...prev,
+                                  [item.id]: et.name,
+                                }));
+                                setEqDropdownOpen(null);
+                              }}
+                            >
+                              <span>{et.name}</span>
+                              {et.category && (
+                                <span className="ml-2 text-xs text-neutral dark:text-white/40">
+                                  {et.category}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  {item.equipmentTypeId && eqDropdownOpen !== item.id && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateItem(item.id, { equipmentTypeId: null });
+                        setEqSearches((prev) => ({ ...prev, [item.id]: "" }));
+                      }}
+                      className="absolute right-2 top-[calc(50%+4px)] text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Заводской номер</Label>
+                  <Input
+                    type="text"
+                    placeholder="123"
+                    value={item.fabricNumber}
+                    onChange={(e) =>
+                      updateItem(item.id, { fabricNumber: e.target.value })
+                    }
+                  />
+                </div>
+
+                {item.service === "Поверка СИ" && (
+                  <div className="space-y-1.5">
+                    <Label>
+                      Номер реестра <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="12345-12"
+                      required
+                      value={item.registry}
+                      onChange={(e) =>
+                        updateItem(item.id, { registry: e.target.value })
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={addItem}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-200 dark:border-white/20 rounded-xl text-sm text-neutral dark:text-white/60 hover:border-primary hover:text-primary transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Добавить позицию
-        </button>
-      </div>}
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            Добавить позицию
+          </button>
+        </div>
+      )}
 
       <div className="space-y-1.5">
-        <Label htmlFor="contact-message">{consultOnly ? "Опишите ваш вопрос" : "Комментарии"}</Label>
+        <Label htmlFor="contact-message">
+          {consultOnly ? "Опишите ваш вопрос" : "Комментарии"}
+        </Label>
         <Textarea
           id="contact-message"
-          placeholder={consultOnly ? "Расскажите, что вас интересует" : "Сообщение (необязательно)"}
+          placeholder={
+            consultOnly
+              ? "Расскажите, что вас интересует"
+              : "Сообщение (необязательно)"
+          }
           rows={3}
           value={form.message}
           onChange={(e) => setForm({ ...form, message: e.target.value })}
@@ -1089,11 +1229,19 @@ export default function ContactForm({
           className="text-xs text-neutral dark:text-white/60 cursor-pointer select-none leading-relaxed"
         >
           Я соглашаюсь с{" "}
-          <Link href="/privacy" className="text-primary hover:underline" target="_blank">
+          <Link
+            href="/privacy"
+            className="text-primary hover:underline"
+            target="_blank"
+          >
             политикой конфиденциальности
           </Link>{" "}
           и{" "}
-          <Link href="/terms" className="text-primary hover:underline" target="_blank">
+          <Link
+            href="/terms"
+            className="text-primary hover:underline"
+            target="_blank"
+          >
             пользовательским соглашением
           </Link>
         </Label>
